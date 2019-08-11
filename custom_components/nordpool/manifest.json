@@ -4,6 +4,6 @@
   "name": "nordpool",
   "documentation": "https://github.com/Hellowlol/nordpool",
   "dependencies": [],
-  "codeowners": ["hellowlol"],
-  "requirements": []
+  "codeowners": ["@hellowlol"],
+  "requirements": ["nordpool"]
 }
