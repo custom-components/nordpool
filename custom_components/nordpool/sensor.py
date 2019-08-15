@@ -1,49 +1,46 @@
 import logging
-import datetime as dt
 import math
-
-import pprint
-
-
 from operator import itemgetter
 
 import voluptuous as vol
-
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import ATTR_ATTRIBUTION, CONF_CURRENCY, CONF_REGION, CONF_NAME
-
+from homeassistant.const import CONF_CURRENCY, CONF_REGION, CONF_NAME
 import homeassistant.helpers.config_validation as cv
-import homeassistant.util.dt as dt_util
 from homeassistant.helpers.entity import Entity
+import pendulum
+
+from . import DOMAIN
+from .misc import is_new, has_junk, extract_attrs
 
 
 _LOGGER = logging.getLogger(__name__)
 
-_CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 
-_CURRENCY_FRACTION = {"DKK": "Øre", "EUR": "Cent", "NOK": "Øre", "SEK": "Öre"}
+_PRICE_IN = {"kWh": 1000, "mWh": 0, "w": 1000 * 1000}
 
-_PRICE_IN = {"kWh": 1000, "mWh": 0}
 
-_REGION_NAME = [
-    "DK1",
-    "DK2",
-    "EE",
-    "FI",
-    "LT",
-    "LV",
-    "Oslo",
-    "Kr.sand",
-    "Bergen",
-    "Molde",
-    "Tr.heim",
-    "Tromsø",
-    "SE1",
-    "SE2",
-    "SE3",
-    "SE4",
-    "SYS",
-]
+_REGIONS = {
+    "DK1": ["Kr", "DKK", "Denmark", 0.25],
+    "DK2": ["Kr", "DKK", "Denmark", 0.25],
+    "FI": ["Euro", "EUR", "Finland", 0.25],
+    "LT": ["Euro", "EUR", "Lithuania", 0.25],
+    "LV": ["Euro", "EUR", "Latvia", 0.25],
+    "Oslo": ["Kr", "NOK", "Norge", 0, 25],
+    "Kr.sand": ["Kr", "NOK", "Norge", 0.25],
+    "Bergen": ["Kr", "NOK", "Norge", 0.25],
+    "Molde": ["Kr", "NOK", "Norge", 0.25],
+    "Tr.heim": ["Kr", "NOK", "Norge", 0.25],
+    "Tromsø": ["Kr", "NOK", "Norge", 0.25],
+    "SE1": ["Kr", "SEK", "Sweden", 0.25],
+    "SE2": ["Kr", "SEK", "Sweden", 0.25],
+    "SE3": ["Kr", "SEK", "Sweden", 0.25],
+    "SE4": ["Kr", "SEK", "Sweden", 0.25],
+    "SYS": ["Euro", "EUR", "Dunno", 0.25]
+    # Am i missing some? Check the nordpool page
+
+    ## Todo, figure out the tax on power in other coutries.
+}
+
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
@@ -51,36 +48,44 @@ DEFAULT_NAME = "Elspot kWh"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Optional(CONF_CURRENCY, default=DEFAULT_CURRENCY): vol.In(_CURRENCY_LIST),
-        vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(_REGION_NAME),
+        vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
+            list(_REGIONS.keys())
+        ),
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional("VAT", default=0.0): cv.small_float,
+        vol.Optional("VAT", default=True): bool,
+        vol.Optional("precision", default=3): cv.positive_int,
+        vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
     }
 )
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
+    """Setup the damn platform"""
     _LOGGER.info("%r" % config)
-    currency = config.get(CONF_CURRENCY)
     region = config.get(CONF_REGION)
     name = config.get(CONF_NAME)
-    vat = config.get("VAT")
     price_type = config.get("price_type")
-    # Add support for muliple sensors.
-    sensor = NordpoolSensor(name, currency, region, vat, price_type)
+    precision = config.get("precision")
+    low_price_cutoff = config.get("low_price_cutoff")
+    api = hass.data[DOMAIN]
+    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, api)
 
     add_devices([sensor])
-    hass.data[name] = sensor
 
 
 class NordpoolSensor(Entity):
-    def __init__(self, name, currency, region, vat, price_type) -> None:
+    def __init__(
+        self, name, area, price_type, precision, low_price_cutoff, api
+    ) -> None:
         self._name = name
-        self._currency = currency
-        self._area = region
-        self._vat = vat
+        self._area = area
+        self._currency = _REGIONS[area][0]
+        self._vat = _REGIONS[area][3]
         self._price_type = price_type
+        self._precision = precision
+        self._low_price_cutoff = low_price_cutoff
+        self._api = api
 
         # Price by current hour.
         self._current_price = 0
@@ -89,7 +94,7 @@ class NordpoolSensor(Entity):
         self._data_today = None
         self._data_tomorrow = None
 
-        # Values for the day.
+        # Values for the day
         self._average = None
         self._max = None
         self._min = None
@@ -97,8 +102,9 @@ class NordpoolSensor(Entity):
         self._off_peak_2 = None
         self._peak = None
 
-        self._last_update = None
-        self._next_update = None
+        # To control the updates.
+        self._last_update_hourly = None
+        self._last_tick = None
 
     @property
     def name(self) -> str:
@@ -110,7 +116,7 @@ class NordpoolSensor(Entity):
 
     @property
     def unit(self) -> str:
-        return self._currency
+        return CONF_CURRENCY
 
     @property
     def state(self) -> float:
@@ -118,60 +124,77 @@ class NordpoolSensor(Entity):
 
     @property
     def low_price(self):
-        """Check if the price is lower then avg"""
-        return self.current_price > self._average
+        """Check if the price is lower then avg."""
+        return (
+            self.current_price < self._average * self._low_price_cutoff
+            if self.current_price
+            else None
+        )
 
     def _calc_price(self, value=None):
         """Calculate price based on the users settings."""
         if value is None:
             value = self._current_price
 
-        if math.isinf(value):
-            _LOGGER.info("api returned junk infitiy")
+        if value is None or math.isinf(value):
+            _LOGGER.info("api returned junk infinty %s", value)
             # So far this seems to happend on peek, offpeek1 and offpeak2
             # if this happens often we could calculate this prices ourself.
-            # Peak = 08:00 to 20:00
-            # Off peak 1 = 00:00 to 08:00
-            # Off peak 2 = 20:00 to 00:00
-            return 0.0
+            return None
 
         # The api returns prices in mwh
-        return value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+        price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+        return round(price, self._precision)
 
     def _update(self, data):
-        _LOGGER.info("Called update")
+        """Set attrs."""
+        _LOGGER.info("Called _update setting attrs for the day")
+
+        if has_junk(data):
+            _LOGGER.info("It was junk infinty in api response, fixed it.")
+            d = extract_attrs(data)
+            data.update(d)
+
+        # we could check for peaks here.
         self._average = self._calc_price(data.get("Average"))
         self._min = self._calc_price(data.get("Min"))
         self._max = self._calc_price(data.get("Max"))
         self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
         self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
         self._peak = self._calc_price(data.get("Peak"))
-        self._last_update = dt_util.now()
-        self._next_update = self._last_update + dt.timedelta(days=1)
-        # Seem to release new prices at 1400.
-        self._next_update.replace(hour=14, minute=0, second=0, microsecond=0)
 
     @property
     def current_price(self):
         return self._calc_price()
 
-    def _someday(self, data):
-        todays = []
-        for item in data.get("values", []):
-            item["value"] = self._calc_price(item["value"])
-            todays.append(item)
-
-        return [i["value"] for i in sorted(todays, key=itemgetter("start"))]
+    def _someday(self, data) -> list:
+        """The data is already sorted in the xml,
+           but i dont trust that to continue forever. Thats why we sort it ourselfs."""
+        return sorted(data.get("values", []), key=itemgetter("start"))
 
     @property
-    def today(self):
-        """Get todays prices"""
-        return self._someday(self._data_today)
+    def today(self) -> list:
+        """Get todays prices
+
+        Returns:
+            list: sorted list where today[0] is the price of hour 00.00 - 01.00
+        """
+        return [
+            self._calc_price(i["value"]) for i in self._someday(self._data_today) if i
+        ]
 
     @property
-    def tomorrow(self):
-        """Get todays prices"""
-        return self._someday(self._data_tomorrow)
+    def tomorrow(self) -> list:
+        """Get tomorrows prices
+
+        Returns:
+            list: sorted where tomorrow[0] is the price of hour 00.00 - 01.00 etc.
+        """
+        return [
+            self._calc_price(i["value"])
+            for i in self._someday(self._data_tomorrow)
+            if i
+        ]
 
     @property
     def device_state_attributes(self) -> dict:
@@ -183,62 +206,66 @@ class NordpoolSensor(Entity):
             "peak": self._peak,
             "min": self._min,
             "max": self._max,
+            "low price": self.low_price,
         }
 
     def _update_current_price(self) -> None:
-        now = dt_util.utcnow()
-        if now.hour > self._last_update.hour or self._current_price in (0, None, 0.0):
-            if self._data_today:
-                for value in self._data_today.get("values", []):
-                    if now.hour == value.get("start").hour:
-                        _LOGGER.info("Update current price")
-                        self._current_price = value.get("value")
-            else:
-                _LOGGER.info("no data :'(")
+        """ update the current price (price this hour)"""
+        local_now = pendulum.now()
 
-    def update(self) -> None:
-        """Update the attributes"""
-        from nordpool import elspot
-
-        # Add todays data :)
-        if self._data_today is None:
-            local_now = dt_util.as_local(dt_util.utcnow())
-            spot = elspot.Prices(self._currency)
-            data = spot.hourly(end_date=local_now, areas=[self._area])
-            # _LOGGER.info('%r', pprint.pprint(data, indent=4))
-
+        if self._last_update_hourly is None or is_new(self._last_update_hourly, "hour"):
+            _LOGGER.info("Updated _current_price!")
+            data = self._api.today(self._area)
             if data:
-                area = list(data["areas"].values())[0]
-                self._data_today = area
-                self._update(area)
+                value = self._someday(data)[local_now.hour]["value"]
+                self._current_price = value
+                self._last_update_hourly = local_now
+            else:
+                _LOGGER.info("Cant update _update_current_price because it was no data")
+        else:
+            _LOGGER.info("Tried to update the hourly price but it wasnt a new hour.")
+
+    def update(self):
+        """Ideally we should just pull from the api all the time but since
+           se shouldnt do any io inside any other methods we store the data
+           in self._data_today and self._data_tomorrow.
+        """
+        if self._last_tick is None:
+            self._last_tick = pendulum.now()
+
+        if self._data_today is None:
+            _LOGGER.info("NordpoolSensor _data_today is none, trying to fetch it.")
+            today = self._api.today(self._area)
+            if today:
+                self._data_today = today
+                self._update(today)
 
         if self._data_tomorrow is None:
-            spot = elspot.Prices(self._currency)
-            data = spot.hourly(areas=[self._area])
-            if data:
-                area = list(data["areas"].values())[0]
-                # lets check that the data is valid, the api adds infinty for missing values.
-                if not math.isinf(area["Average"]):
-                    self._data_tomorrow = area
-                else:
-                    _LOGGER.info("Api returned a infinty value, full was %r", area)
+            _LOGGER.info("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
+            tomorrow = self._api.tomorrow(self._area)
+            if tomorrow:
+                self._data_tomorrow = tomorrow
 
-        now = dt_util.now()
-        if self._next_update is not None and now >= self._next_update:
-            _LOGGER.info("Updated because of tick.")
-            spot = elspot.Prices(self._currency)
-            data = spot.hourly(areas=[self._area])
-            if data:
-                area = list(data["areas"].values())[0]
-                if not math.isinf(area["Average"]):
-                    self._data_tomorrow = area
-                    self._update(area)
-                else:
-                    _LOGGER.info("Api returned a infinty value, full was %r", area)
+        if is_new(self._last_tick, typ="day"):
 
-        if now.date() > self._last_update.date():
-            _LOGGER.info("There is a new day. replacing todays data with tomorrow")
-            self._data_today = self._data_tomorrow
-            self._update(area)
+            # No need to update if we got the info we need
+            if self._data_tomorrow is not None:
+                self._data_today = self._data_tomorrow
+                self._update(self._data_today)
+                self._data_tomorrow = None
+            else:
+                today = self._api.today(self._area)
+                if today:
+                    self._data_today = today
+                    self._update(today)
 
+        # Updates the current for this hour.
         self._update_current_price()
+
+        # Lets just pull data from the api
+        # it will only do io if need.
+        tomorrow = self._api.tomorrow(self._area)
+        if tomorrow:
+            self._data_tomorrow = tomorrow
+
+        self._last_tick = pendulum.now()

@@ -5,5 +5,5 @@
   "documentation": "https://github.com/Hellowlol/nordpool",
   "dependencies": [],
   "codeowners": ["@hellowlol"],
-  "requirements": ["nordpool"]
+  "requirements": ["nordpool", "pendulum"]
 }
