@@ -59,7 +59,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-def setup_platform(hass, config, add_devices, discovery_info=None):
+def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     """Setup the damn platform"""
     _LOGGER.info("%r" % config)
     region = config.get(CONF_REGION)
@@ -118,17 +118,17 @@ class NordpoolSensor(Entity):
     #def unit(self) -> str:
     #    return CONF_CURRENCY
 
-    #@property
-    #def unit_of_measurement(self):
-    #    """Return the unit of measurement this sensor expresses itself in."""
-    #    return CONF_CURRENCY
+    @property
+    def unit_of_measurement(self) _> str:
+        """Return the unit of measurement this sensor expresses itself in."""
+        return CONF_CURRENCY
 
     @property
     def state(self) -> float:
         return self.current_price
 
     @property
-    def low_price(self):
+    def low_price(self) -> bool:
         """Check if the price is lower then avg."""
         return (
             self.current_price < self._average * self._low_price_cutoff
@@ -136,7 +136,7 @@ class NordpoolSensor(Entity):
             else None
         )
 
-    def _calc_price(self, value=None):
+    def _calc_price(self, value=None) -> float:
         """Calculate price based on the users settings."""
         if value is None:
             value = self._current_price
@@ -151,7 +151,7 @@ class NordpoolSensor(Entity):
         price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
         return round(price, self._precision)
 
-    def _update(self, data):
+    def _update(self, data) -> None:
         """Set attrs."""
         _LOGGER.info("Called _update setting attrs for the day")
 
@@ -169,7 +169,7 @@ class NordpoolSensor(Entity):
         self._peak = self._calc_price(data.get("Peak"))
 
     @property
-    def current_price(self):
+    def current_price(self) -> float:
         return self._calc_price()
 
     def _someday(self, data) -> list:
@@ -214,6 +214,7 @@ class NordpoolSensor(Entity):
             "peak": self._peak,
             "min": self._min,
             "max": self._max,
+            "currency": self._currency,
             "low price": self.low_price,
             "today": self.today,
             "tomorrow": self.tomorrow
@@ -235,7 +236,7 @@ class NordpoolSensor(Entity):
         else:
             _LOGGER.info("Tried to update the hourly price but it wasnt a new hour.")
 
-    def update(self):
+    def update(self) -> None:
         """Ideally we should just pull from the api all the time but since
            se shouldnt do any io inside any other methods we store the data
            in self._data_today and self._data_tomorrow.

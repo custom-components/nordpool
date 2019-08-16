@@ -10,7 +10,7 @@ __all__ = ["is_new", "has_junk", "extract_attrs"]
 _LOGGER = logging.getLogger(__name__)
 
 
-def is_new(date=None, typ="day"):
+def is_new(date=None, typ="day") -> bool:
     """Utility to check if its a new hour or day."""
     current = pendulum.now()
     if typ == "day":
@@ -27,7 +27,7 @@ def is_new(date=None, typ="day"):
         return False
 
 
-def has_junk(data):
+def has_junk(data) -> bool:
     """Check if data has some infinity values.
 
     Args:
@@ -48,7 +48,7 @@ def has_junk(data):
     return False
 
 
-def extract_attrs(data):
+def extract_attrs(data) -> dict:
     """
     Peak = 08:00 to 20:00
     Off peak 1 = 00:00 to 08:00
