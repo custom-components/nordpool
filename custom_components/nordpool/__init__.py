@@ -1,12 +1,14 @@
 import logging
 
+from collections import defaultdict
+
 import pendulum
 from .misc import *
 
 from homeassistant.const import CONF_CURRENCY
 import voluptuous as vol
 
-DOMAIN = "Nordpool"
+DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
 
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
@@ -15,7 +17,7 @@ _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
-            {vol.Required(CONF_CURRENCY, default="NOK"): vol.In(_CURRENCY_LIST)}
+            {}
         )
     },
     extra=vol.ALLOW_EXTRA,
@@ -38,15 +40,15 @@ If you have any issues with this you need to open an issue here:
 
 
 class NordpoolData:
-    def __init__(self, currency):
-        self.currency = currency
-        self._data_tomorrow = None
-        self._data_today = None
+    def __init__(self):
         self.spot = None
         self._last_update_tomorrow_date = None
         self._last_tick = None
+        self._data = defaultdict(dict)
+        self.currency = []
 
     def update(self, force=False):
+        """Update any required info."""
         from nordpool import elspot
 
         if self._last_update_tomorrow_date is None:
@@ -58,59 +60,80 @@ class NordpoolData:
         if self._last_tick is None:
             self._last_tick = pendulum.now()
 
-        if self.spot is None:
-            self.spot = elspot.Prices(self.currency)
-
         if force:
-            data = self.spot.hourly(end_date=pendulum.now())
-            self._data_today = data["areas"]
+            for currency in self.currency:
+                spot = elspot.Prices(currency)
+                today = spot.hourly(end_date=pendulum.now())
+                self._data[currency]['today'] = today["areas"]
 
-            data = self.spot.hourly()
-            if data:
-                self._data_tomorrow = data["areas"]
+                tomorrow = self.spot.hourly()
+                if tomorrow:
+                    self._data[currency]['tomorrow'] = tomorrow["areas"]
 
-        if self._data_today is None:
-            data = self.spot.hourly(end_date=pendulum.now())
-            self._data_today = data["areas"]
+            return
 
-        if self._data_tomorrow is None:
-            # needs fix
-            if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(14):
-                self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(14)
-                data = self.spot.hourly()
-                if data:
-                    self._data_tomorrow = data["areas"]
-            else:
-                _LOGGER.info("New api data for tomorrow isnt posted yet")
+        for currency in self.currency:
+            # Add any missing power prices for today in the currency we track
+            if self._data.get(currency, {}).get('today') is None:
+                spot = elspot.Prices(currency)
+                today = spot.hourly(end_date=pendulum.now())
+                if today:
 
+                    self._data[currency]["today"] = today["areas"]
+
+            # Add missing prices for tomorrow.
+            if self._data.get(currency, {}).get('tomorrow') is None:
+                if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(14):
+                    self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(14)
+                    spot = elspot.Prices(currency)
+                    tomorrow = spot.hourly()
+                    if tomorrow:
+                        self._data[currency]["tomorrow"] = tomorrow["areas"]
+                else:
+                    _LOGGER.info("New api data for tomorrow isnt posted yet")
+
+        # Check if there is any "new tomorrows data"
         if (self._last_tick.in_timezone("Europe/Stockholm") > self._last_update_tomorrow_date):
             self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(14)
-            data = self.spot.hourly(pendulum.now().add(days=1))
-            if data:
-                _LOGGER.info(
-                    "New data was posted updating tomorrow prices in NordpoolData"
-                )
-                self._data_tomorrow = data["areas"]
+            for currency in self.currency:
+                spot = elspot.Prices(currency)
+                tomorrow = spot.hourly(pendulum.now().add(days=1))
+                if tomorrow:
+                    _LOGGER.info(
+                        "New data was posted updating tomorrow prices in NordpoolData %s", currency
+                    )
+                    self._data[currency]["tomorrow"] = tomorrow["areas"]
 
         if is_new(self._last_tick, typ="day"):
-            self._data_today = self._data_tomorrow
+            for currency in self.currency:
+                self._data[currency]["today"] = self._data[currency]["today"]
 
         self._last_tick = pendulum.now()
 
-    def today(self, area=None):
-        self.update()
-        return self._data_today.get(area, self._data_today)
+    def _someday(self, area, currency, day):
+        """Returns todays or tomorrows prices in a area in the currency"""
+        if currency not in _CURRENCY_LIST:
+            raise ValueError("%s is a invalid currency possible values are %s" % (currency, ', '.join(_CURRENCY_LIST)))
 
-    def tomorrow(self, area=None):
+        if currency not in self.currency:
+            self.currency.append(currency)
+
         self.update()
-        if self._data_tomorrow is not None:
-            return self._data_tomorrow.get(area, self._data_tomorrow)
+        return self._data.get(currency, {}).get(day, {}).get(area)
+
+    def today(self, area, currency) -> dict:
+        """Returns todays prices in a area in the currency"""
+        return self._someday(area, currency, "today")
+
+    def tomorrow(self, area, currency):
+        """Returns tomorrows prices in a area in the currency"""
+        return self._someday(area, currency, "tomorrow")
 
 
 def setup(hass, config):
     """Setup the integration"""
     currency = config.get(CONF_CURRENCY, "NOK")
-    api = NordpoolData(currency)
+    api = NordpoolData()
     hass.data[DOMAIN] = api
     _LOGGER.info(STARTUP)
     # Return boolean to indicate that initialization was successful.

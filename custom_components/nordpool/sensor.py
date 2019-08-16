@@ -17,14 +17,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 _PRICE_IN = {"kWh": 1000, "mWh": 0, "w": 1000 * 1000}
-
-
 _REGIONS = {
     "DK1": ["Kr", "DKK", "Denmark", 0.25],
     "DK2": ["Kr", "DKK", "Denmark", 0.25],
-    "FI": ["Euro", "EUR", "Finland", 0.25],
-    "LT": ["Euro", "EUR", "Lithuania", 0.25],
-    "LV": ["Euro", "EUR", "Latvia", 0.25],
+    "FI": ["Euro", "EUR", "Finland", 0.24],
+    "LT": ["Euro", "EUR", "Lithuania", 0.21],
+    "LV": ["Euro", "EUR", "Latvia", 0.21],
     "Oslo": ["Kr", "NOK", "Norge", 0, 25],
     "Kr.sand": ["Kr", "NOK", "Norge", 0.25],
     "Bergen": ["Kr", "NOK", "Norge", 0.25],
@@ -38,21 +36,22 @@ _REGIONS = {
     "SYS": ["Euro", "EUR", "Dunno", 0.25]
     # Am i missing some? Check the nordpool page
 
-    ## Todo, figure out the tax on power in other coutries.
 }
 
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
-DEFAULT_NAME = "Elspot kWh"
+DEFAULT_NAME = "Elspot"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
             list(_REGIONS.keys())
         ),
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional("VAT", default=True): bool,
+        vol.Optional(CONF_NAME, default=''): cv.string,
+        # This is only needed if you want the some area but want the prices in a non local currency
+        vol.Optional("currency", default=''): cv.string,
+        vol.Optional("VAT", default=True): vol.Boolean,
         vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
@@ -68,19 +67,20 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     price_type = config.get("price_type")
     precision = config.get("precision")
     low_price_cutoff = config.get("low_price_cutoff")
+    currency = config.get('currency')
     api = hass.data[DOMAIN]
-    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, api)
+    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, api)
 
     add_devices([sensor])
 
 
 class NordpoolSensor(Entity):
     def __init__(
-        self, name, area, price_type, precision, low_price_cutoff, api
+        self, name, area, price_type, precision, low_price_cutoff, currency, api
     ) -> None:
-        self._name = name
+        self._name = name or '%s %s %s' % (DEFAULT_NAME, price_type, area)
         self._area = area
-        self._currency = _REGIONS[area][0]
+        self._currency = currency or _REGIONS[area][1]
         self._vat = _REGIONS[area][3]
         self._price_type = price_type
         self._precision = precision
@@ -215,7 +215,7 @@ class NordpoolSensor(Entity):
 
         if self._last_update_hourly is None or is_new(self._last_update_hourly, "hour"):
             _LOGGER.info("Updated _current_price!")
-            data = self._api.today(self._area)
+            data = self._api.today(self._area, self._currency)
             if data:
                 value = self._someday(data)[local_now.hour]["value"]
                 self._current_price = value
@@ -235,14 +235,14 @@ class NordpoolSensor(Entity):
 
         if self._data_today is None:
             _LOGGER.info("NordpoolSensor _data_today is none, trying to fetch it.")
-            today = self._api.today(self._area)
+            today = self._api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
 
         if self._data_tomorrow is None:
             _LOGGER.info("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
-            tomorrow = self._api.tomorrow(self._area)
+            tomorrow = self._api.tomorrow(self._area, self._currency)
             if tomorrow:
                 self._data_tomorrow = tomorrow
 
@@ -254,7 +254,7 @@ class NordpoolSensor(Entity):
                 self._update(self._data_today)
                 self._data_tomorrow = None
             else:
-                today = self._api.today(self._area)
+                today = self._api.today(self._area, self._currency)
                 if today:
                     self._data_today = today
                     self._update(today)
@@ -264,7 +264,7 @@ class NordpoolSensor(Entity):
 
         # Lets just pull data from the api
         # it will only do io if need.
-        tomorrow = self._api.tomorrow(self._area)
+        tomorrow = self._api.tomorrow(self._area, self._currency)
         if tomorrow:
             self._data_tomorrow = tomorrow
 
