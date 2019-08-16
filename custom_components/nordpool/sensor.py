@@ -88,7 +88,7 @@ class NordpoolSensor(Entity):
         self._api = api
 
         # Price by current hour.
-        self._current_price = 0
+        self._current_price = None
 
         # Holds the data for today and morrow.
         self._data_today = None
@@ -114,9 +114,14 @@ class NordpoolSensor(Entity):
     def icon(self) -> str:
         return "mdi:flash"
 
-    @property
-    def unit(self) -> str:
-        return CONF_CURRENCY
+    #@property
+    #def unit(self) -> str:
+    #    return CONF_CURRENCY
+
+    #@property
+    #def unit_of_measurement(self):
+    #    """Return the unit of measurement this sensor expresses itself in."""
+    #    return CONF_CURRENCY
 
     @property
     def state(self) -> float:
@@ -127,7 +132,7 @@ class NordpoolSensor(Entity):
         """Check if the price is lower then avg."""
         return (
             self.current_price < self._average * self._low_price_cutoff
-            if self.current_price
+            if self.current_price and self._average
             else None
         )
 
@@ -152,7 +157,7 @@ class NordpoolSensor(Entity):
 
         if has_junk(data):
             _LOGGER.info("It was junk infinty in api response, fixed it.")
-            d = extract_attrs(data)
+            d = extract_attrs(data.get('values'))
             data.update(d)
 
         # we could check for peaks here.
@@ -170,6 +175,9 @@ class NordpoolSensor(Entity):
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
            but i dont trust that to continue forever. Thats why we sort it ourselfs."""
+        if data is None:
+            return []
+
         return sorted(data.get("values", []), key=itemgetter("start"))
 
     @property
@@ -207,6 +215,8 @@ class NordpoolSensor(Entity):
             "min": self._min,
             "max": self._max,
             "low price": self.low_price,
+            "today": self.today,
+            "tomorrow": self.tomorrow
         }
 
     def _update_current_price(self) -> None:

@@ -106,7 +106,12 @@ class NordpoolData:
 
         if is_new(self._last_tick, typ="day"):
             for currency in self.currency:
-                self._data[currency]["today"] = self._data[currency]["today"]
+                spot = elspot.Prices(currency)
+                today = spot.hourly(end_date=pendulum.now())
+                if today:
+                    self._data[currency]["today"] = today["areas"]
+                # We could swap, but ill rather do a extrac api call.
+                # self._data[currency]["today"] = self._data[currency]["tomorrow"]
 
         self._last_tick = pendulum.now()
 
@@ -132,7 +137,6 @@ class NordpoolData:
 
 def setup(hass, config):
     """Setup the integration"""
-    currency = config.get(CONF_CURRENCY, "NOK")
     api = NordpoolData()
     hass.data[DOMAIN] = api
     _LOGGER.info(STARTUP)

@@ -14,9 +14,8 @@ def is_new(date=None, typ="day"):
     """Utility to check if its a new hour or day."""
     current = pendulum.now()
     if typ == "day":
-        if date is None:
-            date = current
-        if date > pendulum.tomorrow():
+
+        if date.date() != current.date():
             _LOGGER.info("Its a new day!")
             return True
         return False
@@ -57,7 +56,7 @@ def extract_attrs(data):
     """
     items = []
     d = defaultdict(list)
-    for item in enumerate(data):
+    for item in data:
         curr = pendulum.instance(item.get("start")).in_timezone("Europe/Stockholm")
         peak = pendulum.period(curr.at(8), curr.at(19).end_of("hour"))
         offpeek1 = pendulum.period(curr.start_of("day"), curr.at(8))
