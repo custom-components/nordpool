@@ -119,7 +119,7 @@ class NordpoolSensor(Entity):
     #    return CONF_CURRENCY
 
     @property
-    def unit_of_measurement(self) _> str:
+    def unit_of_measurement(self) -> str:
         """Return the unit of measurement this sensor expresses itself in."""
         return CONF_CURRENCY
 
