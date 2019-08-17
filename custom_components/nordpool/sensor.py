@@ -61,8 +61,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
-    """Setup the damn platform"""
-    _LOGGER.info("%r" % config)
+    """Setup the damn platform using yaml."""
+    _LOGGER.info("setup_platform %s", config)
     region = config.get(CONF_REGION)
     name = config.get(CONF_NAME)
     price_type = config.get("price_type")
@@ -76,7 +76,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
-    """Setup sensor platform."""
+    """Setup sensor platform for the ui"""
     config = config_entry.data
     _LOGGER.info("%r" % config_entry)
     region = config.get(CONF_REGION)
