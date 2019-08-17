@@ -140,6 +140,20 @@ class NordpoolSensor(Entity):
         return _REGIONS[self._area][0]
 
     @property
+    def unique_id(self):
+        name = "elspot_%s%s%s%s%s" % (self._price_type, self._area, self._currency, self._precision, self._low_price_cutoff)
+        name = name.lower().replace('.', '')
+        return name
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, self.unique_id)},
+            "name": self.name,
+            "manufacturer": DOMAIN,
+        }
+
+    @property
     def state(self) -> float:
         return self.current_price
 

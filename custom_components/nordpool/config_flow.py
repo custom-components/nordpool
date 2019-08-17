@@ -26,14 +26,10 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
         """Handle a flow initialized by the user."""
         _LOGGER.info("lo from async_step_user")
         self._errors = {}
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
-        if self.hass.data.get(DOMAIN):
-            return self.async_abort(reason="single_instance_allowed")
 
-        _LOGGER.info('ass %s' % user_input)
+        _LOGGER.info('%s' % user_input)
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            return self.async_create_entry(title="Elspot", data=user_input)
 
         return await self._show_config_form(user_input)
 
@@ -60,8 +56,6 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
         Special type of import, we're not actually going to store any data.
         Instead, we're going to rely on the values that are in config file.
         """
-        _LOGGER.info('ass called async_step_import')
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
+        _LOGGER.info('called async_step_import')
 
         return self.async_create_entry(title="configuration.yaml", data={})

@@ -135,7 +135,14 @@ class NordpoolData:
         return self._someday(area, currency, "tomorrow")
 
 
-async def async_setup(hass, config) -> bool:
+#async def async_setup(hass, config) -> bool:
+#    """Set up using yaml config file."""
+#    _LOGGER.info("async_setup nordpool")
+#    api = NordpoolData()
+#    hass.data[DOMAIN] = api
+#    return True
+
+def setup(hass, config) -> bool:
     """Set up using yaml config file."""
     _LOGGER.info("async_setup nordpool")
     api = NordpoolData()
@@ -146,16 +153,6 @@ async def async_setup(hass, config) -> bool:
 async def async_setup_entry(hass, config_entry):
     """Set up nordpool as config entry."""
     _LOGGER.info("async_setup_entry nordpool")
-
-    if config_entry.source == config_entries.SOURCE_IMPORT:
-        _LOGGER.info('ass')
-        help(config_entry)
-        if conf is None:
-            hass.async_create_task(
-                hass.config_entries.async_remove(config_entry.entry_id)
-            )
-        return False
-
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
     )
