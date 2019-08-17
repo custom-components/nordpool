@@ -39,7 +39,7 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
 
         data_schema = OrderedDict()
         data_schema[vol.Required("region", default="Kr.sand")] = str
-        data_schema[vol.Optional("name", default="Elspot")] = str
+        #data_schema[vol.Optional("name", default="Elspot")] = str
         # This is only needed if you want the some area but want the prices in a non local currency
         data_schema[vol.Optional("currency", default='')] = str
         data_schema[vol.Optional("VAT", default=True)] = bool

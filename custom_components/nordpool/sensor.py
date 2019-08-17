@@ -105,6 +105,7 @@ class NordpoolSensor(Entity):
         self._name = name or '%s %s %s' % (DEFAULT_NAME, price_type, area)
         self._area = area
         self._currency = currency or _REGIONS[area][0]
+        # Fix vat, seems to be included every time.
         self._vat = _REGIONS[area][2]
         self._price_type = price_type
         self._precision = precision
@@ -132,7 +133,11 @@ class NordpoolSensor(Entity):
 
     @property
     def name(self) -> str:
-        return self._name
+        return self.unique_id
+
+    @property
+    def friendly_name(self) -> str:
+        return 'Elspot' #self.unique_id
 
     @property
     def icon(self) -> str:
@@ -254,6 +259,8 @@ class NordpoolSensor(Entity):
             "max": self._max,
             "unit": self.unit,
             "currency": self._currency,
+            "country": _REGIONS[self._area][1],
+            "region": self._area,
             "low price": self.low_price,
             "today": self.today,
             "tomorrow": self.tomorrow
