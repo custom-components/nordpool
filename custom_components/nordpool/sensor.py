@@ -43,6 +43,7 @@ DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
 DEFAULT_NAME = "Elspot"
 
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
@@ -72,6 +73,21 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, api)
 
     add_devices([sensor])
+
+
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Setup sensor platform."""
+    config = config_entry.data
+    _LOGGER.info("%r" % config_entry)
+    region = config.get(CONF_REGION)
+    name = config.get(CONF_NAME)
+    price_type = config.get("price_type")
+    precision = config.get("precision")
+    low_price_cutoff = config.get("low_price_cutoff")
+    currency = config.get('currency')
+    api = hass.data[DOMAIN]
+    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, api)
+    async_add_devices([sensor])
 
 
 class NordpoolSensor(Entity):
@@ -119,9 +135,9 @@ class NordpoolSensor(Entity):
     #    return CONF_CURRENCY
 
     @property
-    def unit_of_measurement(self) _> str:
+    def unit_of_measurement(self) -> str:
         """Return the unit of measurement this sensor expresses itself in."""
-        return CONF_CURRENCY
+        return _REGIONS[self._area][0]
 
     @property
     def state(self) -> float:

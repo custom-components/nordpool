@@ -135,10 +135,77 @@ class NordpoolData:
         return self._someday(area, currency, "tomorrow")
 
 
+async def async_setup(hass, config) -> bool:
+    """Set up using yaml config file."""
+    _LOGGER.info("async_setup nordpool")
+    api = NordpoolData()
+    hass.data[DOMAIN] = api
+    return True
+
+
+async def async_setup_entry(hass, config_entry):
+    """Set up nordpool as config entry."""
+    _LOGGER.info("async_setup_entry nordpool")
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
+    )
+    return True
+
+
+async def async_unload_entry(hass, config_entry):
+    """Unload a config entry."""
+    await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
+    return True
+
+
+''' #org
 def setup(hass, config):
     """Setup the integration"""
+
+
+
+
+    if config.get(DOMAIN) is None:
+        # We get her if the integration is set up using config flow
+        return True
+
     api = NordpoolData()
     hass.data[DOMAIN] = api
     _LOGGER.info(STARTUP)
+
     # Return boolean to indicate that initialization was successful.
     return True
+'''
+
+'''
+async def async_setup_entry(hass, config_entry):
+    """Set up this integration using UI."""
+    _LOGGER.info("ZOMG!")
+    conf = hass.data.get(DOMAIN)
+    if config_entry.source == config_entries.SOURCE_IMPORT:
+        if conf is None:
+            hass.async_create_task(
+                hass.config_entries.async_remove(config_entry.entry_id)
+            )
+        return False
+
+    _LOGGER.info(STARTUP)
+
+    # Do we need a data dict for something?
+    # Create DATA dict
+    hass.data[DOMAIN] = {}
+
+    # Get "global" configuration.
+    #username = config_entry.data.get(CONF_USERNAME)
+    #password = config_entry.data.get(CONF_PASSWORD)
+
+    # Configure the client.
+    hass.data[DOMAIN] = NordpoolData()
+
+    # Add sensor
+    hass.async_add_job(
+        hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
+    )
+
+    return True
+'''

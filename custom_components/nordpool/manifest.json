@@ -4,6 +4,7 @@
   "name": "nordpool",
   "documentation": "https://github.com/Hellowlol/nordpool",
   "dependencies": [],
+  "config_flow": true,
   "codeowners": ["@hellowlol"],
   "requirements": ["nordpool", "pendulum"]
 }
