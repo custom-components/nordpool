@@ -18,26 +18,34 @@ _LOGGER = logging.getLogger(__name__)
 
 _PRICE_IN = {"kWh": 1000, "mWh": 0, "w": 1000 * 1000}
 _REGIONS = {
-    "DK1": ["Kr", "DKK", "Denmark", 0.25],
-    "DK2": ["Kr", "DKK", "Denmark", 0.25],
-    "FI": ["Euro", "EUR", "Finland", 0.24],
-    "LT": ["Euro", "EUR", "Lithuania", 0.21],
-    "LV": ["Euro", "EUR", "Latvia", 0.21],
-    "Oslo": ["Kr", "NOK", "Norge", 0, 25],
-    "Kr.sand": ["Kr", "NOK", "Norge", 0.25],
-    "Bergen": ["Kr", "NOK", "Norge", 0.25],
-    "Molde": ["Kr", "NOK", "Norge", 0.25],
-    "Tr.heim": ["Kr", "NOK", "Norge", 0.25],
-    "Tromsø": ["Kr", "NOK", "Norge", 0.25],
-    "SE1": ["Kr", "SEK", "Sweden", 0.25],
-    "SE2": ["Kr", "SEK", "Sweden", 0.25],
-    "SE3": ["Kr", "SEK", "Sweden", 0.25],
-    "SE4": ["Kr", "SEK", "Sweden", 0.25],
+    "DK1": ["DKK", "Denmark", 0.25],
+    "DK2": ["DKK", "Denmark", 0.25],
+    "FI": ["EUR", "Finland", 0.24],
+    "LT": ["EUR", "Lithuania", 0.21],
+    "LV": ["EUR", "Latvia", 0.21],
+    "Oslo": ["NOK", "Norge", 0, 25],
+    "Kr.sand": ["NOK", "Norge", 0.25],
+    "Bergen": ["NOK", "Norge", 0.25],
+    "Molde": ["NOK", "Norge", 0.25],
+    "Tr.heim": ["NOK", "Norge", 0.25],
+    "Tromsø": ["NOK", "Norge", 0.25],
+    "SE1": ["SEK", "Sweden", 0.25],
+    "SE2": ["SEK", "Sweden", 0.25],
+    "SE3": ["SEK", "Sweden", 0.25],
+    "SE4": ["SEK", "Sweden", 0.25],
+    # What zone is this?
     "SYS": ["Euro", "EUR", "Dunno", 0.25]
     # Am i missing some? Check the nordpool page
 
 }
 
+# Needed as a user can they want the prices in a non local currency.
+_CURRENCY_TO_LOCAL = {
+    "DKK": "Kr",
+    "NOK": "Kr",
+    "SEK": "Kr",
+    "EUR": "€"
+}
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
@@ -80,8 +88,8 @@ class NordpoolSensor(Entity):
     ) -> None:
         self._name = name or '%s %s %s' % (DEFAULT_NAME, price_type, area)
         self._area = area
-        self._currency = currency or _REGIONS[area][1]
-        self._vat = _REGIONS[area][3]
+        self._currency = currency or _REGIONS[area][0]
+        self._vat = _REGIONS[area][2]
         self._price_type = price_type
         self._precision = precision
         self._low_price_cutoff = low_price_cutoff
@@ -114,14 +122,14 @@ class NordpoolSensor(Entity):
     def icon(self) -> str:
         return "mdi:flash"
 
-    #@property
-    #def unit(self) -> str:
-    #    return CONF_CURRENCY
+    @property
+    def unit(self) -> str:
+        return self._price_type
 
     @property
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement this sensor expresses itself in."""
-        return CONF_CURRENCY
+        return _CURRENCY_TO_LOCAL[self._currency]
 
     @property
     def state(self) -> float:
@@ -214,6 +222,7 @@ class NordpoolSensor(Entity):
             "peak": self._peak,
             "min": self._min,
             "max": self._max,
+            "unit": self.unit,
             "currency": self._currency,
             "low price": self.low_price,
             "today": self.today,
