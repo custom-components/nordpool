@@ -5,7 +5,6 @@ from collections import defaultdict
 import pendulum
 from .misc import *
 
-from homeassistant.const import CONF_CURRENCY
 import voluptuous as vol
 
 DOMAIN = "nordpool"
