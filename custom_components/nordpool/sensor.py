@@ -77,8 +77,9 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     precision = config.get("precision")
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get('currency')
+    vat = config.get("VAT")
     api = hass.data[DOMAIN]
-    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, api)
+    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, vat, api)
 
     add_devices([sensor])
 
@@ -93,24 +94,31 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     precision = config.get("precision")
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get('currency')
+    vat = config.get("VAT")
     api = hass.data[DOMAIN]
-    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, api)
+    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, vat, api)
     async_add_devices([sensor])
 
 
 class NordpoolSensor(Entity):
     def __init__(
-        self, name, area, price_type, precision, low_price_cutoff, currency, api
+        self, name, area, price_type, precision, low_price_cutoff, currency, vat, api
     ) -> None:
         self._name = name or '%s %s %s' % (DEFAULT_NAME, price_type, area)
         self._area = area
         self._currency = currency or _REGIONS[area][0]
         # Fix vat, seems to be included every time.
+
         self._vat = _REGIONS[area][2]
         self._price_type = price_type
         self._precision = precision
         self._low_price_cutoff = low_price_cutoff
         self._api = api
+
+        if vat:
+            self._vat = _REGIONS[area][2]
+        else:
+            self._vat = 0
 
         # Price by current hour.
         self._current_price = None
@@ -137,7 +145,7 @@ class NordpoolSensor(Entity):
 
     @property
     def friendly_name(self) -> str:
-        return 'Elspot' #self.unique_id
+        return 'Elspot'
 
     @property
     def icon(self) -> str:
