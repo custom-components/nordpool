@@ -4,7 +4,7 @@ from operator import itemgetter
 
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_CURRENCY, CONF_REGION, CONF_NAME
+from homeassistant.const import CONF_REGION, CONF_NAME
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 import pendulum

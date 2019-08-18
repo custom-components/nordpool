@@ -1,6 +1,7 @@
 import logging
 
 from collections import defaultdict
+from random import randint
 
 import pendulum
 from .misc import *
@@ -51,10 +52,10 @@ class NordpoolData:
         from nordpool import elspot
 
         if self._last_update_tomorrow_date is None:
-            if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(14):
-                self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(14)
+            if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(13, randint(0, 5)):
+                self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(13)
             else:
-                self._last_update_tomorrow_date = pendulum.today("Europe/Stockholm").at(14)
+                self._last_update_tomorrow_date = pendulum.today("Europe/Stockholm").at(13)
 
         if self._last_tick is None:
             self._last_tick = pendulum.now()
@@ -82,8 +83,8 @@ class NordpoolData:
 
             # Add missing prices for tomorrow.
             if self._data.get(currency, {}).get('tomorrow') is None:
-                if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(14):
-                    self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(14)
+                if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(13, randint(0, 5)):
+                    self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(13)
                     spot = elspot.Prices(currency)
                     tomorrow = spot.hourly()
                     if tomorrow:
@@ -93,7 +94,7 @@ class NordpoolData:
 
         # Check if there is any "new tomorrows data"
         if (self._last_tick.in_timezone("Europe/Stockholm") > self._last_update_tomorrow_date):
-            self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(14)
+            self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(13, randint(0, 5))
             for currency in self.currency:
                 spot = elspot.Prices(currency)
                 tomorrow = spot.hourly(pendulum.now().add(days=1))
@@ -134,6 +135,7 @@ class NordpoolData:
         return self._someday(area, currency, "tomorrow")
 
 
+# Lets leave this for now. Ill send a pr to make python nordpool api async later.
 #async def async_setup(hass, config) -> bool:
 #    """Set up using yaml config file."""
 #    _LOGGER.info("async_setup nordpool")
