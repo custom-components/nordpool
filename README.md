@@ -5,13 +5,11 @@
 The sensors tries to set some sane default so a minimal setup can be
 
 ```
-nordpool:
-
 sensor:
   - platform: nordpool
-    region: "Kr.sand"
+    region: "Kr.sand" # This can be skipped if you want Kr.sand
 ```
-This will setup sensor with the name Elspot kwh Kr.sand in the local currency (NOK) with vat included where the sensors is in kwh/kr
+
 
 
 in configuration.yaml
@@ -38,7 +36,7 @@ sensor:
     region: "Kr.sand"
 
     # How many decimals to use in the display of the price
-    precision: 2 
+    precision: 3 
 
     # What the price should be displayed in default
     # Possible values: mwh, kwh and w
@@ -46,3 +44,6 @@ sensor:
     price_type: kwh
       
 ```
+You can also set it up using the webui.
+
+run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help```
