@@ -26,7 +26,7 @@ CONFIG_SCHEMA = vol.Schema(
 
 NAME = DOMAIN
 VERSION = '0.0.1'
-ISSUEURL = 'https://github.com/Hellowlol/nordpool/issues'
+ISSUEURL = 'https://github.com/custom-components/nordpool/issues'
 
 STARTUP = """
 -------------------------------------------------------------------
