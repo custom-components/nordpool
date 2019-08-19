@@ -2,6 +2,8 @@
 
 ### Usage
 
+Set up the sensor using the webui or use a yaml.
+
 The sensors tries to set some sane default so a minimal setup can be
 
 ```
@@ -42,8 +44,9 @@ sensor:
     # Possible values: mwh, kwh and w
     # default: kwh
     price_type: kwh
+
+    friendly_name: "Power"
       
 ```
-You can also set it up using the webui.
 
 run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help```
