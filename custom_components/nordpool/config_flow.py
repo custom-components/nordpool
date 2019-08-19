@@ -4,8 +4,7 @@ from collections import OrderedDict
 import voluptuous as vol
 from homeassistant import config_entries
 
-from . import DOMAIN, _LOGGER
-from .sensor import PLATFORM_SCHEMA
+from . import DOMAIN
 
 
 @config_entries.HANDLERS.register(DOMAIN)
@@ -16,7 +15,6 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     def __init__(self):
-        _LOGGER.info("lo from BlueprintFlowHandler")
         """Initialize."""
         self._errors = {}
 
@@ -24,10 +22,8 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
         self, user_input=None
     ):  # pylint: disable=dangerous-default-value
         """Handle a flow initialized by the user."""
-        _LOGGER.info("lo from async_step_user")
         self._errors = {}
 
-        _LOGGER.info('%s' % user_input)
         if user_input is not None:
             return self.async_create_entry(title="Elspot", data=user_input)
 
@@ -35,11 +31,9 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
 
     async def _show_config_form(self, user_input):
         """Show the configuration form to edit location data."""
-        _LOGGER.info("lo from _show_config_form %r", user_input)
-
         data_schema = OrderedDict()
         data_schema[vol.Required("region", default="Kr.sand")] = str
-        # data_schema[vol.Optional("name", default="Elspot")] = str
+        data_schema[vol.Optional("friendly_name", default="")] = str
         # This is only needed if you want the some area but want the prices in a non local currency
         data_schema[vol.Optional("currency", default='')] = str
         data_schema[vol.Optional("VAT", default=True)] = bool
@@ -56,6 +50,4 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
         Special type of import, we're not actually going to store any data.
         Instead, we're going to rely on the values that are in config file.
         """
-        _LOGGER.info('called async_step_import')
-
         return self.async_create_entry(title="configuration.yaml", data={})

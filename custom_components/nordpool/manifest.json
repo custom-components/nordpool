@@ -1,4 +1,4 @@
-    
+
 {
   "domain": "nordpool",
   "name": "nordpool",
@@ -6,5 +6,5 @@
   "dependencies": [],
   "config_flow": true,
   "codeowners": ["@hellowlol"],
-  "requirements": ["nordpool", "pendulum"]
+  "requirements": ["nordpool>=0.2", "pendulum>=2.0"]
 }

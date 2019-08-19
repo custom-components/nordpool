@@ -10,10 +10,10 @@ if __name__ == "__main__":
     @click.argument('entity_id')
     @click.argument('friendly_name')
     @click.option('--icon', default="mdi:cash", help="The icon you want to use.")
-    @click.option('--unit', default="NOK", help="the currency the sensor should use")
+    @click.option('--unit', default="NOK/kWh", help="the currency the sensor should use")
     @click.option('--path', default="result.yaml", help="What path to write the file to.")
     def make_sensors(entity_id, friendly_name, icon, unit, path):
-        """A simple tool to make template 48 template sensors, one for each hour."""
+        """A simple tool to make 48 template sensors, one for each hour."""
 
         head = {"sensor": [{"platform": "template", "sensors": {}}]}
 

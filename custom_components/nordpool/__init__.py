@@ -41,7 +41,6 @@ If you have any issues with this you need to open an issue here:
 
 class NordpoolData:
     def __init__(self):
-        self.spot = None
         self._last_update_tomorrow_date = None
         self._last_tick = None
         self._data = defaultdict(dict)
@@ -66,7 +65,7 @@ class NordpoolData:
                 today = spot.hourly(end_date=pendulum.now())
                 self._data[currency]['today'] = today["areas"]
 
-                tomorrow = self.spot.hourly()
+                tomorrow = spot.hourly()
                 if tomorrow:
                     self._data[currency]['tomorrow'] = tomorrow["areas"]
 
@@ -127,16 +126,16 @@ class NordpoolData:
         return self._data.get(currency, {}).get(day, {}).get(area)
 
     def today(self, area, currency) -> dict:
-        """Returns todays prices in a area in the currency"""
+        """Returns todays prices in a area in the requested currency"""
         return self._someday(area, currency, "today")
 
     def tomorrow(self, area, currency):
-        """Returns tomorrows prices in a area in the currency"""
+        """Returns tomorrows prices in a area in the requested currency"""
         return self._someday(area, currency, "tomorrow")
 
 
 # Lets leave this for now. Ill send a pr to make python nordpool api async later.
-#async def async_setup(hass, config) -> bool:
+# async def async_setup(hass, config) -> bool:
 #    """Set up using yaml config file."""
 #    _LOGGER.info("async_setup nordpool")
 #    api = NordpoolData()
@@ -153,7 +152,6 @@ def setup(hass, config) -> bool:
 
 async def async_setup_entry(hass, config_entry):
     """Set up nordpool as config entry."""
-    _LOGGER.info("async_setup_entry nordpool")
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
     )

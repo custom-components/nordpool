@@ -4,7 +4,7 @@ from operator import itemgetter
 
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_REGION, CONF_NAME
+from homeassistant.const import CONF_REGION
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 import pendulum
@@ -16,30 +16,29 @@ from .misc import is_new, has_junk, extract_attrs
 _LOGGER = logging.getLogger(__name__)
 
 
-_PRICE_IN = {"kWh": 1000, "mWh": 0, "w": 1000 * 1000}
+_PRICE_IN = {"kWh": 1000, "mWh": 0, "W": 1000 * 1000}
 _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
     "DK2": ["DKK", "Denmark", 0.25],
     "FI": ["EUR", "Finland", 0.24],
     "LT": ["EUR", "Lithuania", 0.21],
     "LV": ["EUR", "Latvia", 0.21],
-    "Oslo": ["NOK", "Norge", 0, 25],
-    "Kr.sand": ["NOK", "Norge", 0.25],
-    "Bergen": ["NOK", "Norge", 0.25],
-    "Molde": ["NOK", "Norge", 0.25],
-    "Tr.heim": ["NOK", "Norge", 0.25],
-    "Tromsø": ["NOK", "Norge", 0.25],
+    "Oslo": ["NOK", "Norway", 0, 25],
+    "Kr.sand": ["NOK", "Norway", 0.25],
+    "Bergen": ["NOK", "Norway", 0.25],
+    "Molde": ["NOK", "Norway", 0.25],
+    "Tr.heim": ["NOK", "Norway", 0.25],
+    "Tromsø": ["NOK", "Norway", 0.25],
     "SE1": ["SEK", "Sweden", 0.25],
     "SE2": ["SEK", "Sweden", 0.25],
     "SE3": ["SEK", "Sweden", 0.25],
     "SE4": ["SEK", "Sweden", 0.25],
     # What zone is this?
-    "SYS": ["Euro", "EUR", "Dunno", 0.25]
-    # Am i missing some? Check the nordpool page
+    "SYS": ["EUR", "System zone", 0.25]
 
 }
 
-# Needed as a user can they want the prices in a non local currency.
+# Needed incase a user wants the prices in non local currency
 _CURRENCY_TO_LOCAL = {
     "DKK": "Kr",
     "NOK": "Kr",
@@ -57,7 +56,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
             list(_REGIONS.keys())
         ),
-        vol.Optional(CONF_NAME, default=''): cv.string,
+        vol.Optional("friendly_name", default=''): cv.string,
         # This is only needed if you want the some area but want the prices in a non local currency
         vol.Optional("currency", default=''): cv.string,
         vol.Optional("VAT", default=True): vol.Boolean,
@@ -72,14 +71,14 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     """Setup the damn platform using yaml."""
     _LOGGER.info("setup_platform %s", config)
     region = config.get(CONF_REGION)
-    name = config.get(CONF_NAME)
+    friendly_name = config.get("friendly_name")
     price_type = config.get("price_type")
     precision = config.get("precision")
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get('currency')
     vat = config.get("VAT")
     api = hass.data[DOMAIN]
-    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, vat, api)
+    sensor = NordpoolSensor(friendly_name, region, price_type, precision, low_price_cutoff, currency, vat, api)
 
     add_devices([sensor])
 
@@ -87,29 +86,25 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
-    _LOGGER.info("%r" % config_entry)
     region = config.get(CONF_REGION)
-    name = config.get(CONF_NAME)
+    friendly_name = config.get("friendly_name")
     price_type = config.get("price_type")
     precision = config.get("precision")
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get('currency')
     vat = config.get("VAT")
     api = hass.data[DOMAIN]
-    sensor = NordpoolSensor(name, region, price_type, precision, low_price_cutoff, currency, vat, api)
+    sensor = NordpoolSensor(friendly_name, region, price_type, precision, low_price_cutoff, currency, vat, api)
     async_add_devices([sensor])
 
 
 class NordpoolSensor(Entity):
     def __init__(
-        self, name, area, price_type, precision, low_price_cutoff, currency, vat, api
+        self, friendly_name, area, price_type, precision, low_price_cutoff, currency, vat, api
     ) -> None:
-        self._name = name or '%s %s %s' % (DEFAULT_NAME, price_type, area)
+        self._friendly_name = friendly_name or '%s %s %s' % (DEFAULT_NAME, price_type, area)
         self._area = area
         self._currency = currency or _REGIONS[area][0]
-        # Fix vat, seems to be included every time.
-
-        self._vat = _REGIONS[area][2]
         self._price_type = price_type
         self._precision = precision
         self._low_price_cutoff = low_price_cutoff
@@ -145,7 +140,7 @@ class NordpoolSensor(Entity):
 
     @property
     def friendly_name(self) -> str:
-        return 'Elspot'
+        return self._friendly_name
 
     @property
     def icon(self) -> str:
@@ -158,7 +153,7 @@ class NordpoolSensor(Entity):
     @property
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement this sensor expresses itself in."""
-        return _CURRENCY_TO_LOCAL[self._currency]
+        return '%s/%s' % (self._currency, self._price_type)
 
     @property
     def unique_id(self):
@@ -180,7 +175,7 @@ class NordpoolSensor(Entity):
 
     @property
     def low_price(self) -> bool:
-        """Check if the price is lower then avg."""
+        """Check if the price is lower then avg depending on settings"""
         return (
             self.current_price < self._average * self._low_price_cutoff
             if self.current_price and self._average
@@ -194,11 +189,9 @@ class NordpoolSensor(Entity):
 
         if value is None or math.isinf(value):
             _LOGGER.info("api returned junk infinty %s", value)
-            # So far this seems to happend on peek, offpeek1 and offpeak2
-            # if this happens often we could calculate this prices ourself.
             return None
 
-        # The api returns prices in mwh
+        # The api returns prices in mWh
         price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
         return round(price, self._precision)
 
