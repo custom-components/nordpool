@@ -56,8 +56,9 @@ def extract_attrs(data) -> dict:
     """
     items = []
     d = defaultdict(list)
+    tzn = pendulum.now().timezone_name
     for item in data:
-        curr = pendulum.instance(item.get("start")).in_timezone("Europe/Stockholm")
+        curr = pendulum.instance(item.get("start")).in_timezone(tzn)
         peak = pendulum.period(curr.at(8), curr.at(19).end_of("hour"))
         offpeek1 = pendulum.period(curr.start_of("day"), curr.at(8))
         offpeek2 = pendulum.period(curr.at(20), curr.at(23).end_of("hour"))
