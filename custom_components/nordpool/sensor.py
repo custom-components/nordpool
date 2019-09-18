@@ -21,6 +21,7 @@ _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
     "DK2": ["DKK", "Denmark", 0.25],
     "FI": ["EUR", "Finland", 0.24],
+    "EE": ["EUR", "Estonia", 0.20],
     "LT": ["EUR", "Lithuania", 0.21],
     "LV": ["EUR", "Latvia", 0.21],
     "Oslo": ["NOK", "Norway", 0, 25],
