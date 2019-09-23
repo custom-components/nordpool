@@ -71,6 +71,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     """Setup the damn platform using yaml."""
     _LOGGER.info("setup_platform %s", config)
+    _LOGGER.info("pendulum default timezone %s", pendulum.now().timezone_name)
+    _LOGGER.info("timezone set in ha %r", hass.config.time_zone)
     region = config.get(CONF_REGION)
     friendly_name = config.get("friendly_name")
     price_type = config.get("price_type")
