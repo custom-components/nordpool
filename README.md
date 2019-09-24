@@ -34,7 +34,7 @@ sensor:
     low_price_cutoff: 0.95
 
     # What power regions your are interested in.
-    # Possible values: "DK1", "DK2", "FI", "LT", "LV", "Oslo", "Kr.sand", "Bergen", "Molde", "Tr.heim", "Tromsø", "SE1", "SE2", "SE3","SE4", "SYS"
+    # Possible values: "DK1", "DK2", "FI", "LT", "LV", "Oslo", "Kr.sand", "Bergen", "Molde", "Tr.heim", "Tromsø", "SE1", "SE2", "SE3","SE4", "SYS", "EE"
     region: "Kr.sand"
 
     # How many decimals to use in the display of the price

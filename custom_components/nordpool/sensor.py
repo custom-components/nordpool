@@ -225,6 +225,20 @@ class NordpoolSensor(Entity):
         if data is None:
             return []
 
+        # All the time in the api is returned in utc
+        # convert this to local time.
+        tz = pendulum.now().timezone_name
+        local_times = []
+        for item in data.get("values", []):
+            i = {"start": pendulum.instance(item["start"]).in_timezone(tz),
+                 "end": pendulum.instance(item["end"]).in_timezone(tz),
+                 "value": item["value"]
+                 }
+
+            local_times.append(i)
+
+        data["values"] = local_times
+
         return sorted(data.get("values", []), key=itemgetter("start"))
 
     @property
