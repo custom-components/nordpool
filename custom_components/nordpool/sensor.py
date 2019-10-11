@@ -292,9 +292,10 @@ class NordpoolSensor(Entity):
             _LOGGER.info("Updated _current_price!")
             data = self._api.today(self._area, self._currency)
             if data:
-                value = self._someday(data)[local_now.hour]["value"]
-                self._current_price = value
-                self._last_update_hourly = local_now
+                for item in self._someday(data):
+                    if item["start"] == local_now.start_of("hour"):
+                        self._current_price = item["value"]
+                        self._last_update_hourly = local_now
             else:
                 _LOGGER.info("Cant update _update_current_price because it was no data")
         else:
