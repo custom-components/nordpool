@@ -41,9 +41,9 @@ sensor:
     precision: 3 
 
     # What the price should be displayed in default
-    # Possible values: mwh, kwh and w
-    # default: kwh
-    price_type: kwh
+    # Possible values: MWh, kWh and W
+    # default: kWh
+    price_type: kWh
 
     friendly_name: "Power"
       
