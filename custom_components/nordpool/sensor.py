@@ -184,7 +184,7 @@ class NordpoolSensor(Entity):
 
     @property
     def unique_id(self):
-        name = "nordpool_%s_%s_%s_%s_%s" % (
+        name = "nordpool_%s_%s_%s_%s_%s_%s" % (
             self._price_type,
             self._area,
             self._currency,
