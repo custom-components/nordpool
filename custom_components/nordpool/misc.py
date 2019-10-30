@@ -14,17 +14,22 @@ def is_new(date=None, typ="day") -> bool:
     """Utility to check if its a new hour or day."""
     current = pendulum.now()
     if typ == "day":
-
         if date.date() != current.date():
-            _LOGGER.info("Its a new day!")
+            _LOGGER.debug("Its a new day!")
             return True
         return False
 
     elif typ == "hour":
         if current.hour != date.hour:
-            _LOGGER.info("Its a new hour!")
+            _LOGGER.debug("Its a new hour!")
             return True
         return False
+
+
+def is_inf(d):
+    if d == float("inf"):
+        return True
+    return False
 
 
 def has_junk(data) -> bool:
@@ -36,11 +41,6 @@ def has_junk(data) -> bool:
     Returns:
         TYPE: True if there is any infinity values else False
     """
-    def is_inf(d):
-        if d == float("inf"):
-            return True
-        return False
-
     cp = dict(data)
     cp.pop("values", None)
     if any(map(is_inf, cp.values())):

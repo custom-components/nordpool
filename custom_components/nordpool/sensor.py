@@ -160,7 +160,9 @@ class NordpoolSensor(Entity):
 
     @property
     def unique_id(self):
-        name = "elspot_%s%s%s%s%s" % (self._price_type, self._area, self._currency, self._precision, self._low_price_cutoff)
+        name = "nordpool_%s_%s_%s_%s_%s" % (self._price_type, self._area,
+                                            self._currency, self._precision,
+                                            self._low_price_cutoff, self._vat)
         name = name.lower().replace('.', '')
         return name
 
@@ -200,7 +202,7 @@ class NordpoolSensor(Entity):
 
     def _update(self, data) -> None:
         """Set attrs."""
-        _LOGGER.info("Called _update setting attrs for the day")
+        _LOGGER.debug("Called _update setting attrs for the day")
 
         if has_junk(data):
             _LOGGER.info("It was junk infinty in api response, fixed it.")
@@ -289,7 +291,7 @@ class NordpoolSensor(Entity):
         local_now = pendulum.now()
 
         if self._last_update_hourly is None or is_new(self._last_update_hourly, "hour"):
-            _LOGGER.info("Updated _current_price!")
+            _LOGGER.debug("Updated _current_price!")
             data = self._api.today(self._area, self._currency)
             if data:
                 for item in self._someday(data):
@@ -299,7 +301,7 @@ class NordpoolSensor(Entity):
             else:
                 _LOGGER.info("Cant update _update_current_price because it was no data")
         else:
-            _LOGGER.info("Tried to update the hourly price but it wasnt a new hour.")
+            _LOGGER.debug("Tried to update the hourly price but it wasnt a new hour.")
 
     def update(self) -> None:
         """Ideally we should just pull from the api all the time but since
@@ -310,14 +312,14 @@ class NordpoolSensor(Entity):
             self._last_tick = pendulum.now()
 
         if self._data_today is None:
-            _LOGGER.info("NordpoolSensor _data_today is none, trying to fetch it.")
+            _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it.")
             today = self._api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
 
         if self._data_tomorrow is None:
-            _LOGGER.info("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
+            _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
             tomorrow = self._api.tomorrow(self._area, self._currency)
             if tomorrow:
                 self._data_tomorrow = tomorrow
