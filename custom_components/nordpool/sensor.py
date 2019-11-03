@@ -225,8 +225,12 @@ class NordpoolSensor(Entity):
             _LOGGER.info("api returned junk infinty %s", value)
             return None
 
-        # The api returns prices in mWh
-        price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+        # The api returns prices in MWh
+        if self._price_type == "MWh":
+            price = value * float(1 + self._vat)
+        else:
+            price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+
         return round(price, self._precision)
 
     def _update(self, data) -> None:
