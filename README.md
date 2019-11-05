@@ -49,4 +49,4 @@ sensor:
       
 ```
 
-run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help```
+run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help``` you can run the script anyhere python is installed. (install the required packages pyyaml and click using `pip install packagename`)
