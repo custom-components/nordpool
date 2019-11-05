@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
         head = {"sensor": [{"platform": "template", "sensors": {}}]}
 
-        name = "elspot_%s_hr_%02d_%02d"
+        name = "nordpool_%s_hr_%02d_%02d"
         state_attr = '{{ state_attr("sensor.%s", "%s")[%s] }}'
 
         for i in range(24):
