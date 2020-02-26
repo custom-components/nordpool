@@ -16,7 +16,7 @@ from .misc import is_new, has_junk, extract_attrs
 _LOGGER = logging.getLogger(__name__)
 
 
-_PRICE_IN = {"kWh": 1000, "MWh": 0, "W": 1000 * 1000}
+_PRICE_IN = {"kWh": 1000, "MWh": 0, "Wh": 1000 * 1000}
 _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
     "DK2": ["DKK", "Denmark", 0.25],
