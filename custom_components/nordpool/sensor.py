@@ -24,7 +24,7 @@ _REGIONS = {
     "EE": ["EUR", "Estonia", 0.20],
     "LT": ["EUR", "Lithuania", 0.21],
     "LV": ["EUR", "Latvia", 0.21],
-    "Oslo": ["NOK", "Norway", 0, 25],
+    "Oslo": ["NOK", "Norway", 0.25],
     "Kr.sand": ["NOK", "Norway", 0.25],
     "Bergen": ["NOK", "Norway", 0.25],
     "Molde": ["NOK", "Norway", 0.25],
