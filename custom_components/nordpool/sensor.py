@@ -188,7 +188,11 @@ class NordpoolSensor(Entity):
     @property
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement this sensor expresses itself in."""
-        return "%s/%s" % (self._currency, self._price_type)
+        _currency = self._currency
+        if self._use_cents:
+            # Convert unit of measurement to cents based on chosen currency
+            _currency = _CURRENTY_TO_CENTS[_currency]
+        return "%s/%s" % (_currency, self._price_type)
 
     @property
     def unique_id(self):
