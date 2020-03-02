@@ -59,6 +59,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
+        vol.Optional("price_in_cents", default=False): vol.Boolean,
     }
 )
 
@@ -75,6 +76,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get("currency")
     vat = config.get("VAT")
+    use_cents = config.get("price_in_cents")
     api = hass.data[DOMAIN]
     sensor = NordpoolSensor(
         friendly_name,
@@ -84,6 +86,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
         low_price_cutoff,
         currency,
         vat,
+        use_cents,
         api,
     )
 
@@ -100,6 +103,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get("currency")
     vat = config.get("VAT")
+    use_cents = config.get("price_in_cents")
     api = hass.data[DOMAIN]
     sensor = NordpoolSensor(
         friendly_name,
@@ -109,6 +113,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         low_price_cutoff,
         currency,
         vat,
+        use_cents,
         api,
     )
     async_add_devices([sensor])
@@ -124,6 +129,7 @@ class NordpoolSensor(Entity):
         low_price_cutoff,
         currency,
         vat,
+        use_cents,
         api,
     ) -> None:
         self._friendly_name = friendly_name or "%s %s %s" % (
@@ -136,6 +142,7 @@ class NordpoolSensor(Entity):
         self._price_type = price_type
         self._precision = precision
         self._low_price_cutoff = low_price_cutoff
+        self._use_cents = use_cents
         self._api = api
 
         if vat:
