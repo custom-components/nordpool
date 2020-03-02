@@ -239,6 +239,10 @@ class NordpoolSensor(Entity):
         else:
             price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
 
+        # Convert price to cents if specified by the user.
+        if self._use_cents:
+            price = price * _CENT_MULTIPLIER
+
         return round(price, self._precision)
 
     def _update(self, data) -> None:
