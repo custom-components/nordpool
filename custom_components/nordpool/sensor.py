@@ -15,7 +15,7 @@ from .misc import is_new, has_junk, extract_attrs
 
 _LOGGER = logging.getLogger(__name__)
 
-
+_CENT_MULTIPLIER = 100
 _PRICE_IN = {"kWh": 1000, "MWh": 0, "Wh": 1000 * 1000}
 _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
@@ -40,6 +40,7 @@ _REGIONS = {
 
 # Needed incase a user wants the prices in non local currency
 _CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
+_CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "¢"}
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
@@ -58,6 +59,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
+        vol.Optional("price_in_cents", default=False): vol.Boolean,
     }
 )
 
@@ -74,6 +76,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get("currency")
     vat = config.get("VAT")
+    use_cents = config.get("price_in_cents")
     api = hass.data[DOMAIN]
     sensor = NordpoolSensor(
         friendly_name,
@@ -83,6 +86,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
         low_price_cutoff,
         currency,
         vat,
+        use_cents,
         api,
     )
 
@@ -99,6 +103,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get("currency")
     vat = config.get("VAT")
+    use_cents = config.get("price_in_cents")
     api = hass.data[DOMAIN]
     sensor = NordpoolSensor(
         friendly_name,
@@ -108,6 +113,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         low_price_cutoff,
         currency,
         vat,
+        use_cents,
         api,
     )
     async_add_devices([sensor])
@@ -123,6 +129,7 @@ class NordpoolSensor(Entity):
         low_price_cutoff,
         currency,
         vat,
+        use_cents,
         api,
     ) -> None:
         self._friendly_name = friendly_name or "%s %s %s" % (
@@ -135,6 +142,7 @@ class NordpoolSensor(Entity):
         self._price_type = price_type
         self._precision = precision
         self._low_price_cutoff = low_price_cutoff
+        self._use_cents = use_cents
         self._api = api
 
         if vat:
@@ -180,7 +188,11 @@ class NordpoolSensor(Entity):
     @property
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement this sensor expresses itself in."""
-        return "%s/%s" % (self._currency, self._price_type)
+        _currency = self._currency
+        if self._use_cents:
+            # Convert unit of measurement to cents based on chosen currency
+            _currency = _CURRENTY_TO_CENTS[_currency]
+        return "%s/%s" % (_currency, self._price_type)
 
     @property
     def unique_id(self):
@@ -230,6 +242,10 @@ class NordpoolSensor(Entity):
             price = value * float(1 + self._vat)
         else:
             price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+
+        # Convert price to cents if specified by the user.
+        if self._use_cents:
+            price = price * _CENT_MULTIPLIER
 
         return round(price, self._precision)
 

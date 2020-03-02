@@ -39,6 +39,7 @@ class BlueprintFlowHandler(config_entries.ConfigFlow):
         data_schema[vol.Optional("VAT", default=True)] = bool
         data_schema[vol.Optional("precision", default=3)] = vol.Coerce(int)
         data_schema[vol.Optional("low_price_cutoff", default=1.0)] = vol.Coerce(float)
+        data_schema[vol.Optional("price_in_cents", default=False)] = bool
         data_schema[vol.Optional("price_type", default="kWh")] = str
 
         return self.async_show_form(
