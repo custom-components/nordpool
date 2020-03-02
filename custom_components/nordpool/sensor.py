@@ -40,7 +40,7 @@ _REGIONS = {
 
 # Needed incase a user wants the prices in non local currency
 _CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
-_CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "¢"}
+_CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
