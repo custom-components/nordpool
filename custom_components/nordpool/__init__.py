@@ -44,6 +44,7 @@ class NordpoolData:
         self._last_update_tomorrow_date = None
         self._last_tick = None
         self._data = defaultdict(dict)
+        self._tomorrow_valid = False
         self.currency = []
 
     def update(self, force=False):
@@ -87,8 +88,10 @@ class NordpoolData:
                     spot = elspot.Prices(currency)
                     tomorrow = spot.hourly()
                     if tomorrow:
+                        self._tomorrow_valid = True
                         self._data[currency]["tomorrow"] = tomorrow["areas"]
                 else:
+                    self._tomorrow_valid = False
                     _LOGGER.info("New api data for tomorrow isnt posted yet")
 
         # Check if there is any "new tomorrows data"
@@ -101,9 +104,11 @@ class NordpoolData:
                     _LOGGER.info(
                         "New data was posted updating tomorrow prices in NordpoolData %s", currency
                     )
+                    self._tomorrow_valid = True
                     self._data[currency]["tomorrow"] = tomorrow["areas"]
 
         if is_new(self._last_tick, typ="day"):
+            self._tomorrow_valid = False
             for currency in self.currency:
                 spot = elspot.Prices(currency)
                 today = spot.hourly(end_date=pendulum.now())
@@ -124,6 +129,9 @@ class NordpoolData:
 
         self.update()
         return self._data.get(currency, {}).get(day, {}).get(area)
+
+    def tomorrow_valid(self):
+        return self._tomorrow_valid
 
     def today(self, area, currency) -> dict:
         """Returns todays prices in a area in the requested currency"""
