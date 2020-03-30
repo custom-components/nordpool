@@ -2,16 +2,15 @@ import logging
 import math
 from operator import itemgetter
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
-import pendulum
+from homeassistant.util import dt as dt_utils
 
 from . import DOMAIN
-from .misc import is_new, has_junk, extract_attrs
-
+from .misc import extract_attrs, has_junk, is_new, start_of
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,9 +65,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     """Setup the damn platform using yaml."""
-    _LOGGER.info("setup_platform %s", config)
-    _LOGGER.info("pendulum default timezone %s", pendulum.now().timezone_name)
-    _LOGGER.info("timezone set in ha %r", hass.config.time_zone)
+    _LOGGER.debug("Dumping config %r", config)
+    _LOGGER.debug("timezone set in ha %r", hass.config.time_zone)
     region = config.get(CONF_REGION)
     friendly_name = config.get("friendly_name")
     price_type = config.get("price_type")
@@ -96,6 +94,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
+    _LOGGER.debug("Dumping config %r", config)
+    _LOGGER.debug("timezone set in ha %r", hass.config.time_zone)
     region = config.get(CONF_REGION)
     friendly_name = config.get("friendly_name")
     price_type = config.get("price_type")
@@ -278,13 +278,19 @@ class NordpoolSensor(Entity):
 
         # All the time in the api is returned in utc
         # convert this to local time.
-        tz = pendulum.now().timezone_name
+        #tz = pendulum.now().timezone_name
+        # ffs
         local_times = []
         for item in data.get("values", []):
+            #i = {
+            #    "start": pendulum.instance(item["start"]).in_timezone(tz),
+            #    "end": pendulum.instance(item["end"]).in_timezone(tz),
+            #    "value": item["value"],
+            #}
             i = {
-                "start": pendulum.instance(item["start"]).in_timezone(tz),
-                "end": pendulum.instance(item["end"]).in_timezone(tz),
-                "value": item["value"],
+                "start": dt_utils.as_local(item["start"]),
+                "end": dt_utils.as_local(item["end"]),
+                "value": item["value"]
             }
 
             local_times.append(i)
@@ -338,13 +344,13 @@ class NordpoolSensor(Entity):
 
     def _update_current_price(self) -> None:
         """ update the current price (price this hour)"""
-        local_now = pendulum.now()
+        local_now = dt_utils.now()
 
         if self._last_update_hourly is None or is_new(self._last_update_hourly, "hour"):
             data = self._api.today(self._area, self._currency)
             if data:
                 for item in self._someday(data):
-                    if item["start"] == local_now.start_of("hour"):
+                    if item["start"] == start_of(local_now, "hour"):
                         self._current_price = item["value"]
                         self._last_update_hourly = local_now
                         _LOGGER.debug("Updated _current_price %s", item["value"])
@@ -359,7 +365,7 @@ class NordpoolSensor(Entity):
            in self._data_today and self._data_tomorrow.
         """
         if self._last_tick is None:
-            self._last_tick = pendulum.now()
+            self._last_tick = dt_utils.now()
 
         if self._data_today is None:
             _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it.")
@@ -396,4 +402,4 @@ class NordpoolSensor(Entity):
         if tomorrow:
             self._data_tomorrow = tomorrow
 
-        self._last_tick = pendulum.now()
+        self._last_tick = dt_utils.now()

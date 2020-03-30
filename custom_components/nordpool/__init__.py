@@ -1,12 +1,12 @@
 import logging
-
 from collections import defaultdict
+from datetime import timedelta
 from random import randint
 
-import pendulum
-from .misc import *
-
 import voluptuous as vol
+from homeassistant.util import dt as dt_utils
+
+from .misc import *
 
 DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
@@ -50,19 +50,21 @@ class NordpoolData:
         """Update any required info."""
         from nordpool import elspot
 
+        at_1300 = dt_utils.now().replace(hour=13, minute=randint(0, 5), second=0)
+
         if self._last_update_tomorrow_date is None:
-            if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(13, randint(0, 5)):
-                self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(13)
+            if stock(dt_utils.now()) > stock(at_1300):
+                self._last_update_tomorrow_date = stock(at_1300 + timedelta(hours=24))
             else:
-                self._last_update_tomorrow_date = pendulum.today("Europe/Stockholm").at(13)
+                self._last_update_tomorrow_date = stock(at_1300)
 
         if self._last_tick is None:
-            self._last_tick = pendulum.now()
+            self._last_tick = dt_utils.now()
 
         if force:
             for currency in self.currency:
                 spot = elspot.Prices(currency)
-                today = spot.hourly(end_date=pendulum.now())
+                today = spot.hourly(end_date=dt_utils.now().strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
                 self._data[currency]['today'] = today["areas"]
 
                 tomorrow = spot.hourly()
@@ -75,15 +77,15 @@ class NordpoolData:
             # Add any missing power prices for today in the currency we track
             if self._data.get(currency, {}).get('today') is None:
                 spot = elspot.Prices(currency)
-                today = spot.hourly(end_date=pendulum.now())
+                today = spot.hourly(end_date=dt_utils.now().strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
                 if today:
 
                     self._data[currency]["today"] = today["areas"]
 
             # Add missing prices for tomorrow.
             if self._data.get(currency, {}).get('tomorrow') is None:
-                if pendulum.now("Europe/Stockholm") > pendulum.now("Europe/Stockholm").at(13, randint(0, 5)):
-                    self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(13)
+                if stock(dt_utils.now()) > stock(at_1300):
+                    self._last_update_tomorrow_date = stock(at_1300)
                     spot = elspot.Prices(currency)
                     tomorrow = spot.hourly()
                     if tomorrow:
@@ -92,11 +94,11 @@ class NordpoolData:
                     _LOGGER.info("New api data for tomorrow isnt posted yet")
 
         # Check if there is any "new tomorrows data"
-        if (self._last_tick.in_timezone("Europe/Stockholm") > self._last_update_tomorrow_date):
-            self._last_update_tomorrow_date = pendulum.tomorrow("Europe/Stockholm").at(13, randint(0, 5))
+        if (stock(self._last_tick) > self._last_update_tomorrow_date):
+            self._last_update_tomorrow_date = stock(at_1300 + timedelta(hours=24))
             for currency in self.currency:
                 spot = elspot.Prices(currency)
-                tomorrow = spot.hourly(pendulum.now().add(days=1))
+                tomorrow = spot.hourly(dt_utils.now() + timedelta(hours=24))
                 if tomorrow:
                     _LOGGER.info(
                         "New data was posted updating tomorrow prices in NordpoolData %s", currency
@@ -106,13 +108,13 @@ class NordpoolData:
         if is_new(self._last_tick, typ="day"):
             for currency in self.currency:
                 spot = elspot.Prices(currency)
-                today = spot.hourly(end_date=pendulum.now())
+                today = spot.hourly(end_date=dt_utils.now().strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
                 if today:
                     self._data[currency]["today"] = today["areas"]
                 # We could swap, but ill rather do a extrac api call.
                 # self._data[currency]["today"] = self._data[currency]["tomorrow"]
 
-        self._last_tick = pendulum.now()
+        self._last_tick = dt_utils.now()
 
     def _someday(self, area, currency, day):
         """Returns todays or tomorrows prices in a area in the currency"""
@@ -144,7 +146,6 @@ class NordpoolData:
 
 def setup(hass, config) -> bool:
     """Set up using yaml config file."""
-    _LOGGER.info("async_setup nordpool")
     api = NordpoolData()
     hass.data[DOMAIN] = api
     return True
