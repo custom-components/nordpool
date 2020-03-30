@@ -54,11 +54,11 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("friendly_name", default=""): cv.string,
         # This is only needed if you want the some area but want the prices in a non local currency
         vol.Optional("currency", default=""): cv.string,
-        vol.Optional("VAT", default=True): vol.Boolean,
+        vol.Optional("VAT", default=True):cv.boolean,
         vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
-        vol.Optional("price_in_cents", default=False): vol.Boolean,
+        vol.Optional("price_in_cents", default=False): cv.boolean,
     }
 )
 
@@ -145,7 +145,7 @@ class NordpoolSensor(Entity):
         self._use_cents = use_cents
         self._api = api
 
-        if vat:
+        if vat is True:
             self._vat = _REGIONS[area][2]
         else:
             self._vat = 0
@@ -189,7 +189,7 @@ class NordpoolSensor(Entity):
     def unit_of_measurement(self) -> str:
         """Return the unit of measurement this sensor expresses itself in."""
         _currency = self._currency
-        if self._use_cents:
+        if self._use_cents is True:
             # Convert unit of measurement to cents based on chosen currency
             _currency = _CURRENTY_TO_CENTS[_currency]
         return "%s/%s" % (_currency, self._price_type)
