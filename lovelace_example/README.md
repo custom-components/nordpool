@@ -5,7 +5,7 @@ The final result will look like this:
 
 ![Simple](/lovelace_example/nordpool.png)
 
-First of all we have to make a sensor for each hour. This can be done using the provided python script or by manually making template sensors in sensors.yaml. In this example we make template sensors. If you live in another price area than "Krsand" your nordpool sensors entity id will be different from mine. So remember to replace "sensor.nordpool_kwh_krsand_nok_2_095_025" with your own.
+First of all we have to make a sensor for each hour. This can be done using the provided python script or by manually making template sensors in sensors.yaml. In this example we make template sensors. If you live in another price area than "Krsand" your nordpool sensors entity id will be different from mine. So remember to replace "sensor.nordpool_kwh_krsand_nok_2_095_025" with your own. Your "unit_of_measurement" may also be different from mine as well.
 Add to your sensors.yaml:
 ````
 # TEMPLATE SENSORS
