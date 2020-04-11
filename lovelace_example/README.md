@@ -1,4 +1,9 @@
-The most common wanted_attributes are:
+### Lovelace card example with sorted price information
+In this example we make a simple but useful lovelace card with price information sorted in ascending order. Especially during periods where the price difference is large, it's useful to sort out the cheapest hours throughout the day and day ahead.
+
+The final result will look like this:
+
+![Simple](/lovelace_example/nordpool.PNG)
 
 ````
 -2: is online, 0=offline, 1=online
