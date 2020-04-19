@@ -1,32 +1,37 @@
+import asyncio
 import logging
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime, timedelta
+from functools import partial
 from random import randint
 
 import voluptuous as vol
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import Config, HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.event import (async_call_later,
+                                         async_track_time_change)
 from homeassistant.util import dt as dt_utils
+from pytz import timezone
 
+from .aio_price import AioPrices
+from .events import async_track_time_change_in_tz
 from .misc import *
 
 DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
+RANDOM_MINUTE = randint(0, 10)
+RANDOM_SECOND = randint(0, 59)
 
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 
 
-CONFIG_SCHEMA = vol.Schema(
-    {
-        DOMAIN: vol.Schema(
-            {}
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
+CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = '0.0.1'
-ISSUEURL = 'https://github.com/custom-components/nordpool/issues'
+VERSION = "0.0.1"
+ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = """
 -------------------------------------------------------------------
@@ -36,138 +41,123 @@ This is a custom component
 If you have any issues with this you need to open an issue here:
 {issueurl}
 -------------------------------------------------------------------
-""".format(name=NAME, version=VERSION, issueurl=ISSUEURL)
+""".format(
+    name=NAME, version=VERSION, issueurl=ISSUEURL
+)
 
 
 class NordpoolData:
-    def __init__(self):
-        self._last_update_tomorrow_date = None
+    def __init__(self, hass: HomeAssistant):
+        self._hass = hass
         self._last_tick = None
         self._data = defaultdict(dict)
         self._tomorrow_valid = False
         self.currency = []
+        self.listeners = []
 
-    def update(self, force=False):
-        """Update any required info."""
-        from nordpool import elspot
+    async def _update(self, type_="today", dt=None):
+        _LOGGER.debug("calling _update %s %s", type_, dt)
+        hass = self._hass
+        client = async_get_clientsession(hass)
 
-        at_1300 = dt_utils.now().replace(hour=13, minute=randint(0, 5), second=0)
-
-        if self._last_update_tomorrow_date is None:
-            if stock(dt_utils.now()) > stock(at_1300):
-                self._last_update_tomorrow_date = stock(at_1300 + timedelta(hours=24))
-            else:
-                self._last_update_tomorrow_date = stock(at_1300)
-
-        if self._last_tick is None:
-            self._last_tick = dt_utils.now()
-
-        if force:
-            for currency in self.currency:
-                spot = elspot.Prices(currency)
-                today = spot.hourly(end_date=dt_utils.now().strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
-                self._data[currency]['today'] = today["areas"]
-
-                tomorrow = spot.hourly()
-                if tomorrow:
-                    self._data[currency]['tomorrow'] = tomorrow["areas"]
-
-            return
+        if dt is None:
+            dt = dt_utils.now()
 
         for currency in self.currency:
-            # Add any missing power prices for today in the currency we track
-            if self._data.get(currency, {}).get('today') is None:
-                spot = elspot.Prices(currency)
-                today = spot.hourly(end_date=dt_utils.now().strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
-                if today:
+            spot = AioPrices(currency, client)
+            data = await spot.hourly(end_date=dt)
+            if data:
+                self._data[currency][type_] = data["areas"]
+            else:
+                _LOGGER.debug("Some crap happend, retrying request later.")
+                async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
-                    self._data[currency]["today"] = today["areas"]
+    async def update_today(self, n: datetime):
+        await self._update("today")
 
-            # Add missing prices for tomorrow.
-            if self._data.get(currency, {}).get('tomorrow') is None:
-                if stock(dt_utils.now()) > stock(at_1300):
-                    self._last_update_tomorrow_date = stock(at_1300)
-                    spot = elspot.Prices(currency)
-                    tomorrow = spot.hourly()
-                    if tomorrow:
-                        self._tomorrow_valid = True
-                        self._data[currency]["tomorrow"] = tomorrow["areas"]
-                else:
-                    self._tomorrow_valid = False
-                    _LOGGER.info("New api data for tomorrow isnt posted yet")
+    async def update_tomorrow(self, n: datetime):
+        _LOGGER.debug("Updating tomorrows prices.")
+        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
+        self._tomorrow_valid = True
 
-        # Check if there is any "new tomorrows data"
-        if (stock(self._last_tick) > self._last_update_tomorrow_date):
-            self._last_update_tomorrow_date = stock(at_1300 + timedelta(hours=24))
-            for currency in self.currency:
-                spot = elspot.Prices(currency)
-                tomorrow = spot.hourly(dt_utils.now() + timedelta(hours=24))
-                if tomorrow:
-                    _LOGGER.info(
-                        "New data was posted updating tomorrow prices in NordpoolData %s", currency
-                    )
-                    self._tomorrow_valid = True
-                    self._data[currency]["tomorrow"] = tomorrow["areas"]
-
-        if is_new(self._last_tick, typ="day"):
-            self._tomorrow_valid = False
-            for currency in self.currency:
-                spot = elspot.Prices(currency)
-                today = spot.hourly(end_date=dt_utils.now().strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
-                if today:
-                    self._data[currency]["today"] = today["areas"]
-                # We could swap, but ill rather do a extrac api call.
-                # self._data[currency]["today"] = self._data[currency]["tomorrow"]
-
-        self._last_tick = dt_utils.now()
-
-    def _someday(self, area, currency, day):
+    async def _someday(self, area: str, currency: str, day: str):
         """Returns todays or tomorrows prices in a area in the currency"""
         if currency not in _CURRENCY_LIST:
-            raise ValueError("%s is a invalid currency possible values are %s" % (currency, ', '.join(_CURRENCY_LIST)))
+            raise ValueError(
+                "%s is a invalid currency possible values are %s"
+                % (currency, ", ".join(_CURRENCY_LIST))
+            )
 
+        # This is needed as the currency is
+        # set in the sensor.
         if currency not in self.currency:
             self.currency.append(currency)
+            await self.update_today(None)
+            await self.update_tomorrow(None)
 
-        self.update()
         return self._data.get(currency, {}).get(day, {}).get(area)
 
-    def tomorrow_valid(self):
+    def tomorrow_valid(self) -> bool:
         return self._tomorrow_valid
 
-    def today(self, area, currency) -> dict:
+    async def today(self, area: str, currency: str) -> dict:
         """Returns todays prices in a area in the requested currency"""
-        return self._someday(area, currency, "today")
+        res = await self._someday(area, currency, "today")
+        return res
 
-    def tomorrow(self, area, currency):
+    async def tomorrow(self, area: str, currency: str):
         """Returns tomorrows prices in a area in the requested currency"""
-        return self._someday(area, currency, "tomorrow")
+        res = await self._someday(area, currency, "tomorrow")
+        return res
 
 
-# Lets leave this for now. Ill send a pr to make python nordpool api async later.
-# async def async_setup(hass, config) -> bool:
-#    """Set up using yaml config file."""
-#    _LOGGER.info("async_setup nordpool")
-#    api = NordpoolData()
-#    hass.data[DOMAIN] = api
-#    return True
-
-def setup(hass, config) -> bool:
+async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up using yaml config file."""
-    api = NordpoolData()
-    hass.data[DOMAIN] = api
+
+    if DOMAIN not in hass.data:
+        api = NordpoolData(hass)
+        hass.data[DOMAIN] = api
+
+        async def check_valid(n):
+            """Cb to set the data to unvalid when its a new day."""
+            api._tomorrow_valid = False
+
+        # Handles futures updates
+        cb_update_tomorrow = async_track_time_change_in_tz(
+            hass,
+            api.update_tomorrow,
+            hour=13,
+            minute=RANDOM_MINUTE,
+            second=RANDOM_SECOND,
+            tz=timezone("Europe/Stockholm"),
+        )
+
+        cb_check_valid = async_track_time_change(
+            hass, check_valid, hour=0, minute=0, second=0
+        )
+
+        api.listeners.append(cb_update_tomorrow)
+        api.listeners.append(cb_check_valid)
+
     return True
 
 
-async def async_setup_entry(hass, config_entry):
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
+        hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
     return True
 
 
-async def async_unload_entry(hass, config_entry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
+    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
+    # remove any listeners.
     return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry)

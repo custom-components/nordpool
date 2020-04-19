@@ -1,15 +1,24 @@
 import logging
 from collections import defaultdict
+from operator import itemgetter
 from statistics import mean
 
-from homeassistant.util import dt as dt_utils
+import pytz
+from homeassistant.util import dt as dt_util
 from pytz import timezone
 
-# import pendulum
+UTC = pytz.utc
 
-__all__ = ["is_new", "has_junk", "extract_attrs", "start_of", "end_of", "stock"]
+__all__ = ["is_new", "has_junk", "extract_attrs", "start_of", "end_of", "stock", "add_junk"]
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def add_junk(d):
+    for key in ["Average", "Min", "Max", "Off-peak 1", "Off-peak 2", "Peak"]:
+        d[key] = float("inf")
+
+    return d
 
 
 def stock(d):
@@ -42,7 +51,7 @@ def end_of(d, typ_="hour"):
 def is_new(date=None, typ="day") -> bool:
     """Utility to check if its a new hour or day."""
     # current = pendulum.now()
-    current = dt_utils.now()
+    current = dt_util.now()
     if typ == "day":
         if date.date() != current.date():
             _LOGGER.debug("Its a new day!")
@@ -79,40 +88,35 @@ def has_junk(data) -> bool:
 
 
 def extract_attrs(data) -> dict:
-    """
-    Peak = 08:00 to 20:00
-    Off peak 1 = 00:00 to 08:00
-    off peak 2 = 20:00 to 00:00
-    """
-    items = []
     d = defaultdict(list)
+    items = [i.get("value") for i in data]
 
-    peak_start = start_of(dt_utils.now().replace(hour=8), "hour")
-    peak_end = end_of(dt_utils.now().replace(hour=19), "hour")
-    offpeek1_start = dt_utils.start_of_local_day()
-    offpeek1_end = end_of(offpeek1_start.replace(hour=7), "hour")
-    offpeek2_start = start_of(dt_utils.now().replace(hour=8), "hour")
-    offpeek2_end = end_of(dt_utils.now().replace(hour=23), "hour")
+    if len(data):
+        data = sorted(data, key=itemgetter("start"))
+        offpeak1 = [i.get("value") for i in data[0:8]]
+        peak = [i.get("value") for i in data[9:17]]
+        offpeak2 = [i.get("value") for i in data[20:]]
 
-    for item in data:
-        curr = dt_utils.as_local(item.get("start"))
+        d["Peak"] = mean(peak)
+        d["Off-peak 1"] = mean(offpeak1)
+        d["Off-peak 2"] = mean(offpeak2)
+        d["Average"] = mean(items)
+        d["Min"] = min(items)
+        d["Max"] = max(items)
 
-        if time_in_range(peak_start, peak_end, curr):
-            d["peak"].append(item.get("value"))
+        return d
 
-        elif time_in_range(offpeek1_start, offpeek1_end, curr):
-            d["offpeek1"].append(item.get("value"))
+    return data
 
-        elif time_in_range(offpeek2_start, offpeek2_end, curr):
-            d["offpeek2"].append(item.get("value"))
 
-        items.append(item.get("value"))
+'''
+def as_tz(dattim, tz=None):
+    """Convert a UTC datetime object to local time zone."""
 
-    d["Peak"] = mean(d["peak"])
-    d["Off-peak 1"] = mean(d["offpeek1"])
-    d["Off-peak 2"] = mean(d["offpeek2"])
-    d["Average"] = mean(items)
-    d["Min"] = min(items)
-    d["Max"] = max(items)
+    if dattim.tzinfo is None:
+        dattim = UTC.localize(dattim)
 
-    return dict(d)
+    return dattim.astimezone(timezone(tz))
+
+
+'''
