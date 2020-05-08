@@ -97,7 +97,7 @@ class NordpoolData:
                     _LOGGER.info("New api data for tomorrow isnt posted yet")
 
         # Check if there is any "new tomorrows data"
-        if (stock(self._last_tick) > self._last_update_tomorrow_date):
+        if self._last_tick > self._last_update_tomorrow_date:
             self._last_update_tomorrow_date = stock(at_1300 + timedelta(hours=24))
             for currency in self.currency:
                 spot = elspot.Prices(currency)
