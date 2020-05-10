@@ -166,7 +166,7 @@ class NordpoolSensor(Entity):
     @property
     def should_poll(self):
         """No need to poll. Coordinator notifies entity of updates."""
-        return False
+        return True
 
     @property
     def friendly_name(self) -> str:
