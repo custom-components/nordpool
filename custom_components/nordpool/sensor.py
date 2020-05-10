@@ -95,7 +95,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
 
 async def async_setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     _LOGGER.debug("called async_setup_platform")
-    _dry_setup(hass, config, async_add_devices)
+    _dry_setup(hass, config, add_devices)
     return True
 
 
@@ -263,7 +263,9 @@ class NordpoolSensor(Entity):
 
     @property
     def current_price(self) -> float:
-        return self._calc_price()
+        res = self._calc_price()
+        _LOGGER.debug("Current hours price for %s is %s", self.name, res)
+        return res
 
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
@@ -348,7 +350,9 @@ class NordpoolSensor(Entity):
                     # _LOGGER.info("start %s local_now %s", item["start"], start_of(local_now, "hour"))
                     self._current_price = item["value"]
                     self._last_update_hourly = local_now
-                    _LOGGER.debug("Updated %s _current_price %s", self.name, item["value"])
+                    _LOGGER.debug(
+                        "Updated %s _current_price %s", self.name, item["value"]
+                    )
         else:
             _LOGGER.info("Cant update _update_current_price because it was no data")
 
@@ -400,7 +404,9 @@ class NordpoolSensor(Entity):
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass")
 
-        cb = async_track_time_change(self._api._hass, self.check_stuff, minute=0, second=0)
+        cb = async_track_time_change(
+            self._api._hass, self.check_stuff, minute=0, second=0
+        )
         self._cbs.append(cb)
 
         await asyncio.sleep(10)
