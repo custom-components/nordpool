@@ -264,7 +264,7 @@ class NordpoolSensor(Entity):
     @property
     def current_price(self) -> float:
         res = self._calc_price()
-        _LOGGER.debug("Current hours price for %s is %s", self.name, res)
+        # _LOGGER.debug("Current hours price for %s is %s", self.name, res)
         return res
 
     def _someday(self, data) -> list:
