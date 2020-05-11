@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import math
 from operator import itemgetter
@@ -7,10 +6,8 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION, EVENT_TIME_CHANGED
-from homeassistant.helpers.dispatcher import (async_dispatcher_connect,
-                                              async_dispatcher_send)
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_utils
 
 from . import DOMAIN, EVENT_NEW_DATA
@@ -409,16 +406,8 @@ class NordpoolSensor(Entity):
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
-        _LOGGER.debug("called async_added_to_hass")
-
+        _LOGGER.debug("called async_added_to_hass %s", self.name)
         async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
-
-        #cb = async_track_time_change(
-        #    self._api._hass, self.check_stuff, minute=0, second=0
-        #)
-        #self._cbs.append(cb)
-
-        #await asyncio.sleep(10)
         await self.check_stuff()
 
     # async def async_will_remove_from_hass(self):

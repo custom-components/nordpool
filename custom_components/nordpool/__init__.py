@@ -16,7 +16,8 @@ from pytz import timezone
 
 from .aio_price import AioPrices
 from .events import async_track_time_change_in_tz
-from .misc import *
+
+#from .misc import *
 
 DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
@@ -79,7 +80,6 @@ class NordpoolData:
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
         self._tomorrow_valid = True
-        async_dispatcher_send(self._hass, EVENT_NEW_DATA)
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns todays or tomorrows prices in a area in the currency"""
@@ -130,12 +130,20 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
         async def new_hr(n):
+            """Callback to tell the sensors to update on a new hour."""
+            async_dispatcher_send(hass, EVENT_NEW_DATA)
+
+        async def new_data_cb(n):
+            """Callback to fetch new data for tomorrows prices at 1300ish CET
+               and notify any sensors, about the new data
+            """
+            await api.api.update_tomorrow(n)
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
         # Handles futures updates
         cb_update_tomorrow = async_track_time_change_in_tz(
             hass,
-            api.update_tomorrow,
+            new_data_cb,
             hour=13,
             minute=RANDOM_MINUTE,
             second=RANDOM_SECOND,
