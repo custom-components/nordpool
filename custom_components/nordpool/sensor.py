@@ -153,7 +153,6 @@ class NordpoolSensor(Entity):
         self._peak = None
 
         # To control the updates.
-        self._last_update_hourly = None
         self._last_tick = None
         self._cbs = []
 
@@ -351,7 +350,6 @@ class NordpoolSensor(Entity):
                 if item["start"] == start_of(local_now, "hour"):
                     # _LOGGER.info("start %s local_now %s", item["start"], start_of(local_now, "hour"))
                     self._current_price = item["value"]
-                    self._last_update_hourly = local_now
                     _LOGGER.debug(
                         "Updated %s _current_price %s", self.name, item["value"]
                     )
