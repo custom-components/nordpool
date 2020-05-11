@@ -7,11 +7,13 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION, EVENT_TIME_CHANGED
+from homeassistant.helpers.dispatcher import (async_dispatcher_connect,
+                                              async_dispatcher_send)
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_utils
 
-from . import DOMAIN
+from . import DOMAIN, EVENT_NEW_DATA
 from .misc import extract_attrs, has_junk, is_new, start_of
 
 _LOGGER = logging.getLogger(__name__)
@@ -144,7 +146,6 @@ class NordpoolSensor(Entity):
         # Holds the data for today and morrow.
         self._data_today = None
         self._data_tomorrow = None
-        self._tomorrow_valid = None
 
         # Values for the day
         self._average = None
@@ -166,7 +167,7 @@ class NordpoolSensor(Entity):
     @property
     def should_poll(self):
         """No need to poll. Coordinator notifies entity of updates."""
-        return True
+        return False
 
     @property
     def friendly_name(self) -> str:
@@ -229,7 +230,7 @@ class NordpoolSensor(Entity):
             value = self._current_price
 
         if value is None or math.isinf(value):
-            _LOGGER.info("api returned junk infinty %s", value)
+            # _LOGGER.info("api returned junk infinty %s", value)
             return None
 
         # The api returns prices in MWh
@@ -249,7 +250,7 @@ class NordpoolSensor(Entity):
         _LOGGER.debug("Called _update setting attrs for the day")
 
         if has_junk(data):
-            _LOGGER.debug("It was junk infinty in api response, fixed it.")
+            # _LOGGER.debug("It was junk infinty in api response, fixed it.")
             d = extract_attrs(data.get("values"))
             data.update(d)
 
@@ -326,7 +327,7 @@ class NordpoolSensor(Entity):
             "country": _REGIONS[self._area][1],
             "region": self._area,
             "low price": self.low_price,
-            "tomorrow_valid": self._tomorrow_valid,
+            "tomorrow_valid": self.tomorrow_valid,
             "today": self.today,
             "tomorrow": self.tomorrow,
         }
@@ -338,6 +339,10 @@ class NordpoolSensor(Entity):
     @property
     def raw_tomorrow(self):
         return self._data_today
+
+    @property
+    def tomorrow_valid(self):
+        return self._api.tomorrow_valid()
 
     async def _update_current_price(self) -> None:
         """ update the current price (price this hour)"""
@@ -356,9 +361,10 @@ class NordpoolSensor(Entity):
         else:
             _LOGGER.info("Cant update _update_current_price because it was no data")
 
-    async def check_stuff(self, now) -> None:
+    async def check_stuff(self) -> None:
         """Cb to do some house keeping, called every hour to get the current hours price
         """
+        _LOGGER.debug("called check_stuff")
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
 
@@ -376,8 +382,9 @@ class NordpoolSensor(Entity):
                 self._data_tomorrow = tomorrow
 
         # We can just check if this is the first hour.
-        if is_new(self._last_tick, typ="day"):
 
+        if is_new(self._last_tick, typ="day"):
+        #if now.hour == 0:
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
@@ -397,20 +404,22 @@ class NordpoolSensor(Entity):
             self._data_tomorrow = tomorrow
 
         self._last_tick = dt_utils.now()
-        self._tomorrow_valid = self._api.tomorrow_valid()
+        self.async_write_ha_state()
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass")
 
-        cb = async_track_time_change(
-            self._api._hass, self.check_stuff, minute=0, second=0
-        )
-        self._cbs.append(cb)
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
 
-        await asyncio.sleep(10)
-        await self.check_stuff(None)
+        #cb = async_track_time_change(
+        #    self._api._hass, self.check_stuff, minute=0, second=0
+        #)
+        #self._cbs.append(cb)
+
+        #await asyncio.sleep(10)
+        await self.check_stuff()
 
     # async def async_will_remove_from_hass(self):
     #     """This needs some testing.."""

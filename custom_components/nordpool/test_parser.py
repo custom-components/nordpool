@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from operator import itemgetter
 
+# https://repl.it/repls/WildImpishMass
 from dateutil import tz
 from nordpool import elspot
 

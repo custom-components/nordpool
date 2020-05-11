@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -9,6 +8,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (async_call_later,
                                          async_track_time_change)
 from homeassistant.util import dt as dt_utils
@@ -22,7 +22,7 @@ DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
 RANDOM_MINUTE = randint(0, 10)
 RANDOM_SECOND = randint(0, 59)
-
+EVENT_NEW_DATA = "nordpool_update"
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 
 
@@ -79,6 +79,7 @@ class NordpoolData:
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
         self._tomorrow_valid = True
+        async_dispatcher_send(self._hass, EVENT_NEW_DATA)
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns todays or tomorrows prices in a area in the currency"""
@@ -118,9 +119,18 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
 
-        async def check_valid(n):
-            """Cb to set the data to unvalid when its a new day."""
+        async def new_day_cb(n):
+            """Cb to handle some house keeping when it a new day."""
             api._tomorrow_valid = False
+
+            for curr in api.currency:
+                api._data[curr]["today"] = api._data[curr]["tomorrow"]
+                api._data[curr]["tomorrow"] = {}
+
+            async_dispatcher_send(hass, EVENT_NEW_DATA)
+
+        async def new_hr(n):
+            async_dispatcher_send(hass, EVENT_NEW_DATA)
 
         # Handles futures updates
         cb_update_tomorrow = async_track_time_change_in_tz(
@@ -132,12 +142,15 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
             tz=timezone("Europe/Stockholm"),
         )
 
-        cb_check_valid = async_track_time_change(
-            hass, check_valid, hour=0, minute=0, second=0
+        cb_new_day = async_track_time_change(
+            hass, new_day_cb, hour=0, minute=0, second=0
         )
 
+        cb_new_hr = async_track_time_change(hass, new_hr, minute=0, second=0)
+
         api.listeners.append(cb_update_tomorrow)
-        api.listeners.append(cb_check_valid)
+        api.listeners.append(cb_new_hr)
+        api.listeners.append(cb_new_day)
 
     return True
 
