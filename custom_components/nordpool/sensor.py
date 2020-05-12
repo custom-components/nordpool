@@ -93,14 +93,12 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
 
 
 async def async_setup_platform(hass, config, add_devices, discovery_info=None) -> None:
-    _LOGGER.debug("called async_setup_platform")
     _dry_setup(hass, config, add_devices)
     return True
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
-    _LOGGER.info("called async_setup_entry")
     config = config_entry.data
     _dry_setup(hass, config, async_add_devices)
     return True
@@ -354,7 +352,7 @@ class NordpoolSensor(Entity):
                         "Updated %s _current_price %s", self.name, item["value"]
                     )
         else:
-            _LOGGER.info("Cant update _update_current_price because it was no data")
+            _LOGGER.debug("Cant update _update_current_price because it was no data")
 
     async def check_stuff(self) -> None:
         """Cb to do some house keeping, called every hour to get the current hours price

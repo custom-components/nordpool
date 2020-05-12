@@ -64,6 +64,10 @@ class NordpoolData:
         if dt is None:
             dt = dt_utils.now()
 
+        # We dont really need today and morrow
+        # when the region is in another timezone
+        # as we request data for 3 days anyway.
+        # Keeping this for now, but this should be changed.
         for currency in self.currency:
             spot = AioPrices(currency, client)
             data = await spot.hourly(end_date=dt)
@@ -74,6 +78,7 @@ class NordpoolData:
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, n: datetime):
+        _LOGGER.debug("Updating tomorrows prices.")
         await self._update("today")
 
     async def update_tomorrow(self, n: datetime):
@@ -124,7 +129,10 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
             api._tomorrow_valid = False
 
             for curr in api.currency:
-                api._data[curr]["today"] = api._data[curr]["tomorrow"]
+                if not len(api._data[curr]["tomorrow"]):
+                    api._data[curr]["today"] = await api.update_today(None)
+                else:
+                    api._data[curr]["today"] = api._data[curr]["tomorrow"]
                 api._data[curr]["tomorrow"] = {}
 
             async_dispatcher_send(hass, EVENT_NEW_DATA)
@@ -137,7 +145,7 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
             """Callback to fetch new data for tomorrows prices at 1300ish CET
                and notify any sensors, about the new data
             """
-            await api.api.update_tomorrow(n)
+            await api.update_tomorrow(n)
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
         # Handles futures updates

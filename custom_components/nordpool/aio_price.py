@@ -2,7 +2,6 @@ import asyncio
 import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from operator import itemgetter
 
 from dateutil import tz
 from dateutil.parser import parse as parse_dt
@@ -33,7 +32,6 @@ tzs = {
     # What zone is this?
     "SYS": "Europe/Stockholm",
 }
-
 
 
 def join_result_for_correct_time(results, dt):
@@ -96,7 +94,7 @@ class AioPrices(Prices):
     async def _io(self, url, **kwargs):
 
         resp = await self.client.get(url, params=kwargs)
-        _LOGGER.debug("requested %s", resp.url)
+        _LOGGER.debug("requested %s %s", resp.url, kwargs)
 
         return await resp.json()
 
