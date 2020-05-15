@@ -5,11 +5,12 @@ from operator import itemgetter
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_REGION
+from homeassistant.const import CONF_REGION, EVENT_TIME_CHANGED
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import dt as dt_utils
 
-from . import DOMAIN
+from . import DOMAIN, EVENT_NEW_DATA
 from .misc import extract_attrs, has_junk, is_new, start_of
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("friendly_name", default=""): cv.string,
         # This is only needed if you want the some area but want the prices in a non local currency
         vol.Optional("currency", default=""): cv.string,
-        vol.Optional("VAT", default=True):cv.boolean,
+        vol.Optional("VAT", default=True): cv.boolean,
         vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
@@ -63,7 +64,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
+def _dry_setup(hass, config, add_devices, discovery_info=None):
     """Setup the damn platform using yaml."""
     _LOGGER.debug("Dumping config %r", config)
     _LOGGER.debug("timezone set in ha %r", hass.config.time_zone)
@@ -91,32 +92,16 @@ def setup_platform(hass, config, add_devices, discovery_info=None) -> None:
     add_devices([sensor])
 
 
+async def async_setup_platform(hass, config, add_devices, discovery_info=None) -> None:
+    _dry_setup(hass, config, add_devices)
+    return True
+
+
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
-    _LOGGER.debug("Dumping config %r", config)
-    _LOGGER.debug("timezone set in ha %r", hass.config.time_zone)
-    region = config.get(CONF_REGION)
-    friendly_name = config.get("friendly_name")
-    price_type = config.get("price_type")
-    precision = config.get("precision")
-    low_price_cutoff = config.get("low_price_cutoff")
-    currency = config.get("currency")
-    vat = config.get("VAT")
-    use_cents = config.get("price_in_cents")
-    api = hass.data[DOMAIN]
-    sensor = NordpoolSensor(
-        friendly_name,
-        region,
-        price_type,
-        precision,
-        low_price_cutoff,
-        currency,
-        vat,
-        use_cents,
-        api,
-    )
-    async_add_devices([sensor])
+    _dry_setup(hass, config, async_add_devices)
+    return True
 
 
 class NordpoolSensor(Entity):
@@ -156,7 +141,6 @@ class NordpoolSensor(Entity):
         # Holds the data for today and morrow.
         self._data_today = None
         self._data_tomorrow = None
-        self._tomorrow_valid = None
 
         # Values for the day
         self._average = None
@@ -167,12 +151,17 @@ class NordpoolSensor(Entity):
         self._peak = None
 
         # To control the updates.
-        self._last_update_hourly = None
         self._last_tick = None
+        self._cbs = []
 
     @property
     def name(self) -> str:
         return self.unique_id
+
+    @property
+    def should_poll(self):
+        """No need to poll. Coordinator notifies entity of updates."""
+        return False
 
     @property
     def friendly_name(self) -> str:
@@ -235,7 +224,7 @@ class NordpoolSensor(Entity):
             value = self._current_price
 
         if value is None or math.isinf(value):
-            _LOGGER.info("api returned junk infinty %s", value)
+            # _LOGGER.info("api returned junk infinty %s", value)
             return None
 
         # The api returns prices in MWh
@@ -255,7 +244,7 @@ class NordpoolSensor(Entity):
         _LOGGER.debug("Called _update setting attrs for the day")
 
         if has_junk(data):
-            _LOGGER.info("It was junk infinty in api response, fixed it.")
+            # _LOGGER.debug("It was junk infinty in api response, fixed it.")
             d = extract_attrs(data.get("values"))
             data.update(d)
 
@@ -269,7 +258,9 @@ class NordpoolSensor(Entity):
 
     @property
     def current_price(self) -> float:
-        return self._calc_price()
+        res = self._calc_price()
+        # _LOGGER.debug("Current hours price for %s is %s", self.name, res)
+        return res
 
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
@@ -277,21 +268,12 @@ class NordpoolSensor(Entity):
         if data is None:
             return []
 
-        # All the time in the api is returned in utc
-        # convert this to local time.
-        #tz = pendulum.now().timezone_name
-        # ffs
         local_times = []
         for item in data.get("values", []):
-            #i = {
-            #    "start": pendulum.instance(item["start"]).in_timezone(tz),
-            #    "end": pendulum.instance(item["end"]).in_timezone(tz),
-            #    "value": item["value"],
-            #}
             i = {
                 "start": dt_utils.as_local(item["start"]),
                 "end": dt_utils.as_local(item["end"]),
-                "value": item["value"]
+                "value": item["value"],
             }
 
             local_times.append(i)
@@ -339,71 +321,92 @@ class NordpoolSensor(Entity):
             "country": _REGIONS[self._area][1],
             "region": self._area,
             "low price": self.low_price,
-            "tomorrow_valid": self._tomorrow_valid, 
+            "tomorrow_valid": self.tomorrow_valid,
             "today": self.today,
             "tomorrow": self.tomorrow,
         }
 
-    def _update_current_price(self) -> None:
+    @property
+    def raw_today(self):
+        return self._data_today
+
+    @property
+    def raw_tomorrow(self):
+        return self._data_today
+
+    @property
+    def tomorrow_valid(self):
+        return self._api.tomorrow_valid()
+
+    async def _update_current_price(self) -> None:
         """ update the current price (price this hour)"""
         local_now = dt_utils.now()
 
-        if self._last_update_hourly is None or is_new(self._last_update_hourly, "hour"):
-            data = self._api.today(self._area, self._currency)
-            if data:
-                for item in self._someday(data):
-                    if item["start"] == start_of(local_now, "hour"):
-                        self._current_price = item["value"]
-                        self._last_update_hourly = local_now
-                        _LOGGER.debug("Updated _current_price %s", item["value"])
-            else:
-                _LOGGER.info("Cant update _update_current_price because it was no data")
+        data = await self._api.today(self._area, self._currency)
+        if data:
+            for item in self._someday(data):
+                if item["start"] == start_of(local_now, "hour"):
+                    # _LOGGER.info("start %s local_now %s", item["start"], start_of(local_now, "hour"))
+                    self._current_price = item["value"]
+                    _LOGGER.debug(
+                        "Updated %s _current_price %s", self.name, item["value"]
+                    )
         else:
-            _LOGGER.debug("Tried to update the hourly price but it wasnt a new hour.")
+            _LOGGER.debug("Cant update _update_current_price because it was no data")
 
-    def update(self) -> None:
-        """Ideally we should just pull from the api all the time but since
-           se shouldnt do any io inside any other methods we store the data
-           in self._data_today and self._data_tomorrow.
+    async def check_stuff(self) -> None:
+        """Cb to do some house keeping, called every hour to get the current hours price
         """
+        _LOGGER.debug("called check_stuff")
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
 
         if self._data_today is None:
             _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it.")
-            today = self._api.today(self._area, self._currency)
+            today = await self._api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
 
         if self._data_tomorrow is None:
             _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
-            tomorrow = self._api.tomorrow(self._area, self._currency)
+            tomorrow = await self._api.tomorrow(self._area, self._currency)
             if tomorrow:
                 self._data_tomorrow = tomorrow
 
+        # We can just check if this is the first hour.
+
         if is_new(self._last_tick, typ="day"):
-            
+        #if now.hour == 0:
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
                 self._update(self._data_today)
                 self._data_tomorrow = None
             else:
-                today = self._api.today(self._area, self._currency)
+                today = await self._api.today(self._area, self._currency)
                 if today:
                     self._data_today = today
                     self._update(today)
 
         # Updates the current for this hour.
-        self._update_current_price()
+        await self._update_current_price()
 
-        # Lets just pull data from the api
-        # it will only do io if need.
-        tomorrow = self._api.tomorrow(self._area, self._currency)
+        tomorrow = await self._api.tomorrow(self._area, self._currency)
         if tomorrow:
             self._data_tomorrow = tomorrow
 
         self._last_tick = dt_utils.now()
-        self._tomorrow_valid = self._api.tomorrow_valid()
+        self.async_write_ha_state()
 
+    async def async_added_to_hass(self):
+        """Connect to dispatcher listening for entity data notifications."""
+        await super().async_added_to_hass()
+        _LOGGER.debug("called async_added_to_hass %s", self.name)
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
+        await self.check_stuff()
+
+    # async def async_will_remove_from_hass(self):
+    #     """This needs some testing.."""
+    #     for cb in self._cbs:
+    #         self._api._hass.bus._async_remove_listener(EVENT_TIME_CHANGED, cb)
