@@ -178,3 +178,10 @@ class AioPrices(Prices):
     async def yearly(self, end_date=None, areas=[]):
         """ Helper to fetch yearly data, see Prices.fetch() """
         return await self.fetch(self.YEARLY, end_date, areas)
+
+    def _conv_to_float(self, s):
+        """ Convert numbers to float. Return infinity, if conversion fails. """
+        try:
+            return float(s.replace(',', '.').replace(" ", ""))
+        except ValueError:
+            return float('inf')
