@@ -262,9 +262,9 @@ class NordpoolSensor(Entity):
         # _LOGGER.debug("Current hours price for %s is %s", self.name, res)
         return res
 
-    def _someday(self, data) -> list:
+    def _someday(self, data, calc_price=False) -> list:
         """The data is already sorted in the xml,
-           but i dont trust that to continue forever. Thats why we sort it ourselfs."""
+        but i dont trust that to continue forever. Thats why we sort it ourselfs."""
         if data is None:
             return []
 
@@ -275,6 +275,8 @@ class NordpoolSensor(Entity):
                 "end": dt_utils.as_local(item["end"]),
                 "value": item["value"],
             }
+            if calc_price is True:
+                i["value"] = self._calc_price(item["value"])
 
             local_times.append(i)
 
@@ -324,15 +326,17 @@ class NordpoolSensor(Entity):
             "tomorrow_valid": self.tomorrow_valid,
             "today": self.today,
             "tomorrow": self.tomorrow,
+            "raw_today": self.raw_today,
+            "raw_tomorrow": self.raw_tomorrow,
         }
 
     @property
     def raw_today(self):
-        return self._data_today
+        return self._someday(self._data_today, calc_price=True)
 
     @property
     def raw_tomorrow(self):
-        return self._data_today
+        return self._someday(self._data_tomorrow, calc_price=True)
 
     @property
     def tomorrow_valid(self):
@@ -355,8 +359,7 @@ class NordpoolSensor(Entity):
             _LOGGER.debug("Cant update _update_current_price because it was no data")
 
     async def check_stuff(self) -> None:
-        """Cb to do some house keeping, called every hour to get the current hours price
-        """
+        """Cb to do some house keeping, called every hour to get the current hours price"""
         _LOGGER.debug("called check_stuff")
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
@@ -377,7 +380,7 @@ class NordpoolSensor(Entity):
         # We can just check if this is the first hour.
 
         if is_new(self._last_tick, typ="day"):
-        #if now.hour == 0:
+            # if now.hour == 0:
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
