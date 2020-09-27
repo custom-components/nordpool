@@ -324,15 +324,26 @@ class NordpoolSensor(Entity):
             "tomorrow_valid": self.tomorrow_valid,
             "today": self.today,
             "tomorrow": self.tomorrow,
+            "raw_today": self.raw_today,
+            "raw_tomorrow": self.raw_tomorrow
         }
+
+    def _add_raw(self, data):
+        result = []
+        for res in self._someday(data):
+            item = {"start": res["start"],
+                    "end": res["end"],
+                    "value": self._calc_price(res["value"])}
+            result.append(item)
+        return result
 
     @property
     def raw_today(self):
-        return self._data_today
+        return self._add_raw(self._data_today)
 
     @property
     def raw_tomorrow(self):
-        return self._data_today
+        return self._add_raw(self._data_tomorrow)
 
     @property
     def tomorrow_valid(self):
