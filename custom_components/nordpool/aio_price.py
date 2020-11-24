@@ -79,6 +79,8 @@ def join_result_for_correct_time(results, dt):
                 if start_of_day <= local and local <= end_of_day:
                     fin["areas"][key]["values"].append(val)
 
+    _LOGGER.debug("Combines result: %s", fin)
+
     return fin
 
 
