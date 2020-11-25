@@ -8,22 +8,8 @@ from dateutil import tz
 from nordpool import elspot
 
 _LOGGER = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
-to_helsinki = tz.gettz("Europe/Helsinki")
-utc = datetime.utcnow()
-
-# Convert time zone
-hel = utc.astimezone(to_helsinki)
-dt_today = hel.date()
-dt_yesterday = hel + timedelta(days=-1)
-print("Requsting data for %s - %s" % (dt_yesterday.date(), dt_today))
-
-spot = elspot.Prices("EUR")
-yesterday = spot.hourly(end_date=dt_yesterday)
-today = spot.hourly(end_date=dt_today)
-
-
-results = [yesterday, today]
 
 tzs = {
     "DK1": "Europe/Copenhagen",
@@ -44,6 +30,10 @@ tzs = {
     "SE4": "Europe/Stockholm",
     # What zone is this?
     "SYS": "Europe/Stockholm",
+    "FR": "Europe/Paris",
+    "BE": "Europe/Brussels",
+    "AT": "Europe/Vienna",
+    "DE-LU": "Europe/Berlin"
 }
 
 
@@ -95,7 +85,7 @@ def join_result_for_correct_time(results):
                 hour=0, minute=0, second=0, microsecond=0
             )
             end_of_day = utc.astimezone(zone).replace(
-                hour=23, minute=59, second=59, microsecond=9999
+                hour=23, minute=59, second=59, microsecond=999999
             )
 
             for val in values:
@@ -110,31 +100,56 @@ def join_result_for_correct_time(results):
     return fin
 
 
-def manual_check(data, region="FI"):
-    values = []
-    for key, value in data["areas"].items():
+
+
+if __name__ == "__main__":
+    import click
+
+    @click.command()
+    @click.option('--region', '-r', default="DK1")
+    @click.option('--currency', '-c', default="DKK")
+    @click.option('--vat', '-v', default=0)
+    def manual_check(region, currency, vat):
+
+
+        ts = tz.gettz(tzs[region])
+        utc = datetime.utcnow()
+
+        # Convert time zone
+        lt = utc.astimezone(ts)
+        dt_today = lt.date()
+        dt_yesterday = lt + timedelta(days=-1)
+
+        spot = elspot.Prices(currency)
+        yesterday = spot.hourly(end_date=dt_yesterday)
+        today = spot.hourly(end_date=dt_today)
+        tomorrow = spot.hourly(end_date=dt_today + timedelta(days=1))
+
+        results = [yesterday, today, tomorrow]
+
+        data = join_result_for_correct_time(results)
         values = []
-        if key == region or region is None:
-            for v in data["areas"][key]["values"]:
-                zone = tzs.get(key)
-                if zone is None:
-                    continue
-                zone = tz.gettz(zone)
+        for key, value in data["areas"].items():
+            values = []
+            if key == region or region is None:
+                for v in data["areas"][key]["values"]:
+                    zone = tzs.get(key)
+                    if zone is None:
+                        continue
+                    zone = tz.gettz(zone)
 
-                i = {
-                    "value": v["value"],
-                    "start": v["start"].astimezone(zone),
-                    "end": v["end"].astimezone(zone),
-                }
-                values.append(i)
+                    i = {
+                        "value": v["value"],
+                        "start": v["start"].astimezone(zone),
+                        "end": v["end"].astimezone(zone),
+                    }
+                    values.append(i)
 
-        if len(values):
-            print("Report for region %s" % key)
-        for vvv in sorted(values, key=itemgetter("start")):
-            print("from %s to %s price %s" % (vvv["start"], vvv["end"], vvv["value"]))
-        if len(values):
-            print("total hours %s" % len(values))
+            if len(values):
+                print("Report for region %s" % key)
+            for vvv in sorted(values, key=itemgetter("start")):
+                print("from %s to %s price %s" % (vvv["start"], vvv["end"], vvv["value"]))
+            if len(values):
+                print("total hours %s" % len(values))
 
-
-res = join_result_for_correct_time([yesterday, today])
-manual_check(res, region="FI")
+    manual_check()
