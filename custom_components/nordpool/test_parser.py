@@ -8,7 +8,7 @@ from dateutil import tz
 from nordpool import elspot
 
 _LOGGER = logging.getLogger(__name__)
-
+logging.basicConfig(level=logging.DEBUG)
 
 
 tzs = {
@@ -30,6 +30,10 @@ tzs = {
     "SE4": "Europe/Stockholm",
     # What zone is this?
     "SYS": "Europe/Stockholm",
+    "FR": "Europe/Paris",
+    "BE": "Europe/Brussels",
+    "AT": "Europe/Vienna",
+    "DE-LU": "Europe/Berlin"
 }
 
 
@@ -81,7 +85,7 @@ def join_result_for_correct_time(results):
                 hour=0, minute=0, second=0, microsecond=0
             )
             end_of_day = utc.astimezone(zone).replace(
-                hour=23, minute=59, second=59, microsecond=9999
+                hour=23, minute=59, second=59, microsecond=999999
             )
 
             for val in values:
@@ -102,7 +106,7 @@ if __name__ == "__main__":
     import click
 
     @click.command()
-    @click.option('--region', '-d', default="DK1")
+    @click.option('--region', '-r', default="DK1")
     @click.option('--currency', '-c', default="DKK")
     @click.option('--vat', '-v', default=0)
     def manual_check(region, currency, vat):

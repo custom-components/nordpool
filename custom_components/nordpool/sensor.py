@@ -36,6 +36,14 @@ _REGIONS = {
     "SE4": ["SEK", "Sweden", 0.25],
     # What zone is this?
     "SYS": ["EUR", "System zone", 0.25],
+
+    "FR": ["EUR", "France", 0.055],
+    "NL": ["EUR", "Netherlands", 0.21],
+    "BE": ["EUR", "Belgium", 0.21],
+    "AT": ["EUR", "Austria", 0.20],
+    # Tax is disabled for now, i need to split the areas
+    # to handle the tax.
+    "DE-LU": ["EUR", "Germany and Luxembourg", 0]
 }
 
 # Needed incase a user wants the prices in non local currency
@@ -224,7 +232,7 @@ class NordpoolSensor(Entity):
             value = self._current_price
 
         if value is None or math.isinf(value):
-            # _LOGGER.info("api returned junk infinty %s", value)
+            _LOGGER.debug("api returned junk infinty %s", value)
             return None
 
         # The api returns prices in MWh

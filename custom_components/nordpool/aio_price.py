@@ -31,6 +31,11 @@ tzs = {
     "SE4": "Europe/Stockholm",
     # What zone is this?
     "SYS": "Europe/Stockholm",
+    "FR": "Europe/Paris",
+    "NL": "Europe/Amsterdam",
+    "BE": "Europe/Brussels",
+    "AT": "Europe/Vienna",
+    "DE-LU": "Europe/Berlin",
 }
 
 
@@ -71,7 +76,7 @@ def join_result_for_correct_time(results, dt):
                 hour=0, minute=0, second=0, microsecond=0
             )
             end_of_day = utc.astimezone(zone).replace(
-                hour=23, minute=59, second=59, microsecond=9999
+                hour=23, minute=59, second=59, microsecond=999999
             )
 
             for val in values:
