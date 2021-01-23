@@ -11,7 +11,7 @@
                     "currency": "EUR",
                     "VAT": "Koos käibemaksuga",
                     "precision": "Mitu kohta peale koma",
-                    "low_price_cutoff": "Madala hinna väärtus",
+                    "low_price_cutoff": "Madala hinna tase",
                     "price_in_cents": "Hind sentides",
                     "price_type": "Hinna vorming"
                 }
