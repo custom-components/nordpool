@@ -71,9 +71,6 @@ class NordpoolData:
             data = await spot.hourly(end_date=dt)
             if data:
                 self._data[currency][type_] = data["areas"]
-            else:
-                _LOGGER.debug("Some crap happend, retrying request later.")
-                async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, n: datetime):
         _LOGGER.debug("Updating tomorrows prices.")

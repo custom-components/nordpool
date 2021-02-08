@@ -95,9 +95,6 @@ class AioPrices(Prices):
         self.client = client
         self.tz = tz
 
-        #if self.tz is None:
-        #    self.tz = tz.gettz("Europe/Stockholm")
-
     async def _io(self, url, **kwargs):
 
         resp = await self.client.get(url, params=kwargs)

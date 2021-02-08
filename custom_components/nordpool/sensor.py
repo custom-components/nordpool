@@ -36,14 +36,13 @@ _REGIONS = {
     "SE4": ["SEK", "Sweden", 0.25],
     # What zone is this?
     "SYS": ["EUR", "System zone", 0.25],
-
     "FR": ["EUR", "France", 0.055],
     "NL": ["EUR", "Netherlands", 0.21],
     "BE": ["EUR", "Belgium", 0.21],
     "AT": ["EUR", "Austria", 0.20],
     # Tax is disabled for now, i need to split the areas
     # to handle the tax.
-    "DE-LU": ["EUR", "Germany and Luxembourg", 0]
+    "DE-LU": ["EUR", "Germany and Luxembourg", 0],
 }
 
 # Needed incase a user wants the prices in non local currency
@@ -272,7 +271,7 @@ class NordpoolSensor(Entity):
 
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
-           but i dont trust that to continue forever. Thats why we sort it ourselfs."""
+        but i dont trust that to continue forever. Thats why we sort it ourselfs."""
         if data is None:
             return []
 
@@ -333,15 +332,17 @@ class NordpoolSensor(Entity):
             "today": self.today,
             "tomorrow": self.tomorrow,
             "raw_today": self.raw_today,
-            "raw_tomorrow": self.raw_tomorrow
+            "raw_tomorrow": self.raw_tomorrow,
         }
 
     def _add_raw(self, data):
         result = []
         for res in self._someday(data):
-            item = {"start": res["start"],
-                    "end": res["end"],
-                    "value": self._calc_price(res["value"])}
+            item = {
+                "start": res["start"],
+                "end": res["end"],
+                "value": self._calc_price(res["value"]),
+            }
             result.append(item)
         return result
 
@@ -365,7 +366,6 @@ class NordpoolSensor(Entity):
         if data:
             for item in self._someday(data):
                 if item["start"] == start_of(local_now, "hour"):
-                    # _LOGGER.info("start %s local_now %s", item["start"], start_of(local_now, "hour"))
                     self._current_price = item["value"]
                     _LOGGER.debug(
                         "Updated %s _current_price %s", self.name, item["value"]
@@ -374,8 +374,7 @@ class NordpoolSensor(Entity):
             _LOGGER.debug("Cant update _update_current_price because it was no data")
 
     async def check_stuff(self) -> None:
-        """Cb to do some house keeping, called every hour to get the current hours price
-        """
+        """Cb to do some house keeping, called every hour to get the current hours price"""
         _LOGGER.debug("called check_stuff")
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
@@ -393,10 +392,8 @@ class NordpoolSensor(Entity):
             if tomorrow:
                 self._data_tomorrow = tomorrow
 
-        # We can just check if this is the first hour.
-
         if is_new(self._last_tick, typ="day"):
-        #if now.hour == 0:
+            # if now.hour == 0:
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow

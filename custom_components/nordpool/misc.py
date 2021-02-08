@@ -109,14 +109,31 @@ def extract_attrs(data) -> dict:
     return data
 
 
-'''
-def as_tz(dattim, tz=None):
-    """Convert a UTC datetime object to local time zone."""
+def test_valid_nordpooldata(data, region=None):
+    for currency, v in data.items():
+        for type_of_day, real_data in v.items():
+            for key, values in real_data.items():
+                if region is not None and key in region:
+                    if any([i["value"] == float("inf") for i in values["values"]]):
+                        _LOGGER.debug("Found infinty invalid data in %s %s %s", currency, type_of_day, key)
+                        return False
 
-    if dattim.tzinfo is None:
-        dattim = UTC.localize(dattim)
-
-    return dattim.astimezone(timezone(tz))
+    return True
 
 
-'''
+def valid_data(data):
+    """Helper to validate the data
+
+           Note this only handle the values, min max etc are often bugged
+           and is fixed manully.
+    """
+    try:
+        for key, values in data.get("areas", {}).items():
+            if any([i["value"] == float("inf") for i in values["values"]]):
+                _LOGGER.debug("Found infinty in data for %s", key)
+                return False
+
+        return True
+    except Exection:
+        _LOGGER.exception("Something happend when trying to validate the data")
+        return False
