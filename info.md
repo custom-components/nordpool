@@ -41,7 +41,7 @@ sensor:
     precision: 3 
 
     # What the price should be displayed in default
-    # Possible values: mWh, kWh and W
+    # Possible values: MWh, kWh and W
     # default: kWh
     price_type: kWh
 

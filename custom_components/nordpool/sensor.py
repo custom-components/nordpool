@@ -236,7 +236,7 @@ class NordpoolSensor(Entity):
             return None
 
         # The api returns prices in MWh
-        if self._price_type == "MWh":
+        if self._price_type in ("MWh", "mWh"):
             price = value * float(1 + self._vat)
         else:
             price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
