@@ -115,7 +115,7 @@ class NordpoolData:
         return res
 
 
-async def async_setup(hass: HomeAssistant, config: Config) -> bool:
+async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up using yaml config file."""
 
     if DOMAIN not in hass.data:
@@ -143,7 +143,7 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
 
         async def new_data_cb(n):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
-               and notify any sensors, about the new data
+            and notify any sensors, about the new data
             """
             _LOGGER.debug("Called new_data_cb")
             await api.update_tomorrow(n)
@@ -172,19 +172,32 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     return True
 
 
+async def async_setup(hass: HomeAssistant, config: Config) -> bool:
+    """Set up using yaml config file."""
+    return await _dry_setup(hass, config)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
+    res = await _dry_setup(hass, entry.data)
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
-    return True
+    return res
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    # remove any listeners.
-    return True
+    unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "sensor")
+
+    if unload_ok:
+        for unsub in hass.data[DOMAIN].listeners:
+            unsub()
+        hass.data.pop(DOMAIN)
+
+        return True
+
+    return False
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
