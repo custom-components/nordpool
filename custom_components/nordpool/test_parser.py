@@ -1,11 +1,55 @@
 import logging
+import sys  # Make sure plexapi is in the systempath
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from operator import itemgetter
+from os.path import abspath, dirname
+from pprint import pprint
 
+import requests
 # https://repl.it/repls/WildImpishMass
 from dateutil import tz
+from dateutil.parser import parse as parse_dt
 from nordpool import elspot
+
+
+class PP(elspot.Prices):
+    def __init__(self, currency):
+        super().__init__(currency)
+        self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
+
+    def _fetch_json(self, data_type, end_date=None):
+        ''' Fetch JSON from API '''
+        # If end_date isn't set, default to tomorrow
+        if end_date is None:
+            end_date = date.today() + timedelta(days=1)
+        # If end_date isn't a date or datetime object, try to parse a string
+        if not isinstance(end_date, date) and not isinstance(end_date, datetime):
+            end_date = parse_dt(end_date)
+
+        if self.currency != "EUR":
+            data_type = 23
+
+        # Create request to API
+        r = requests.get(self.API_URL % data_type, params={
+            'currency': self.currency,
+            'endDate': end_date.strftime('%d-%m-%Y'),
+        })
+        # Return JSON response
+        return r.json()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -106,8 +150,8 @@ if __name__ == "__main__":
     import click
 
     @click.command()
-    @click.option('--region', '-r', default="DK1")
-    @click.option('--currency', '-c', default="DKK")
+    @click.option('--region', '-r', default="Kr.sand")
+    @click.option('--currency', '-c', default="NOK")
     @click.option('--vat', '-v', default=0)
     def manual_check(region, currency, vat):
 
@@ -120,10 +164,13 @@ if __name__ == "__main__":
         dt_today = lt.date()
         dt_yesterday = lt + timedelta(days=-1)
 
-        spot = elspot.Prices(currency)
+        spot = PP(currency)
         yesterday = spot.hourly(end_date=dt_yesterday)
         today = spot.hourly(end_date=dt_today)
         tomorrow = spot.hourly(end_date=dt_today + timedelta(days=1))
+        #print(today)
+        print(pprint(today.get("areas")))
+        return
 
         results = [yesterday, today, tomorrow]
 

@@ -41,9 +41,9 @@ tzs = {
 
 def join_result_for_correct_time(results, dt):
     """Parse a list of responses from the api
-       to extract the correct hours in there timezone.
+    to extract the correct hours in there timezone.
     """
-    #utc = datetime.utcnow()
+    # utc = datetime.utcnow()
     fin = defaultdict(dict)
     _LOGGER.debug("join_result_for_correct_time %s", dt)
     utc = dt
@@ -89,13 +89,28 @@ def join_result_for_correct_time(results, dt):
     return fin
 
 
+# Its possible to get EE, LT
+
+local_curr_map = {
+    "NO": 23,
+    "SE": 29,
+    "DK": 41,
+    # "EE": 47,
+    # "LT": 53,
+    # "LV": 59,
+    "FI": 35,
+    # "AT": 298578,
+}
+
+
 class AioPrices(Prices):
     def __init__(self, currency, client, tz=None):
         super().__init__(currency)
         self.client = client
         self.tz = tz
+        self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
 
-        #if self.tz is None:
+        # if self.tz is None:
         #    self.tz = tz.gettz("Europe/Stockholm")
 
     async def _io(self, url, **kwargs):
@@ -105,7 +120,7 @@ class AioPrices(Prices):
 
         return await resp.json()
 
-    async def _fetch_json(self, data_type, end_date=None):
+    async def _fetch_json(self, data_type, end_date=None, areas=None):
         """ Fetch JSON from API """
         # If end_date isn't set, default to tomorrow
         if end_date is None:
@@ -114,11 +129,24 @@ class AioPrices(Prices):
         if not isinstance(end_date, date) and not isinstance(end_date, datetime):
             end_date = parse_dt(end_date)
 
-        return await self._io(
-            self.API_URL % data_type,
-            currency=self.currency,
-            endDate=end_date.strftime("%d-%m-%Y"),
-        )
+        if self.currency != "EUR":
+
+            all_data = []
+
+            for pageidx in data_types:
+                data = await self._io(
+                    self.API_URL_CURRENCY % data_type,
+                    currency=self.currency,
+                    endDate=end_date.strftime("%d-%m-%Y"),
+                )
+                all_data.append(data)
+            return all_data
+        else:
+            return await self._io(
+                self.API_URL % data_type,
+                currency=self.currency,
+                endDate=end_date.strftime("%d-%m-%Y"),
+            )
 
     async def fetch(self, data_type, end_date=None, areas=[]):
         """
@@ -144,11 +172,11 @@ class AioPrices(Prices):
 
         # Check how to handle all time zone in this,
         # dunno how to do this yet.
-        #stock = datetime.utcnow().astimezone(tz.gettz("Europe/Stockholm"))
-        #stock_offset = stock.utcoffset().total_seconds()
+        # stock = datetime.utcnow().astimezone(tz.gettz("Europe/Stockholm"))
+        # stock_offset = stock.utcoffset().total_seconds()
         # compare utc offset
         if self.tz == tz.gettz("Europe/Stockholm"):
-            data = await self._fetch_json(data_type, end_date)
+            data = await self._fetch_json(data_type, end_date, areas)
             return self._parse_json(data, areas)
         else:
 
@@ -156,13 +184,46 @@ class AioPrices(Prices):
             today = datetime.now()
             tomorrow = datetime.now() + timedelta(days=1)
 
-            jobs = [
-                self._fetch_json(data_type, yesterday),
-                self._fetch_json(data_type, today),
-                self._fetch_json(data_type, tomorrow),
-            ]
+            days = [yesterday, today, tomorrow]
+            # Workaround for api changes.
+            if self.currency != "EUR":
+                jobs = []
+                all_data = []
+                idx_list = local_curr_map.values()
 
-            res = await asyncio.gather(*jobs)
+                stuff = []
+                for d in days:
+                    dat = {"areas": {}}
+                    for pageidx in idx_list:
+                        task = self._io(
+                            self.API_URL_CURRENCY % pageidx,
+                            currency=self.currency,
+                            endDate=d.strftime("%d-%m-%Y"),
+                        )
+                        data = await task
+
+                        try:
+                            jd = self._parse_json(data, areas)
+
+                            for key, value in jd.get("areas").items():
+                                dat["areas"][key] = value
+
+                        except Exception as e:
+                            raise
+
+                    stuff.append(dat)
+
+                return join_result_for_correct_time(stuff, end_date)
+
+                # jobs.append(task)
+            else:
+
+                jobs = [
+                    self._fetch_json(data_type, yesterday),
+                    self._fetch_json(data_type, today),
+                    self._fetch_json(data_type, tomorrow),
+                ]
+
             raw = [self._parse_json(i, areas) for i in res]
             return join_result_for_correct_time(raw, end_date)
 
@@ -189,6 +250,6 @@ class AioPrices(Prices):
     def _conv_to_float(self, s):
         """ Convert numbers to float. Return infinity, if conversion fails. """
         try:
-            return float(s.replace(',', '.').replace(" ", ""))
+            return float(s.replace(",", ".").replace(" ", ""))
         except ValueError:
-            return float('inf')
+            return float("inf")
