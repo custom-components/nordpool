@@ -39,6 +39,56 @@ tzs = {
 }
 
 
+# List of page index for hourly data
+# Some is disable as the don't contain the other currencies NOK etc
+# or there are som issues with data paring for some one the, DataStartdate
+# Lets comeback and fix that later, just need to adjust the self._parser.
+# DataEnddate: "2021-02-11T00:00:00"
+# DataStartdate: "0001-01-01T00:00:00"
+COUNTRY_BASE_PAGE = {
+    #"SYS": 17,
+    "NO": 23,
+    "SE": 29,
+    "DK": 41,
+    #"FI": 35,
+    #"EE": 47,
+    #"LT": 53,
+    #"LV": 59,
+    #"AT": 298578,
+    #"BE": 298736,
+    #"DE-LU": 299565,
+    #"FR": 299568,
+    #"NL": 299571,
+    #"PL": 391921,
+}
+
+AREA_TO_COUNTRY = {
+    "SYS": "SYS",
+    "SE1": "SE",
+    "SE2": "SE",
+    "SE3": "SE",
+    "SE4": "SE",
+    "FI": "FI",
+    "DK1": "DK",
+    "DK2": "DK",
+    "OSLO": "NO",
+    "KR.SAND": "NO",
+    "BERGEN": "NO",
+    "MOLDE": "NO",
+    "TR.HEIM": "NO",
+    "TROMSØ": "NO",
+    "EE": "EE",
+    "LV": "LV",
+    "LT": "LT",
+    "AT": "AT",
+    "BE": "BE",
+    "DE-LU": "DE-LU",
+    "FR": "FR",
+    "NL": "NL",
+    "PL ": "PL"
+}
+
+
 def join_result_for_correct_time(results, dt):
     """Parse a list of responses from the api
     to extract the correct hours in there timezone.
@@ -89,19 +139,6 @@ def join_result_for_correct_time(results, dt):
     return fin
 
 
-# Its possible to get EE, LT
-
-local_curr_map = {
-    "NO": 23,
-    "SE": 29,
-    "DK": 41,
-    # "EE": 47,
-    # "LT": 53,
-    # "LV": 59,
-    "FI": 35,
-    # "AT": 298578,
-}
-
 
 class AioPrices(Prices):
     def __init__(self, currency, client, tz=None):
@@ -129,24 +166,12 @@ class AioPrices(Prices):
         if not isinstance(end_date, date) and not isinstance(end_date, datetime):
             end_date = parse_dt(end_date)
 
-        if self.currency != "EUR":
 
-            all_data = []
-
-            for pageidx in data_types:
-                data = await self._io(
-                    self.API_URL_CURRENCY % data_type,
-                    currency=self.currency,
-                    endDate=end_date.strftime("%d-%m-%Y"),
-                )
-                all_data.append(data)
-            return all_data
-        else:
-            return await self._io(
+        return await self._io(
                 self.API_URL % data_type,
                 currency=self.currency,
                 endDate=end_date.strftime("%d-%m-%Y"),
-            )
+        )
 
     async def fetch(self, data_type, end_date=None, areas=[]):
         """
@@ -187,10 +212,11 @@ class AioPrices(Prices):
             days = [yesterday, today, tomorrow]
             # Workaround for api changes.
             if self.currency != "EUR":
-                jobs = []
-                all_data = []
-                idx_list = local_curr_map.values()
-
+                # Only need to check for today price
+                # as this is only available for dk, nor, se
+                # and all of them is in the corrent timezone.
+                days = [today, tomorrow]
+                idx_list = COUNTRY_BASE_PAGE.values()
                 stuff = []
                 for d in days:
                     dat = {"areas": {}}
@@ -209,13 +235,13 @@ class AioPrices(Prices):
                                 dat["areas"][key] = value
 
                         except Exception as e:
+                            _LOGGER.debug("Error with %s %s", d, pageidx)
                             raise
 
                     stuff.append(dat)
 
                 return join_result_for_correct_time(stuff, end_date)
 
-                # jobs.append(task)
             else:
 
                 jobs = [
@@ -223,6 +249,8 @@ class AioPrices(Prices):
                     self._fetch_json(data_type, today),
                     self._fetch_json(data_type, tomorrow),
                 ]
+
+                res = await asyncio.gather(*jobs)
 
             raw = [self._parse_json(i, areas) for i in res]
             return join_result_for_correct_time(raw, end_date)
