@@ -1,18 +1,23 @@
 """Adds config flow for nordpool."""
+import logging
+import re
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.helpers.template import is_template_string
 
 from . import DOMAIN
-from .sensor import _PRICE_IN, _REGIONS
+from .sensor import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE
 
 regions = sorted(list(_REGIONS.keys()))
 currencys = sorted(list(set(v[0] for k, v in _REGIONS.items())))
 price_types = sorted(list(_PRICE_IN.keys()))
+_LOGGER = logging.getLogger(__name__)
 
 
 class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Blueprint."""
+    """Config flow for Nordpool."""
 
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
@@ -28,6 +33,15 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._errors = {}
 
         if user_input is not None:
+            if user_input["additional_costs"] == "":
+                user_input["additional_costs"] = cv.template(DEFAULT_TEMPLATE)
+            else:
+                # Lets try to remove the most common mistakes, this will still fail if the template
+                # was writte in notepad or something like that..
+                user_input["additional_costs"] = re.sub(r"\s{2,}", '', user_input["additional_costs"])
+                if not is_template_string(user_input["additional_costs"]):
+                    raise
+
             return self.async_create_entry(title="Nordpool", data=user_input)
 
         data_schema = {
@@ -39,12 +53,14 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional("low_price_cutoff", default=1.0): vol.Coerce(float),
             vol.Optional("price_in_cents", default=False): bool,
             vol.Optional("price_type", default="kWh"): vol.In(price_types),
+            vol.Optional("additional_costs", default=""): str
         }
 
         placeholders = {
             "region": regions,
             "currency": currencys,
             "price_type": price_types,
+            "additional_costs": "{{0}}"
         }
 
         return self.async_show_form(

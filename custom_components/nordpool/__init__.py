@@ -32,17 +32,15 @@ NAME = DOMAIN
 VERSION = "0.0.2"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
-STARTUP = """
+STARTUP = f"""
 -------------------------------------------------------------------
-{name}
-Version: {version}
+{NAME}
+Version: {VERSION}
 This is a custom component
 If you have any issues with this you need to open an issue here:
-{issueurl}
+{ISSUEURL}
 -------------------------------------------------------------------
-""".format(
-    name=NAME, version=VERSION, issueurl=ISSUEURL
-)
+"""
 
 
 class NordpoolData:
