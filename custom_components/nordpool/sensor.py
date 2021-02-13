@@ -8,6 +8,7 @@ from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION, EVENT_TIME_CHANGED
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
 
 from . import DOMAIN, EVENT_NEW_DATA
@@ -55,6 +56,9 @@ DEFAULT_REGION = "Kr.sand"
 DEFAULT_NAME = "Elspot"
 
 
+DEFAULT_TEMPLATE = "{{0.0}}"
+
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
@@ -68,6 +72,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
+        vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template
     }
 )
 
@@ -84,6 +89,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     currency = config.get("currency")
     vat = config.get("VAT")
     use_cents = config.get("price_in_cents")
+    ad_template = config.get("additional_costs")
     api = hass.data[DOMAIN]
     sensor = NordpoolSensor(
         friendly_name,
@@ -95,6 +101,8 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
         vat,
         use_cents,
         api,
+        ad_template,
+        hass
     )
 
     add_devices([sensor])
@@ -124,6 +132,8 @@ class NordpoolSensor(Entity):
         vat,
         use_cents,
         api,
+        ad_template,
+        hass
     ) -> None:
         self._friendly_name = friendly_name or "%s %s %s" % (
             DEFAULT_NAME,
@@ -137,6 +147,8 @@ class NordpoolSensor(Entity):
         self._low_price_cutoff = low_price_cutoff
         self._use_cents = use_cents
         self._api = api
+        self._ad_template = ad_template
+        self._hass = hass
 
         if vat is True:
             self._vat = _REGIONS[area][2]
@@ -158,9 +170,17 @@ class NordpoolSensor(Entity):
         self._off_peak_2 = None
         self._peak = None
 
+        # Check incase the sensor was setup using config flow.
+        # This blow up if the template isnt valid.
+        if not isinstance(self._ad_template, Template):
+            self._ad_template = cv.template(self._ad_template)
+
+        attach(self._hass, self._ad_template)
+
         # To control the updates.
         self._last_tick = None
         self._cbs = []
+
 
     @property
     def name(self) -> str:
@@ -235,11 +255,13 @@ class NordpoolSensor(Entity):
             _LOGGER.debug("api returned junk infinty %s", value)
             return None
 
+        self._ad_template_value = self._ad_template.async_render()
+
         # The api returns prices in MWh
         if self._price_type in ("MWh", "mWh"):
-            price = value * float(1 + self._vat)
+            price = self._ad_template_value / 1000  + value * float(1 + self._vat)
         else:
-            price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+            price = self._ad_template_value + value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
 
         # Convert price to cents if specified by the user.
         if self._use_cents:
