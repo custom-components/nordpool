@@ -2,7 +2,6 @@
 import logging
 import re
 
-import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers.template import is_template_string
@@ -34,7 +33,7 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             if user_input["additional_costs"] == "":
-                user_input["additional_costs"] = cv.template(DEFAULT_TEMPLATE)
+                user_input["additional_costs"] = DEFAULT_TEMPLATE
             else:
                 # Lets try to remove the most common mistakes, this will still fail if the template
                 # was writte in notepad or something like that..
