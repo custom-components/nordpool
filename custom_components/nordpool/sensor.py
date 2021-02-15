@@ -266,7 +266,7 @@ class NordpoolSensor(Entity):
 
                 return contextfunction(inner)
 
-            template_value = self._ad_template.async_render(price_hour=faker())
+            template_value = self._ad_template.async_render(now=faker())
         else:
             template_value = self._ad_template.async_render()
 
