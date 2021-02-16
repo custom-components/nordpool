@@ -2,9 +2,12 @@
 {
   "domain": "nordpool",
   "name": "nordpool",
-  "documentation": "https://github.com/Hellowlol/nordpool",
+  "documentation": "https://github.com/custom-components/nordpool/",
+  "issue_tracker": "https://github.com/custom-components/nordpool/issues",
   "dependencies": [],
+  "after_dependencies": ["http"],
   "config_flow": true,
   "codeowners": ["@hellowlol"],
-  "requirements": ["nordpool>=0.2"]
+  "requirements": ["nordpool>=0.2"],
+  "version": "v0.0.2"
 }
