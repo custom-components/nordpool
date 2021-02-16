@@ -46,7 +46,41 @@ sensor:
     price_type: kWh
 
     friendly_name: "Power"
+
+    # This option allows the usage of a template to add a tariff.
+    # now() always refers start of the hour of that price.
+    # this way we can calculate the correct costs the future and add that to graphs etc.
+    # The price result of the tariff expects this additional cost to be in kWh and not cents
+    # default {{0.0}}
+    additional_costs: ""
       
 ```
+
+```
+# Tariff example
+'{% set s = {
+    "hourly_fixed_cost": 0.5352,
+    "winter_night": 0.265,
+    "winter_day": 0.465,
+    "summer_day": 0.284,
+    "summer_night": 0.246,
+    "cert": 0.01
+}
+%}
+{% if now().month >= 5 and now().month <11 %}
+    {% if now().hour >=6 and now().hour <23 %}
+        {{s.summer_day+s.hourly_fixed_cost+s.cert}}
+    {% else %}
+        {{s.night+s.hourly_fixed_cost+s.cert}}
+    {% endif %}
+{% else %}
+    {% if now().hour >=6 and now().hour <23 %}
+        {{s.winter_day+s.hourly_fixed_cost+s.cert}}
+    {%else%}
+        {{s.winter_night+s.hourly_fixed_cost+s.cert}}
+    {% endif %}
+{% endif %}'
+```
+
 
 run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help``` you can run the script anyhere python is installed. (install the required packages pyyaml and click using `pip install packagename`)
