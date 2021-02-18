@@ -1,0 +1,25 @@
+{
+    "config": {
+        "title": "Elektri börsihind",
+        "step": {
+            "user": {
+                "title": "Andur",
+                "description": "Seadista elektrihinna andur",
+                "data": {
+                    "region": "Piirkond",
+                    "friendly_name": "Kuvatav nimi",
+                    "currency": "EUR",
+                    "VAT": "Koos käibemaksuga",
+                    "precision": "Mitu kohta peale koma",
+                    "low_price_cutoff": "Madala hinna tase",
+                    "price_in_cents": "Hind sentides",
+                    "price_type": "Hinna vorming",
+                    "additional_costs": "Lisanduvate hindade mall"
+                     }
+            }
+        },
+        "error": {
+            "name_exists": "See nimi on juba kasutusel"
+        }
+    }
+}
