@@ -13,8 +13,9 @@
                     "precision": "Mitu kohta peale koma",
                     "low_price_cutoff": "Madala hinna tase",
                     "price_in_cents": "Hind sentides",
-                    "price_type": "Hinna vorming"
-                }
+                    "price_type": "Hinna vorming",
+                    "additional_costs": "Lisanduvate hindade mall"
+                     }
             }
         },
         "error": {
