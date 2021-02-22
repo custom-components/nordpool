@@ -1,5 +1,23 @@
 ## nordpool custom component for home assistant
 
+## Installation
+
+### Option 1: HACS
+
+Under HACS -> Integrations, select "+", search for `nordpool` and install it. 
+
+
+### Option 2: Manual
+
+From the [latest release](https://github.com/custom-components/nordpool/releases)
+
+```bash
+cd YOUR_HASS_CONFIG_DIRECTORY    # same place as configuration.yaml
+mkdir -p custom_components/nordpool
+cd custom_components/nordpool
+unzip nordpool.X.Y-Z.zip
+```
+
 ### Usage
 
 Set up the sensor using the webui or use a yaml.
@@ -49,8 +67,8 @@ sensor:
 
     # This option allows the usage of a template to add a tariff.
     # now() always refers start of the hour of that price.
-    # this way we can calculate the correct costs the future and add that to graphs etc.
-    # The price result of the tariff expects this additional cost to be in kWh and not cents
+    # this way we can calculate the correct costs add that to graphs etc.
+    # The price result of the tariff expects this additional cost to be in kWh and not cents.
     # default {{0.0}}
     additional_costs: ""
       
