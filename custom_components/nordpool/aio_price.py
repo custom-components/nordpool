@@ -204,53 +204,53 @@ class AioPrices(Prices):
             data = await self._fetch_json(data_type, end_date, areas)
             return self._parse_json(data, areas)
         else:
-
             yesterday = datetime.now() - timedelta(days=1)
             today = datetime.now()
             tomorrow = datetime.now() + timedelta(days=1)
 
             days = [yesterday, today, tomorrow]
             # Workaround for api changes.
-            if self.currency != "EUR":
-                # Only need to check for today price
-                # as this is only available for dk, nor, se
-                # and all of them is in the corrent timezone.
-                days = [today, tomorrow]
-                idx_list = COUNTRY_BASE_PAGE.values()
-                stuff = []
-                for d in days:
-                    dat = {"areas": {}}
-                    for pageidx in idx_list:
-                        task = self._io(
-                            self.API_URL_CURRENCY % pageidx,
-                            currency=self.currency,
-                            endDate=d.strftime("%d-%m-%Y"),
-                        )
-                        data = await task
+            # Disabled for now as nordpool have fixed the api endpoint that we used.
+            #if self.currency != "EUR":
+            #    # Only need to check for today price
+            #    # as this is only available for dk, nor, se
+            #    # and all of them is in the corrent timezone.
+            #    days = [today, tomorrow]
+            #    idx_list = COUNTRY_BASE_PAGE.values()
+            #    stuff = []
+            #    for d in days:
+            #        dat = {"areas": {}}
+            #        for pageidx in idx_list:
+            #            task = self._io(
+            #                self.API_URL_CURRENCY % pageidx,
+            #                currency=self.currency,
+            #                endDate=d.strftime("%d-%m-%Y"),
+            #            )
+            #            data = await task
+            #
+            #            try:
+            #                jd = self._parse_json(data, areas)
+            #
+            #               for key, value in jd.get("areas").items():
+            #                    dat["areas"][key] = value
+            #
+            #            except Exception as e:
+            #                _LOGGER.debug("Error with %s %s", d, pageidx)
+            #                raise
+            #
+            #        stuff.append(dat)
+            #
+            #    return join_result_for_correct_time(stuff, end_date)
 
-                        try:
-                            jd = self._parse_json(data, areas)
+            #else:
 
-                            for key, value in jd.get("areas").items():
-                                dat["areas"][key] = value
-
-                        except Exception as e:
-                            _LOGGER.debug("Error with %s %s", d, pageidx)
-                            raise
-
-                    stuff.append(dat)
-
-                return join_result_for_correct_time(stuff, end_date)
-
-            else:
-
-                jobs = [
+            jobs = [
                     self._fetch_json(data_type, yesterday),
                     self._fetch_json(data_type, today),
                     self._fetch_json(data_type, tomorrow),
-                ]
+            ]
 
-                res = await asyncio.gather(*jobs)
+            res = await asyncio.gather(*jobs)
 
             raw = [self._parse_json(i, areas) for i in res]
             return join_result_for_correct_time(raw, end_date)
