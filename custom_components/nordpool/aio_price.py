@@ -46,20 +46,20 @@ tzs = {
 # DataEnddate: "2021-02-11T00:00:00"
 # DataStartdate: "0001-01-01T00:00:00"
 COUNTRY_BASE_PAGE = {
-    #"SYS": 17,
+    # "SYS": 17,
     "NO": 23,
     "SE": 29,
     "DK": 41,
-    #"FI": 35,
-    #"EE": 47,
-    #"LT": 53,
-    #"LV": 59,
-    #"AT": 298578,
-    #"BE": 298736,
-    #"DE-LU": 299565,
-    #"FR": 299568,
-    #"NL": 299571,
-    #"PL": 391921,
+    # "FI": 35,
+    # "EE": 47,
+    # "LT": 53,
+    # "LV": 59,
+    # "AT": 298578,
+    # "BE": 298736,
+    # "DE-LU": 299565,
+    # "FR": 299568,
+    # "NL": 299571,
+    # "PL": 391921,
 }
 
 AREA_TO_COUNTRY = {
@@ -85,7 +85,7 @@ AREA_TO_COUNTRY = {
     "DE-LU": "DE-LU",
     "FR": "FR",
     "NL": "NL",
-    "PL ": "PL"
+    "PL ": "PL",
 }
 
 
@@ -139,16 +139,12 @@ def join_result_for_correct_time(results, dt):
     return fin
 
 
-
 class AioPrices(Prices):
     def __init__(self, currency, client, tz=None):
         super().__init__(currency)
         self.client = client
         self.tz = tz
         self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
-
-        # if self.tz is None:
-        #    self.tz = tz.gettz("Europe/Stockholm")
 
     async def _io(self, url, **kwargs):
 
@@ -166,11 +162,10 @@ class AioPrices(Prices):
         if not isinstance(end_date, date) and not isinstance(end_date, datetime):
             end_date = parse_dt(end_date)
 
-
         return await self._io(
-                self.API_URL % data_type,
-                currency=self.currency,
-                endDate=end_date.strftime("%d-%m-%Y"),
+            self.API_URL % data_type,
+            currency=self.currency,
+            endDate=end_date.strftime("%d-%m-%Y"),
         )
 
     async def fetch(self, data_type, end_date=None, areas=[]):
@@ -208,10 +203,10 @@ class AioPrices(Prices):
             today = datetime.now()
             tomorrow = datetime.now() + timedelta(days=1)
 
-            days = [yesterday, today, tomorrow]
+            # days = [yesterday, today, tomorrow]
             # Workaround for api changes.
             # Disabled for now as nordpool have fixed the api endpoint that we used.
-            #if self.currency != "EUR":
+            # if self.currency != "EUR":
             #    # Only need to check for today price
             #    # as this is only available for dk, nor, se
             #    # and all of them is in the corrent timezone.
@@ -242,12 +237,12 @@ class AioPrices(Prices):
             #
             #    return join_result_for_correct_time(stuff, end_date)
 
-            #else:
+            # else:
 
             jobs = [
-                    self._fetch_json(data_type, yesterday),
-                    self._fetch_json(data_type, today),
-                    self._fetch_json(data_type, tomorrow),
+                self._fetch_json(data_type, yesterday),
+                self._fetch_json(data_type, today),
+                self._fetch_json(data_type, tomorrow),
             ]
 
             res = await asyncio.gather(*jobs)

@@ -3,11 +3,10 @@
         "title": "Nordpool",
         "step": {
             "user": {
-                "title": "Sensor",
+                "title": "Nordpool Sensor",
                 "description": "Setup a Nordpool sensor",
                 "data": {
                     "region": "Region",
-                    "friendly_name": "friendly_name",
                     "currency": "NOK",
                     "VAT": "Include VAT",
                     "precision": "How many decimals to show",
@@ -19,7 +18,8 @@
             }
         },
         "error": {
-            "name_exists": "Name already exists"
+            "name_exists": "Name already exists",
+            "invalid_template": "The template is invalid, check https://github.com/custom-components/nordpool"
         }
     }
 }

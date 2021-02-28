@@ -4,7 +4,7 @@ import re
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.helpers.template import is_template_string
+from homeassistant.helpers.template import is_template_string, Template
 
 from . import DOMAIN
 from .sensor import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE
@@ -32,34 +32,38 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._errors = {}
 
         if user_input is not None:
-            if user_input["additional_costs"] == "":
+            template_ok = False
+            if user_input["additional_costs"] in (None, ""):
                 user_input["additional_costs"] = DEFAULT_TEMPLATE
             else:
                 # Lets try to remove the most common mistakes, this will still fail if the template
                 # was writte in notepad or something like that..
-                user_input["additional_costs"] = re.sub(r"\s{2,}", '', user_input["additional_costs"])
-                if not is_template_string(user_input["additional_costs"]):
-                    raise
+                user_input["additional_costs"] = re.sub(
+                    r"\s{2,}", "", user_input["additional_costs"]
+                )
 
-            return self.async_create_entry(title="Nordpool", data=user_input)
+            template_ok = await self._valid_template(user_input["additional_costs"])
+            if template_ok:
+                return self.async_create_entry(title="Nordpool", data=user_input)
+            else:
+                self._errors["base"] = "invalid_template"
 
         data_schema = {
             vol.Required("region", default=None): vol.In(regions),
-            vol.Optional("friendly_name", default=""): str,
             vol.Optional("currency", default=""): vol.In(currencys),
             vol.Optional("VAT", default=True): bool,
             vol.Optional("precision", default=3): vol.Coerce(int),
             vol.Optional("low_price_cutoff", default=1.0): vol.Coerce(float),
             vol.Optional("price_in_cents", default=False): bool,
             vol.Optional("price_type", default="kWh"): vol.In(price_types),
-            vol.Optional("additional_costs", default=""): str
+            vol.Optional("additional_costs", default=""): str,
         }
 
         placeholders = {
             "region": regions,
             "currency": currencys,
             "price_type": price_types,
-            "additional_costs": "{{0}}"
+            "additional_costs": "{{0.0|float}}",
         }
 
         return self.async_show_form(
@@ -68,6 +72,19 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders=placeholders,
             errors=self._errors,
         )
+
+    async def _valid_template(self, user_template):
+        try:
+            _LOGGER.debug(user_template)
+            ut = Template(user_template, self.hass).async_render()
+            if isinstance(ut, float):
+                return True
+            else:
+                return False
+        except Exception as e:
+            _LOGGER.error(e)
+            pass
+        return False
 
     async def async_step_import(self, user_input):  # pylint: disable=unused-argument
         """Import a config entry.

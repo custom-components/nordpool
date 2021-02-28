@@ -4,12 +4,21 @@ from operator import itemgetter
 from statistics import mean
 
 import pytz
+from homeassistant.helpers.template import Template, is_template_string
 from homeassistant.util import dt as dt_util
 from pytz import timezone
 
 UTC = pytz.utc
 
-__all__ = ["is_new", "has_junk", "extract_attrs", "start_of", "end_of", "stock", "add_junk"]
+__all__ = [
+    "is_new",
+    "has_junk",
+    "extract_attrs",
+    "start_of",
+    "end_of",
+    "stock",
+    "add_junk",
+]
 
 _LOGGER = logging.getLogger(__name__)
 

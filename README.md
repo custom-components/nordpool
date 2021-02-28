@@ -4,7 +4,7 @@
 
 ### Option 1: HACS
 
-Under HACS -> Integrations, select "+", search for `nordpool` and install it. 
+Under HACS -> Integrations, select "+", search for `nordpool` and install it.
 
 
 ### Option 2: Manual
@@ -56,22 +56,20 @@ sensor:
     region: "Kr.sand"
 
     # How many decimals to use in the display of the price
-    precision: 3 
+    precision: 3
 
     # What the price should be displayed in default
     # Possible values: MWh, kWh and Wh
     # default: kWh
     price_type: kWh
 
-    friendly_name: "Power"
-
     # This option allows the usage of a template to add a tariff.
     # now() always refers start of the hour of that price.
     # this way we can calculate the correct costs add that to graphs etc.
-    # The price result of the tariff expects this additional cost to be in kWh and not cents.
-    # default {{0.0}}
-    additional_costs: ""
-      
+    # The price result of the additional_costs template expects this additional cost to be in kWh and not cents as a float
+    # default {{0.0|float}}
+    additional_costs: "{{0.0|float}}"
+
 ```
 
 ```
@@ -87,15 +85,15 @@ sensor:
 %}
 {% if now().month >= 5 and now().month <11 %}
     {% if now().hour >=6 and now().hour <23 %}
-        {{s.summer_day+s.hourly_fixed_cost+s.cert}}
+        {{s.summer_day+s.hourly_fixed_cost+s.cert|float}}
     {% else %}
-        {{s.night+s.hourly_fixed_cost+s.cert}}
+        {{s.night+s.hourly_fixed_cost+s.cert|float}}
     {% endif %}
 {% else %}
     {% if now().hour >=6 and now().hour <23 %}
-        {{s.winter_day+s.hourly_fixed_cost+s.cert}}
+        {{s.winter_day+s.hourly_fixed_cost+s.cert|float}}
     {%else%}
-        {{s.winter_night+s.hourly_fixed_cost+s.cert}}
+        {{s.winter_night+s.hourly_fixed_cost+s.cert|float}}
     {% endif %}
 {% endif %}'
 ```
