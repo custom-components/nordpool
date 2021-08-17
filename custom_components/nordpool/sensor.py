@@ -199,7 +199,11 @@ class NordpoolSensor(Entity):
 
     @property
     def name(self) -> str:
-        return self.unique_id
+        if self._friendly_name:
+            name = self._friendly_name
+        else:
+            name = self.unique_id
+        return name
 
     @property
     def should_poll(self):
@@ -230,20 +234,19 @@ class NordpoolSensor(Entity):
     @property
     def unique_id(self):
         if self._friendly_name:
-            name = self._friendly_name.lower()
-            name = name.translate(_SPECIAL_CHAR_AMP)
+            unique_id = self._friendly_name.lower()
+            unique_id = unique_id.translate(_SPECIAL_CHAR_AMP)
         else:
-	        name = "nordpool_%s_%s_%s_%s_%s_%s" % (
+            unique_id = "nordpool_%s_%s_%s_%s_%s_%s" % (
 	            self._price_type,
 	            self._area,
 	            self._currency,
 	            self._precision,
 	            self._low_price_cutoff,
 	            self._vat,
-	        )
-	        name = name.lower().replace(".", "")
-
-        return name
+            )
+            unique_id = unique_id.translate(_SPECIAL_CHAR_AMP)
+        return unique_id
 
     @property
     def device_info(self):
