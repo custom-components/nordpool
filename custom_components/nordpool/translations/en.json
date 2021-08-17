@@ -7,6 +7,7 @@
                 "description": "Setup a Nordpool sensor",
                 "data": {
                     "region": "Region",
+                    "friendly_name": "friendly_name",
                     "currency": "NOK",
                     "VAT": "Include VAT",
                     "precision": "How many decimals to show",

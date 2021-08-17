@@ -50,6 +50,7 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = {
             vol.Required("region", default=None): vol.In(regions),
+            vol.Optional("friendly_name", default=""): str,
             vol.Optional("currency", default=""): vol.In(currencys),
             vol.Optional("VAT", default=True): bool,
             vol.Optional("precision", default=3): vol.Coerce(int),

@@ -52,6 +52,18 @@ _REGIONS = {
 # Needed incase a user wants the prices in non local currency
 _CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
 _CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
+_SPECIAL_CHAR_AMP = {
+    ord('ä'):'a',
+    ord('ö'):'o',
+    ord('å'):'a',
+    ord('ø'):'o',
+    ord('ü'):'u',
+    ord('ß'):'ss',
+    ord('€'):'e',
+    ord(' '):'_',
+    ord('.'):'',
+    ord(','):'',
+}
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
@@ -137,8 +149,7 @@ class NordpoolSensor(Entity):
         ad_template,
         hass,
     ) -> None:
-        # friendly_name is ignored as it never worked.
-        # rename the sensor in the ui if you dont like the name.
+        self._friendly_name = friendly_name
         self._area = area
         self._currency = currency or _REGIONS[area][0]
         self._price_type = price_type
@@ -196,6 +207,10 @@ class NordpoolSensor(Entity):
         return False
 
     @property
+    def friendly_name(self) -> str:
+        return self._friendly_name
+
+    @property
     def icon(self) -> str:
         return "mdi:flash"
 
@@ -214,15 +229,20 @@ class NordpoolSensor(Entity):
 
     @property
     def unique_id(self):
-        name = "nordpool_%s_%s_%s_%s_%s_%s" % (
-            self._price_type,
-            self._area,
-            self._currency,
-            self._precision,
-            self._low_price_cutoff,
-            self._vat,
-        )
-        name = name.lower().replace(".", "")
+        if self._friendly_name:
+            name = self._friendly_name.lower()
+            name = name.translate(_SPECIAL_CHAR_AMP)
+        else:
+	        name = "nordpool_%s_%s_%s_%s_%s_%s" % (
+	            self._price_type,
+	            self._area,
+	            self._currency,
+	            self._precision,
+	            self._low_price_cutoff,
+	            self._vat,
+	        )
+	        name = name.lower().replace(".", "")
+
         return name
 
     @property
