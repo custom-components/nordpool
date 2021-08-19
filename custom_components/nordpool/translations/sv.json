@@ -1,0 +1,25 @@
+{
+    "config": {
+        "title": "Nordpool",
+        "step": {
+            "user": {
+                "title": "Sensor",
+                "description": "Konfigurera en Nordpool sensor",
+                "data": {
+                    "region": "Region",
+                    "friendly_name": "Visnings namn",
+                    "currency": "SEK",
+                    "VAT": "Inkludera VAT",
+                    "precision": "Hur många decimaler ska visas",
+                    "low_price_cutoff": "Lägsta pris nivå",
+                    "price_in_cents": "Pris i ören",
+                    "price_type": "Pris i formatatet",
+                    "additional_costs": "Mall för ytterligare kostnader"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Namnet existerar redan"
+        }
+    }
+}
