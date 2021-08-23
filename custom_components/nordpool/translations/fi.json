@@ -1,0 +1,26 @@
+{
+    "config": {
+        "title": "Nordpool",
+        "step": {
+            "user": {
+                "title": "Nordpool sensori",
+                "description": "Nordpool sensorin asetukset",
+                "data": {
+                    "region": "Alue",
+                    "friendly_name": "Nimi käyttöliittymässä",
+                    "currency": "EUR",
+                    "VAT": "Sisällytä ALV",
+                    "precision": "Desimaalien lukumäärä",
+                    "low_price_cutoff": "Matalan hinnan raja-arvo",
+                    "price_in_cents": "Hinta senteissä",
+                    "price_type": "Hinnan yksikkö",
+                    "additional_costs": "Sivukulujen laskenta Template"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Nimi on jo käytössä",
+            "invalid_template": "Template on virheellinen, katso https://github.com/custom-components/nordpool"
+        }
+    }
+}
