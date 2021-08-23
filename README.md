@@ -67,6 +67,7 @@ sensor:
     # now() always refers start of the hour of that price.
     # this way we can calculate the correct costs add that to graphs etc.
     # The price result of the additional_costs template expects this additional cost to be in kWh and not cents as a float
+    # Note: if VAT is set to true, VAT will also be added to any additional_costs.
     # default {{0.0|float}}
     additional_costs: "{{0.0|float}}"
 
