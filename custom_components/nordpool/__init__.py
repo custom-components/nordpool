@@ -9,7 +9,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from homeassistant.helpers.event import async_call_later, async_track_time_change
+from homeassistant.helpers.event import (async_call_later,
+                                         async_track_time_change)
 from homeassistant.util import dt as dt_utils
 from pytz import timezone
 
@@ -68,7 +69,11 @@ class NordpoolData:
             data = await spot.hourly(end_date=dt)
             if data:
                 self._data[currency][type_] = data["areas"]
+                if type_ == "tomorrow":
+                    self._tomorrow_valid = True
             else:
+                if type_ == "tomorrow":
+                    self._tomorrow_valid = False
                 _LOGGER.debug("Some crap happend, retrying request later.")
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
@@ -79,7 +84,6 @@ class NordpoolData:
     async def update_tomorrow(self, n: datetime):
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
-        self._tomorrow_valid = True
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns todays or tomorrows prices in a area in the currency"""
@@ -180,8 +184,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
-
-    # entry.add_update_listener(async_reload_entry)
     return res
 
 
