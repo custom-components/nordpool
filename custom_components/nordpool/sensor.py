@@ -371,7 +371,7 @@ class NordpoolSensor(Entity):
         ]
 
     @property
-    def device_state_attributes(self) -> dict:
+    def extra_state_attributes(self) -> dict:
         return {
             "current_price": self.current_price,
             "average": self._average,
