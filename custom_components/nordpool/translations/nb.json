@@ -9,7 +9,7 @@
                     "region": "Region",
                     "friendly_name": "friendly_name",
                     "currency": "NOK",
-                    "VAT": Inkluder MVA",
+                    "VAT": "Inkluder MVA",
                     "precision": "Antall desimaler som vises",
                     "low_price_cutoff": "Grense for lav-pris",
                     "price_in_cents": "Pris i cent",
