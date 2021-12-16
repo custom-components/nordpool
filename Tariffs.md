@@ -21,13 +21,14 @@ Note: The "PSO" tax has been discontinued as of 2022-01-01.
   * October through March, during 17:00-20:00
 
 ```jinja
-  additional_costs: |-
-    # See https://github.com/custom-components/nordpool/blob/master/Tariffs.md
-    {% set config = {
-        "elafgift": 0.903,
-        "low_cost": 0.2363,
-        "high_cost": 0.6307
-    }
-    %}
-    {{ config.elafgift + (config.high_cost if (now().month <= 3 or 10 <= now().month) and (17 <= now().hour < 20) else config.low_cost) | float }}
+    additional_costs: >-
+      {% set config = {
+          "elafgift": 0.903,
+          "low_cost": 0.2363,
+          "high_cost": 0.6307
+      }
+      %}
+      {{ config.elafgift +
+           (config.high_cost if (now().month <= 3 or 10 <= now().month) and (17 <= now().hour < 20) else config.low_cost)
+         | float }}
 ```
