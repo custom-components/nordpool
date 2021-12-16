@@ -22,6 +22,7 @@ Note: The "PSO" tax has been discontinued as of 2022-01-01.
 
 ```jinja
   additional_costs: |-
+    # See https://github.com/custom-components/nordpool/blob/master/Tariffs.md
     {% set config = {
         "elafgift": 0.903,
         "low_cost": 0.2363,
