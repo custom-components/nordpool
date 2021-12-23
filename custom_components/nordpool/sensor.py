@@ -375,8 +375,8 @@ class NordpoolSensor(Entity):
         return {
             "current_price": self.current_price,
             "average": self._average,
-            "off peak 1": self._off_peak_1,
-            "off peak 2": self._off_peak_2,
+            "off_peak_1": self._off_peak_1,
+            "off_peak_2": self._off_peak_2,
             "peak": self._peak,
             "min": self._min,
             "max": self._max,
