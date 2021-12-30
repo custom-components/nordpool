@@ -11,7 +11,7 @@
                     "VAT": "Inkluder MVA",
                     "precision": "Antall desimaler som vises",
                     "low_price_cutoff": "Grense for lav-pris",
-                    "price_in_cents": "Pris i cent",
+                    "price_in_cents": "Pris i øre",
                     "price_type": "Pris i format",
                     "additional_costs": "Mal for tilleggskostnader"
                 }
