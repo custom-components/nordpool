@@ -9,7 +9,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from homeassistant.helpers.event import async_call_later, async_track_time_change
+from homeassistant.helpers.event import (async_call_later,
+                                         async_track_time_change)
 from homeassistant.util import dt as dt_utils
 from pytz import timezone
 
@@ -28,7 +29,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
@@ -69,7 +70,7 @@ class NordpoolData:
             if data:
                 self._data[currency][type_] = data["areas"]
             else:
-                _LOGGER.debug("Some crap happend, retrying request later.")
+                _LOGGER.info("Some crap happend, retrying request later.")
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, n: datetime):
