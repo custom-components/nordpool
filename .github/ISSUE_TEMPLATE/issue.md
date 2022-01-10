@@ -19,6 +19,9 @@ Issues not containing the minimum requirements will be closed:
 If you are unsure about the version check the const.py file.
 -->
 
+## Homeassistant version
+
+
 ## Configuration
 
 ```yaml
