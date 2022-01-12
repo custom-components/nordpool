@@ -1,17 +1,17 @@
 {
     "config": {
-        "title": "Nordpool",
+        "title": "Nord Pool",
         "step": {
             "user": {
                 "title": "Sensor",
-                "description": "Konfigurera en Nordpool sensor",
+                "description": "Konfigurera en Nord Pool-sensor",
                 "data": {
                     "region": "Region",
-                    "friendly_name": "Visnings namn",
+                    "friendly_name": "Visningsnamn",
                     "currency": "SEK",
-                    "VAT": "Inkludera VAT",
+                    "VAT": "Inkludera moms",
                     "precision": "Hur många decimaler ska visas",
-                    "low_price_cutoff": "Lägsta pris nivå",
+                    "low_price_cutoff": "Lägsta prisnivå",
                     "price_in_cents": "Pris i ören",
                     "price_type": "Pris i formatatet",
                     "additional_costs": "Mall för ytterligare kostnader"
