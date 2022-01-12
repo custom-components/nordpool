@@ -100,3 +100,16 @@ sensor:
 
 
 run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help``` you can run the script anyhere python is installed. (install the required packages pyyaml and click using `pip install packagename`)
+
+### Debug loggning
+Add this to your configuration.yaml to debug the component.
+
+```
+logger:
+  default: info
+  logs:
+    nordpool: debug
+    custom_components.nordpool: debug
+    custom_components.nordpool.sensor: debug
+    custom_components.nordpool.aio_price: debug
+```
