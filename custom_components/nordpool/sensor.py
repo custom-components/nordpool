@@ -269,13 +269,18 @@ class NordpoolSensor(Entity):
         else:
             template_value = self._ad_template.async_render()
 
-        # The api returns prices in MWh
-        if self._price_type in ("MWh", "mWh"):
-            price = template_value / 1000 + value * float(1 + self._vat)
-        else:
-            price = template_value + value / _PRICE_IN[self._price_type] * (
-                float(1 + self._vat)
-            )
+        try:
+
+            # The api returns prices in MWh
+            if self._price_type in ("MWh", "mWh"):
+                price = template_value / 1000 + value * float(1 + self._vat)
+            else:
+                price = template_value + value / _PRICE_IN[self._price_type] * (
+                    float(1 + self._vat)
+                )
+        except TypeError:
+            _LOGGER.debug("raw %s template_value %s type %s passed value %s", self._ad_template.template, template_value, type(template_value), value)
+            raise
 
         # Convert price to cents if specified by the user.
         if self._use_cents:
@@ -293,6 +298,7 @@ class NordpoolSensor(Entity):
         data.update(d)
 
         if self._ad_template.template == DEFAULT_TEMPLATE:
+            _LOGGER.debug("Using default template")
             self._average = self._calc_price(data.get("Average"))
             self._min = self._calc_price(data.get("Min"))
             self._max = self._calc_price(data.get("Max"))
