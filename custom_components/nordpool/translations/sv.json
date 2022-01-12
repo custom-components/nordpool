@@ -20,6 +20,7 @@
         },
         "error": {
             "name_exists": "Namnet existerar redan"
+	    "invalid_template": "Mallen är ogiltig, se https://github.com/custom-components/nordpool"
         }
     }
 }
