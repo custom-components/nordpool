@@ -74,7 +74,7 @@ sensor:
 
 ```
 # Tariff example
-'{% set s = {
+{% set s = {
     "hourly_fixed_cost": 0.5352,
     "winter_night": 0.265,
     "winter_day": 0.465,
@@ -83,19 +83,13 @@ sensor:
     "cert": 0.01
 }
 %}
-{% if now().month >= 5 and now().month <11 %}
-    {% if now().hour >=6 and now().hour <23 %}
-        {{s.summer_day+s.hourly_fixed_cost+s.cert|float}}
-    {% else %}
-        {{s.night+s.hourly_fixed_cost+s.cert|float}}
-    {% endif %}
-{% else %}
-    {% if now().hour >=6 and now().hour <23 %}
-        {{s.winter_day+s.hourly_fixed_cost+s.cert|float}}
-    {%else%}
-        {{s.winter_night+s.hourly_fixed_cost+s.cert|float}}
-    {% endif %}
-{% endif %}'
+{% set is_summer = now().month >= 5 and now().month <11 %}
+{% set is_day = now().hour >=6 and now().hour <23 %}
+{% set summer_cost = s.summer_day if is_day else s.summer_night %}
+{% set winter_cost = s.winter_day if is_day else s.winter_night %}
+{% set price = summer_cost if is_summer else winter_cost %}
+
+{{ price + s.cert + s.hourly_fixed_cost }}
 ```
 
 
