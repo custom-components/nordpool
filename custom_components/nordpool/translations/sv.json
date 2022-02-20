@@ -12,6 +12,7 @@
                     "VAT": "Inkludera moms",
                     "precision": "Hur många decimaler ska visas",
                     "low_price_cutoff": "Lägsta prisnivå",
+                    "high_price_cutoff": "Högsta prisnivå",
                     "price_in_cents": "Pris i ören",
                     "price_type": "Prisformat",
                     "additional_costs": "Mall för ytterligare kostnader"

@@ -12,6 +12,7 @@
                     "VAT": "Sisällytä ALV",
                     "precision": "Desimaalien lukumäärä",
                     "low_price_cutoff": "Matalan hinnan raja-arvo",
+                    "high_price_cutoff": "Korkea hinnan raja-arvo",
                     "price_in_cents": "Hinta senteissä",
                     "price_type": "Hinnan yksikkö",
                     "additional_costs": "Sivukulujen laskenta Template"

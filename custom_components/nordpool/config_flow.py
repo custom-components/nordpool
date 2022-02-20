@@ -54,6 +54,7 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional("VAT", default=True): bool,
             vol.Optional("precision", default=3): vol.Coerce(int),
             vol.Optional("low_price_cutoff", default=1.0): vol.Coerce(float),
+            vol.Optional("high_price_cutoff", default=1.0): vol.Coerce(float),
             vol.Optional("price_in_cents", default=False): bool,
             vol.Optional("price_type", default="kWh"): vol.In(price_types),
             vol.Optional("additional_costs", default=""): str,

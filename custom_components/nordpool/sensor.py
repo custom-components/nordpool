@@ -72,6 +72,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("VAT", default=True): cv.boolean,
         vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
+        vol.Optional("high_price_cutoff", default=1.0): vol.All(vol.Coerce(float), vol.Range(min=1)),
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
@@ -88,6 +89,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     price_type = config.get("price_type")
     precision = config.get("precision")
     low_price_cutoff = config.get("low_price_cutoff")
+    high_price_cutoff = config.get("high_price_cutoff")
     currency = config.get("currency")
     vat = config.get("VAT")
     use_cents = config.get("price_in_cents")
@@ -99,6 +101,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
         price_type,
         precision,
         low_price_cutoff,
+        high_price_cutoff,
         currency,
         vat,
         use_cents,
@@ -130,6 +133,7 @@ class NordpoolSensor(Entity):
         price_type,
         precision,
         low_price_cutoff,
+        high_price_cutoff,
         currency,
         vat,
         use_cents,
@@ -144,6 +148,7 @@ class NordpoolSensor(Entity):
         self._price_type = price_type
         self._precision = precision
         self._low_price_cutoff = low_price_cutoff
+        self._high_price_cutoff = high_price_cutoff
         self._use_cents = use_cents
         self._api = api
         self._ad_template = ad_template
@@ -214,12 +219,13 @@ class NordpoolSensor(Entity):
 
     @property
     def unique_id(self):
-        name = "nordpool_%s_%s_%s_%s_%s_%s" % (
+        name = "nordpool_%s_%s_%s_%s_%s_%s_%s" % (
             self._price_type,
             self._area,
             self._currency,
             self._precision,
             self._low_price_cutoff,
+            self._high_price_cutoff,
             self._vat,
         )
         name = name.lower().replace(".", "")
@@ -242,6 +248,15 @@ class NordpoolSensor(Entity):
         """Check if the price is lower then avg depending on settings"""
         return (
             self.current_price < self._average * self._low_price_cutoff
+            if self.current_price and self._average
+            else None
+        )
+
+    @property
+    def high_price(self) -> bool:
+        """Check if the price is higher than avg depending on settings"""
+        return (
+            self.current_price > self._average * self._high_price_cutoff
             if self.current_price and self._average
             else None
         )
@@ -384,7 +399,8 @@ class NordpoolSensor(Entity):
             "currency": self._currency,
             "country": _REGIONS[self._area][1],
             "region": self._area,
-            "low price": self.low_price,
+            "low_price": self.low_price,
+            "high_price": self.high_price,
             "tomorrow_valid": self.tomorrow_valid,
             "today": self.today,
             "tomorrow": self.tomorrow,

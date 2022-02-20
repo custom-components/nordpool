@@ -33,6 +33,10 @@ sensor:
     # low_price = hour_price < average * low_price_cutoff
     low_price_cutoff: 0.95
 
+    # Helper so you can set your "high" price
+    # high_price = hour_price > average * high_price_cutoff
+    high_price_cutoff: 1.05
+
     # What power regions your are interested in.
     # Possible values: "DK1", "DK2", "FI", "LT", "LV", "Oslo", "Kr.sand", "Bergen", "Molde", "Tr.heim", "Tromsø", "SE1", "SE2", "SE3","SE4", "SYS"
     region: "Kr.sand"

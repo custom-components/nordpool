@@ -12,6 +12,7 @@
                     "VAT": "Koos käibemaksuga",
                     "precision": "Mitu kohta peale koma",
                     "low_price_cutoff": "Madala hinna tase",
+                    "high_price_cutoff": "Kõrge hinna tase",
                     "price_in_cents": "Hind sentides",
                     "price_type": "Hinna vorming",
                     "additional_costs": "Lisanduvate hindade mall"
