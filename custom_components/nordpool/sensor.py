@@ -14,40 +14,14 @@ from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
 from jinja2 import contextfunction
 
-from . import DOMAIN, EVENT_NEW_DATA
-from .misc import extract_attrs, has_junk, is_new, start_of
+from . import DOMAIN, EVENT_NEW_DATA, _REGIONS
+from .misc import extract_attrs, has_junk, is_new, start_of, test_valid_nordpooldata
 
 _LOGGER = logging.getLogger(__name__)
 
 _CENT_MULTIPLIER = 100
 _PRICE_IN = {"kWh": 1000, "MWh": 0, "Wh": 1000 * 1000}
-_REGIONS = {
-    "DK1": ["DKK", "Denmark", 0.25],
-    "DK2": ["DKK", "Denmark", 0.25],
-    "FI": ["EUR", "Finland", 0.24],
-    "EE": ["EUR", "Estonia", 0.20],
-    "LT": ["EUR", "Lithuania", 0.21],
-    "LV": ["EUR", "Latvia", 0.21],
-    "Oslo": ["NOK", "Norway", 0.25],
-    "Kr.sand": ["NOK", "Norway", 0.25],
-    "Bergen": ["NOK", "Norway", 0.25],
-    "Molde": ["NOK", "Norway", 0.25],
-    "Tr.heim": ["NOK", "Norway", 0.25],
-    "Tromsø": ["NOK", "Norway", 0.25],
-    "SE1": ["SEK", "Sweden", 0.25],
-    "SE2": ["SEK", "Sweden", 0.25],
-    "SE3": ["SEK", "Sweden", 0.25],
-    "SE4": ["SEK", "Sweden", 0.25],
-    # What zone is this?
-    "SYS": ["EUR", "System zone", 0.25],
-    "FR": ["EUR", "France", 0.055],
-    "NL": ["EUR", "Netherlands", 0.21],
-    "BE": ["EUR", "Belgium", 0.21],
-    "AT": ["EUR", "Austria", 0.20],
-    # Tax is disabled for now, i need to split the areas
-    # to handle the tax.
-    "DE-LU": ["EUR", "Germany and Luxembourg", 0],
-}
+
 
 # Needed incase a user wants the prices in non local currency
 _CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
@@ -413,7 +387,7 @@ class NordpoolSensor(Entity):
 
     @property
     def tomorrow_valid(self):
-        return self._api.tomorrow_valid()
+        return len([i for i in self.tomorrow if i is not None]) >= 24
 
     async def _update_current_price(self) -> None:
         """ update the current price (price this hour)"""
@@ -478,10 +452,18 @@ class NordpoolSensor(Entity):
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
-        _LOGGER.debug("called async_added_to_hass %s", self.name)
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
 
-        await self.check_stuff()
+        # This is way to way to broad and should be removed later...
+        async def wrapper():
+            try:
+                await self.check_stuff()
+            except Exception:
+                _LOGGER.exception("Failed to run check_stuff")
+
+        _LOGGER.debug("called async_added_to_hass %s", self.name)
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, wrapper)
+
+        await wrapper()
 
     # async def async_will_remove_from_hass(self):
     #     """This needs some testing.."""

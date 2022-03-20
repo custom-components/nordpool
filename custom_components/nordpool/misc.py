@@ -18,6 +18,7 @@ __all__ = [
     "end_of",
     "stock",
     "add_junk",
+    "test_valid_nordpooldata",
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,6 +81,47 @@ def is_inf(d):
     return False
 
 
+def test_valid_nordpolldata2(data_, region=None):
+    # not in use atm
+    for key, value in data.get("areas", {}).items():
+        if region is None or key in region:
+            # if region is not None and area in region:
+            if any([i["value"] == float("inf") for i in value.get("values", {})]):
+                _LOGGER.debug("Found infinty invalid data in %s", key)
+
+                return False
+
+    return True
+
+
+def test_valid_nordpooldata(data_, region=None):
+    # from pprint import pformat
+
+    _LOGGER.debug("Checking for inf value in data for %s", region)
+
+    # _LOGGER.debug("DATA %s", pformat(data_))
+    if isinstance(data_, dict):
+        data_ = [data_]
+
+    for data in data_:
+        for currency, v in data.items():
+            for area, real_data in v.items():
+                # _LOGGER.debug("area %s", area)
+                if region is None or area in region:
+                    # if region is not None and area in region:
+                    if any(
+                        [
+                            i["value"] == float("inf")
+                            for i in real_data.get("values", {})
+                        ]
+                    ):
+                        _LOGGER.debug("Found infinty invalid data in area %s", area)
+
+                        return False
+
+    return True
+
+
 def has_junk(data) -> bool:
     """Check if data has some infinity values.
 
@@ -116,16 +158,3 @@ def extract_attrs(data) -> dict:
         return d
 
     return data
-
-
-'''
-def as_tz(dattim, tz=None):
-    """Convert a UTC datetime object to local time zone."""
-
-    if dattim.tzinfo is None:
-        dattim = UTC.localize(dattim)
-
-    return dattim.astimezone(timezone(tz))
-
-
-'''
