@@ -328,7 +328,7 @@ class NordpoolSensor(Entity):
         return [
             self._calc_price(i["value"], fake_dt=i["start"])
             for i in self._someday(self._data_today)
-            if i
+            if i is not None
         ]
 
     @property
@@ -338,10 +338,13 @@ class NordpoolSensor(Entity):
         Returns:
             list: sorted where tomorrow[0] is the price of hour 00.00 - 01.00 etc.
         """
+        if self._data_tomorrow is None:
+            return []
+
         return [
             self._calc_price(i["value"], fake_dt=i["start"])
             for i in self._someday(self._data_tomorrow)
-            if i
+            if i is not None
         ]
 
     @property
@@ -431,10 +434,12 @@ class NordpoolSensor(Entity):
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
-                self._update(self._data_today)
                 self._data_tomorrow = None
+                self._update(self._data_today)
+
             else:
                 today = await self._api.today(self._area, self._currency)
+                self._data_tomorrow = None
                 if today:
                     self._data_today = today
                     self._update(today)
@@ -461,9 +466,9 @@ class NordpoolSensor(Entity):
                 _LOGGER.exception("Failed to run check_stuff")
 
         _LOGGER.debug("called async_added_to_hass %s", self.name)
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, wrapper)
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
 
-        await wrapper()
+        await self.check_stuff()
 
     # async def async_will_remove_from_hass(self):
     #     """This needs some testing.."""

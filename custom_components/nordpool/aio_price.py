@@ -6,8 +6,6 @@ from datetime import date, datetime, timedelta
 from dateutil import tz
 from dateutil.parser import parse as parse_dt
 from nordpool.elspot import Prices
-import backoff
-import aiohttp
 
 from .misc import add_junk, test_valid_nordpooldata
 
@@ -148,7 +146,6 @@ class AioPrices(Prices):
         self.tz = tz
         self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
 
-    @backoff.on_exception(backoff.expo, aiohttp.ClientError, logger=_LOGGER)
     async def _io(self, url, **kwargs):
         resp = await self.client.get(url, params=kwargs)
         _LOGGER.debug("requested %s %s", resp.url, kwargs)

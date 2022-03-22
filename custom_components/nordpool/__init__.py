@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from functools import partial
 from random import randint
 
+import aiohttp
+import backoff
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
@@ -76,7 +78,6 @@ class NordpoolData:
         self._hass = hass
         self._last_tick = None
         self._data = defaultdict(dict)
-        self._tomorrow_valid = False
         self.currency = []
         self.listeners = []
 
@@ -85,49 +86,67 @@ class NordpoolData:
         hass = self._hass
         client = async_get_clientsession(hass)
 
+        ATTEMPTS = 0
+
         if dt is None:
             dt = dt_utils.now()
 
-        # We dont really need today and morrow
-        # when the region is in another timezone
-        # as we request data for 3 days anyway.
-        # Keeping this for now, but this should be changed.
-        attemps = []
-        for currency in self.currency:
+        @backoff.on_predicate(
+            backoff.constant, interval=60 * 10, logger=_LOGGER
+        )  # Set better defaults
+        @backoff.on_exception(backoff.expo, aiohttp.ClientError, logger=_LOGGER)
+        async def really_update(currency, end_date):
+            # Should be removed
+            """ "
+            nonlocal ATTEMPTS
+
+            if ATTEMPTS == 0:
+                ATTEMPTS += 1
+                raise aiohttp.ClientError
+            elif ATTEMPTS == 1:
+                ATTEMPTS += 1
+                return False
+            """
+
+            func_now = dt_utils.now()
             spot = AioPrices(currency, client)
-            data = await spot.hourly(end_date=dt)
+            data = await spot.hourly(end_date=end_date)
             # We only verify the the areas that has the correct currency, example AT is always inf for all other currency then EUR
             # Now this will fail for any users that has a non local currency for the region they selected.
             # Thats a problem for another day..
             regions_to_verify = [k for k, v in _REGIONS.items() if v[0] == currency]
             data_ok = test_valid_nordpooldata(data, region=regions_to_verify)
-            attemps.append(data_ok)
+
             if data_ok is False:
-                np_should_have_released_new_data = stock(dt).replace(
+                np_should_have_released_new_data = stock(func_now).replace(
                     hour=13, minute=RANDOM_MINUTE, second=RANDOM_SECOND
                 )
 
                 if type_ == "tomorrow":
-                    if stock(dt) >= np_should_have_released_new_data:
+                    if stock(func_now) >= np_should_have_released_new_data:
                         _LOGGER.info(
-                            "The time is %s, but nordpool havnt released any new data retrying in 5 minutes",
-                            dt,
-                        )
-                        p = partial(self._update, type_, dt)
-                        async_call_later(hass, 60 * 5, p)
-                    else:
-                        _LOGGER.debug("No new data is availble yet")
-
+                            "A new data should be available, it does not exist in isnt valid"
+                        )  # retry.
+                        return False
                 else:
-                    _LOGGER.debug("Retrying request for %s", type_)
-                    p = partial(self._update, type_, dt)
-                    async_call_later(hass, 60 * 5, p)
-                return False
+                    _LOGGER.info("No new data is available")
+                    # Need to handle the None
+                    return None
 
-            if data_ok:
+            else:
                 self._data[currency][type_] = data["areas"]
 
+            return True
+
+        attemps = []
+        for currency in self.currency:
+            update_attemp = await really_update(currency, dt)
+            attemps.append(update_attemp)
         _LOGGER.debug("ATTEMPTS %s", attemps)
+
+        if None in attemps:
+            return False
+
         return all(attemps)
 
     async def update_today(self, n: datetime, currency=None, area=None):
@@ -150,7 +169,7 @@ class NordpoolData:
             )
 
         # This is needed as the currency is
-        # set in the sensor.
+        # set in the sensor and we need to pull for the first time.
         if currency not in self.currency:
             self.currency.append(currency)
             await self.update_today(None)
