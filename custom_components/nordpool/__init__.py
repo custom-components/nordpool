@@ -92,8 +92,8 @@ class NordpoolData:
             dt = dt_utils.now()
 
         @backoff.on_predicate(
-            backoff.constant, interval=60 * 10, logger=_LOGGER
-        )  # Set better defaults
+            backoff.constant, interval=60, logger=_LOGGER
+        )  # Set better defaults, and add a give_up
         @backoff.on_exception(backoff.expo, aiohttp.ClientError, logger=_LOGGER)
         async def really_update(currency, end_date):
             # Should be removed
