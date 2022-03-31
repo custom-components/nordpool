@@ -12,7 +12,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
-from jinja2 import contextfunction
+from jinja2 import pass_context
 
 from . import DOMAIN, EVENT_NEW_DATA
 from .misc import extract_attrs, has_junk, is_new, start_of
@@ -263,7 +263,7 @@ class NordpoolSensor(Entity):
                 def inner(*args, **kwargs):
                     return fake_dt
 
-                return contextfunction(inner)
+                return pass_context(inner)
 
             template_value = self._ad_template.async_render(now=faker())
         else:
