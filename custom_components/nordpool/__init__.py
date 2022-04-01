@@ -17,7 +17,7 @@ from pytz import timezone
 
 from .aio_price import AioPrices
 from .events import async_track_time_change_in_tz
-from .misc import test_valid_nordpooldata, test_valid_nordpolldata2, stock
+from .misc import test_valid_nordpooldata, stock
 
 DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ class NordpoolData:
         @backoff.on_exception(backoff.expo, aiohttp.ClientError, logger=_LOGGER)
         async def really_update(currency, end_date):
             # Should be removed
-            """ "
+            """
             nonlocal ATTEMPTS
 
             if ATTEMPTS == 0:
@@ -125,29 +125,33 @@ class NordpoolData:
                 if type_ == "tomorrow":
                     if stock(func_now) >= np_should_have_released_new_data:
                         _LOGGER.info(
-                            "A new data should be available, it does not exist in isnt valid"
+                            "New data should be available, it does not exist or isnt valid"
                         )  # retry.
                         return False
+
+                    else:
+                        _LOGGER.info("No new data is available")
+                        # Need to handle the None
+                        # Give up, a new request will pulling the data 1300ish
+                        return None
                 else:
-                    _LOGGER.info("No new data is available")
-                    # Need to handle the None
-                    return None
+                    return False
 
             else:
                 self._data[currency][type_] = data["areas"]
 
             return True
 
-        attemps = []
+        attempts = []
         for currency in self.currency:
-            update_attemp = await really_update(currency, dt)
-            attemps.append(update_attemp)
-        _LOGGER.debug("ATTEMPTS %s", attemps)
+            update_attempt = await really_update(currency, dt)
+            attempts.append(update_attempt)
+        _LOGGER.debug("ATTEMPTS %s", attempts)
 
-        if None in attemps:
+        if None in attempts:
             return False
 
-        return all(attemps)
+        return all(attempts)
 
     async def update_today(self, n: datetime, currency=None, area=None):
         _LOGGER.debug("Updating todays prices.")

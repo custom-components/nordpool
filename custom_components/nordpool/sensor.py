@@ -3,6 +3,7 @@ import math
 from datetime import datetime
 from operator import itemgetter
 from statistics import mean
+from click import pass_context
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -12,7 +13,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
-from jinja2 import contextfunction
+from jinja2 import pass_context
 
 from . import DOMAIN, EVENT_NEW_DATA, _REGIONS
 from .misc import extract_attrs, has_junk, is_new, start_of, test_valid_nordpooldata
@@ -237,7 +238,7 @@ class NordpoolSensor(Entity):
                 def inner(*args, **kwargs):
                     return fake_dt
 
-                return contextfunction(inner)
+                return pass_context(inner)
 
             template_value = self._ad_template.async_render(now=faker())
         else:
@@ -393,7 +394,7 @@ class NordpoolSensor(Entity):
         return len([i for i in self.tomorrow if i is not None]) >= 24
 
     async def _update_current_price(self) -> None:
-        """ update the current price (price this hour)"""
+        """update the current price (price this hour)"""
         local_now = dt_utils.now()
 
         data = await self._api.today(self._area, self._currency)
