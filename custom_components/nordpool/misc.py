@@ -86,7 +86,7 @@ def test_valid_nordpooldata(data_, region=None):
 
     _LOGGER.debug("Checking for inf value in data for %s", region)
 
-    if data is None:
+    if data_ is None:
         return False
 
     # _LOGGER.debug("DATA %s", pformat(data_))
