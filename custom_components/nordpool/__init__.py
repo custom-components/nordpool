@@ -97,7 +97,7 @@ class NordpoolData:
         @backoff.on_exception(backoff.expo, aiohttp.ClientError, logger=_LOGGER)
         async def really_update(currency, end_date):
             # Should be removed
-
+            """
             nonlocal ATTEMPTS
 
             if ATTEMPTS == 0:
@@ -106,6 +106,7 @@ class NordpoolData:
             elif ATTEMPTS == 1:
                 ATTEMPTS += 1
                 return False
+            """
 
             func_now = dt_utils.now()
             spot = AioPrices(currency, client)
