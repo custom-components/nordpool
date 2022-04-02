@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from operator import itemgetter
+from operator import itemgetter, not_
 from statistics import mean
 
 import pytz
@@ -19,12 +19,24 @@ __all__ = [
     "stock",
     "add_junk",
     "test_valid_nordpooldata",
+    "predicate",
 ]
+
 
 _LOGGER = logging.getLogger(__name__)
 
 
+def predicate(value):
+    """Helper to stop the retry on None values."""
+    _LOGGER.debug("Predicate with %s", value)
+    if value is None:
+        _LOGGER.debug("No data is available yet.")
+        return False
+    return not_(value)
+
+
 def add_junk(d):
+    """Used to add inf values to a dict"""
     for key in ["Average", "Min", "Max", "Off-peak 1", "Off-peak 2", "Peak"]:
         d[key] = float("inf")
 
@@ -82,8 +94,7 @@ def is_inf(d):
 
 
 def test_valid_nordpooldata(data_, region=None):
-    # from pprint import pformat
-
+    """Checks that the data is OK."""
     _LOGGER.debug("Checking for inf value in data for %s", region)
 
     if data_ is None:
@@ -94,7 +105,7 @@ def test_valid_nordpooldata(data_, region=None):
         data_ = [data_]
 
     for data in data_:
-        for currency, v in data.items():
+        for _, v in data.items():
             for area, real_data in v.items():
                 # _LOGGER.debug("area %s", area)
                 if region is None or area in region:
@@ -129,6 +140,7 @@ def has_junk(data) -> bool:
 
 
 def extract_attrs(data) -> dict:
+    """Extrace the correct attrs from a dict"""
     d = defaultdict(list)
     items = [i.get("value") for i in data]
 

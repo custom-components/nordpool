@@ -17,7 +17,7 @@ from pytz import timezone
 
 from .aio_price import AioPrices
 from .events import async_track_time_change_in_tz
-from .misc import test_valid_nordpooldata, stock
+from .misc import test_valid_nordpooldata, stock, predicate
 
 DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
@@ -86,27 +86,13 @@ class NordpoolData:
         hass = self._hass
         client = async_get_clientsession(hass)
 
-        ATTEMPTS = 0
-
         if dt is None:
             dt = dt_utils.now()
 
-        @backoff.on_predicate(
-            backoff.constant, interval=60, logger=_LOGGER
-        )  # Set better defaults, and add a give_up
+        @backoff.on_predicate(backoff.expo, predicate=predicate, logger=_LOGGER)
         @backoff.on_exception(backoff.expo, aiohttp.ClientError, logger=_LOGGER)
         async def really_update(currency, end_date):
-            # Should be removed
-            """
-            nonlocal ATTEMPTS
-
-            if ATTEMPTS == 0:
-                ATTEMPTS += 1
-                raise aiohttp.ClientError
-            elif ATTEMPTS == 1:
-                ATTEMPTS += 1
-                return False
-            """
+            """Requests the data from nordpool and retries on http errors or missing/wrong data."""
 
             func_now = dt_utils.now()
             spot = AioPrices(currency, client)
@@ -146,7 +132,7 @@ class NordpoolData:
         for currency in self.currency:
             update_attempt = await really_update(currency, dt)
             attempts.append(update_attempt)
-        _LOGGER.debug("ATTEMPTS %s", attempts)
+        # _LOGGER.debug("ATTEMPTS %s", attempts)
 
         if None in attempts:
             return False

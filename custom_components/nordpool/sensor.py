@@ -3,7 +3,6 @@ import math
 from datetime import datetime
 from operator import itemgetter
 from statistics import mean
-from click import pass_context
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -16,7 +15,7 @@ from homeassistant.util import dt as dt_utils
 from jinja2 import pass_context
 
 from . import DOMAIN, EVENT_NEW_DATA, _REGIONS
-from .misc import extract_attrs, has_junk, is_new, start_of, test_valid_nordpooldata
+from .misc import extract_attrs, is_new, start_of
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,6 +85,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
 
 
 async def async_setup_platform(hass, config, add_devices, discovery_info=None) -> None:
+    """Setup for yaml."""
     _dry_setup(hass, config, add_devices)
     return True
 
@@ -98,6 +98,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
 
 class NordpoolSensor(Entity):
+    """Sensor for nordpool"""
+
     def __init__(
         self,
         friendly_name,
