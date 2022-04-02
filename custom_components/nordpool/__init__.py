@@ -132,10 +132,6 @@ class NordpoolData:
         for currency in self.currency:
             update_attempt = await really_update(currency, dt)
             attempts.append(update_attempt)
-        # _LOGGER.debug("ATTEMPTS %s", attempts)
-
-        if None in attempts:
-            return False
 
         return all(attempts)
 
