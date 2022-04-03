@@ -7,7 +7,7 @@ from dateutil import tz
 from dateutil.parser import parse as parse_dt
 from nordpool.elspot import Prices
 
-from .misc import add_junk, test_valid_nordpooldata
+from .misc import add_junk
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,6 +140,8 @@ def join_result_for_correct_time(results, dt):
 
 
 class AioPrices(Prices):
+    """Aioprices"""
+
     def __init__(self, currency, client, tz=None):
         super().__init__(currency)
         self.client = client
@@ -192,11 +194,6 @@ class AioPrices(Prices):
         if areas is None:
             areas = []
 
-        # Check how to handle all time zone in this,
-        # dunno how to do this yet.
-        # stock = datetime.utcnow().astimezone(tz.gettz("Europe/Stockholm"))
-        # stock_offset = stock.utcoffset().total_seconds()
-        # compare utc offset
         if self.tz == tz.gettz("Europe/Stockholm"):
             data = await self._fetch_json(data_type, end_date, areas)
             return self._parse_json(data, areas)

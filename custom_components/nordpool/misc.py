@@ -2,6 +2,8 @@ import logging
 from collections import defaultdict
 from operator import itemgetter, not_
 from statistics import mean
+from typing import Union
+from datetime import datetime
 
 import pytz
 from homeassistant.helpers.template import Template, is_template_string
@@ -26,16 +28,16 @@ __all__ = [
 _LOGGER = logging.getLogger(__name__)
 
 
-def predicate(value):
+def predicate(value: Union[bool, None]) -> bool:
     """Helper to stop the retry on None values."""
     _LOGGER.debug("Predicate with %s", value)
     if value is None:
-        _LOGGER.debug("No data is available yet.")
+        _LOGGER.debug("No data is available yet. Stopping retries")
         return False
     return not_(value)
 
 
-def add_junk(d):
+def add_junk(d: dict) -> dict:
     """Used to add inf values to a dict"""
     for key in ["Average", "Min", "Max", "Off-peak 1", "Off-peak 2", "Peak"]:
         d[key] = float("inf")
@@ -43,12 +45,13 @@ def add_junk(d):
     return d
 
 
-def stock(d):
-    """convert datetime to stocholm time."""
+def stock(d: datetime):
+    """convert datetime to stockholm time."""
     return d.astimezone(timezone("Europe/Stockholm"))
 
 
-def start_of(d, typ_="hour"):
+def start_of(d: datetime, typ_: str = "hour") -> datetime:
+    """Change a datetime object to start of day or hour"""
     if typ_ == "hour":
         return d.replace(minute=0, second=0, microsecond=0)
     elif typ_ == "day":
@@ -63,7 +66,8 @@ def time_in_range(start, end, x):
         return start <= x or x <= end
 
 
-def end_of(d, typ_="hour"):
+def end_of(d: datetime, typ_: str = "hour") -> datetime:
+    """Change a datetime object to end of hour or day"""
     if typ_ == "hour":
         return d.replace(minute=59, second=59, microsecond=999999)
     elif typ_ == "day":
@@ -87,7 +91,7 @@ def is_new(date=None, typ="day") -> bool:
         return False
 
 
-def is_inf(d):
+def is_inf(d) -> bool:
     if d == float("inf"):
         return True
     return False

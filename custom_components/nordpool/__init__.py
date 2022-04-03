@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import partial
 from random import randint
+from typing import Union
 
 import aiohttp
 import backoff
@@ -23,7 +24,7 @@ DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
 RANDOM_MINUTE = randint(0, 10)
 RANDOM_SECOND = randint(0, 59)
-EVENT_NEW_DATA = "nordpool_update"
+EVENT_NEW_DATA = "nordpool_update_new_data"
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 
 _REGIONS = {
@@ -74,6 +75,8 @@ If you have any issues with this you need to open an issue here:
 
 
 class NordpoolData:
+    """Handles the updates."""
+
     def __init__(self, hass: HomeAssistant):
         self._hass = hass
         self._last_tick = None
@@ -81,7 +84,7 @@ class NordpoolData:
         self.currency = []
         self.listeners = []
 
-    async def _update(self, *args, type_="today", dt=None):
+    async def _update(self, *args, type_="today", dt=None) -> bool:
         _LOGGER.debug("calling _update %s %s", type_, dt)
         hass = self._hass
         client = async_get_clientsession(hass)
@@ -91,9 +94,8 @@ class NordpoolData:
 
         @backoff.on_predicate(backoff.expo, predicate=predicate, logger=_LOGGER)
         @backoff.on_exception(backoff.expo, aiohttp.ClientError, logger=_LOGGER)
-        async def really_update(currency, end_date):
+        async def really_update(currency: str, end_date: datetime) -> Union[bool, None]:
             """Requests the data from nordpool and retries on http errors or missing/wrong data."""
-
             func_now = dt_utils.now()
             spot = AioPrices(currency, client)
             data = await spot.hourly(end_date=end_date)
@@ -111,8 +113,8 @@ class NordpoolData:
                 if type_ == "tomorrow":
                     if stock(func_now) >= np_should_have_released_new_data:
                         _LOGGER.info(
-                            "New data should be available, it does not exist or isnt valid"
-                        )  # retry.
+                            "New data should be available, it does not exist or isnt valid so we will retry the request later"
+                        )
                         return False
 
                     else:
@@ -135,18 +137,20 @@ class NordpoolData:
 
         return all(attempts)
 
-    async def update_today(self, n: datetime, currency=None, area=None):
+    async def update_today(self, n: datetime) -> bool:
+        """Gets the prices for today"""
         _LOGGER.debug("Updating todays prices.")
         return await self._update("today")
 
-    async def update_tomorrow(self, n: datetime, currency=None, area=None):
+    async def update_tomorrow(self, n: datetime) -> bool:
+        """Get the prices for tomorrow"""
         _LOGGER.debug("Updating tomorrows prices.")
         result = await self._update(
             type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24)
         )
         return result
 
-    async def _someday(self, area: str, currency: str, day: str):
+    async def _someday(self, area: str, currency: str, day: str) -> Union[dict, None]:
         """Returns todays or tomorrows prices in a area in the currency"""
         if currency not in _CURRENCY_LIST:
             raise ValueError(
@@ -163,12 +167,12 @@ class NordpoolData:
 
         return self._data.get(currency, {}).get(day, {}).get(area)
 
-    async def today(self, area: str, currency: str) -> dict:
+    async def today(self, area: str, currency: str) -> Union[dict, None]:
         """Returns todays prices in a area in the requested currency"""
         res = await self._someday(area, currency, "today")
         return res
 
-    async def tomorrow(self, area: str, currency: str):
+    async def tomorrow(self, area: str, currency: str) -> Union[dict, None]:
         """Returns tomorrows prices in a area in the requested currency"""
         res = await self._someday(area, currency, "tomorrow")
         return res
@@ -181,22 +185,39 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
 
-        async def new_day_cb(n):
+        async def new_day_cb(n) -> None:
             """Cb to handle some house keeping when it a new day."""
             _LOGGER.debug("Called new_day_cb callback")
 
             for curr in api.currency:
-                await api.update_today(None)
+                tom = api._data[curr]["tomorrow"]
+                regions_to_verify = [k for k, v in _REGIONS.items() if v[0] == curr]
+                _LOGGER.debug("Checking that data we already have for tomorrow is ok.")
+                data_ok = test_valid_nordpooldata(tom, region=regions_to_verify)
+                if data_ok:
+                    api._data[curr]["today"] = tom
+                else:
+                    await api.update_today(None)
+
                 api._data[curr]["tomorrow"] = {}
+                _LOGGER.debug(
+                    "Clear tomorrow for %s, %s", curr, api._data[curr]["tomorrow"]
+                )
 
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
-        async def new_hr(n):
+        async def new_hr(n: datetime) -> None:
             """Callback to tell the sensors to update on a new hour."""
             _LOGGER.debug("Called new_hr callback")
+
+            # We don't want to notify the sensor about this hour as this is
+            # handled by the new_day_cb anyway.
+            if n.hour == 0:
+                return
+
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
-        async def new_data_cb(n):
+        async def new_data_cb(n: datetime) -> None:
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data
             """

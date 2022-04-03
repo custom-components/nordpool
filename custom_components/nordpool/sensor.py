@@ -1,6 +1,5 @@
 import logging
 import math
-from datetime import datetime
 from operator import itemgetter
 from statistics import mean
 
@@ -264,8 +263,6 @@ class NordpoolSensor(Entity):
         """Set attrs."""
         _LOGGER.debug("Called _update setting attrs for the day")
 
-        # if has_junk(data):
-        #    # _LOGGER.debug("It was junk infinity in api response, fixed it.")
         d = extract_attrs(data.get("values"))
         data.update(d)
 
@@ -283,6 +280,7 @@ class NordpoolSensor(Entity):
                     i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
                 )
                 for i in data
+                if i.get("value")
             ]
             offpeak1 = formatted_prices[0:8]
             peak = formatted_prices[9:17]
@@ -297,8 +295,8 @@ class NordpoolSensor(Entity):
 
     @property
     def current_price(self) -> float:
+        """The calculated price for the current hour"""
         res = self._calc_price()
-        # _LOGGER.debug("Current hours price for %s is %s", self.name, res)
         return res
 
     def _someday(self, data) -> list:
@@ -385,15 +383,19 @@ class NordpoolSensor(Entity):
 
     @property
     def raw_today(self):
+        """Raw values for today"""
         return self._add_raw(self._data_today)
 
     @property
     def raw_tomorrow(self):
+        """Raw values for tomorrow"""
         return self._add_raw(self._data_tomorrow)
 
     @property
     def tomorrow_valid(self):
-        return len([i for i in self.tomorrow if i is not None]) >= 24
+        """Check if the data for tomorrow is valid"""
+        # todo this should be improved
+        return len([i for i in self.tomorrow if i is not None]) >= 20
 
     async def _update_current_price(self) -> None:
         """update the current price (price this hour)"""
@@ -403,7 +405,6 @@ class NordpoolSensor(Entity):
         if data:
             for item in self._someday(data):
                 if item["start"] == start_of(local_now, "hour"):
-                    # _LOGGER.info("start %s local_now %s", item["start"], start_of(local_now, "hour"))
                     self._current_price = item["value"]
                     _LOGGER.debug(
                         "Updated %s _current_price %s", self.name, item["value"]
@@ -430,12 +431,9 @@ class NordpoolSensor(Entity):
             if tomorrow:
                 self._data_tomorrow = tomorrow
 
-        # We can just check if this is the first hour.
-
         if is_new(self._last_tick, typ="day"):
-            # if now.hour == 0:
-            # No need to update if we got the info we need
             if self._data_tomorrow is not None:
+                _LOGGER.debug("Setting tomorrows data as today and clearing tomorrow.")
                 self._data_today = self._data_tomorrow
                 self._data_tomorrow = None
                 self._update(self._data_today)
@@ -457,16 +455,16 @@ class NordpoolSensor(Entity):
         self._last_tick = dt_utils.now()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
 
         # This is way to way to broad and should be removed later...
-        async def wrapper():
-            try:
-                await self.check_stuff()
-            except Exception:
-                _LOGGER.exception("Failed to run check_stuff")
+        # async def wrapper():
+        #    try:
+        #        await self.check_stuff()
+        #    except Exception:
+        #        _LOGGER.exception("Failed to run check_stuff")
 
         _LOGGER.debug("called async_added_to_hass %s", self.name)
         async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
