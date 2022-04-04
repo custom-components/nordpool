@@ -101,6 +101,8 @@ def test_valid_nordpooldata(data_, region=None):
     """Checks that the data is OK."""
     _LOGGER.debug("Checking for inf value in data for %s", region)
 
+    _LOGGER.debug(data_)
+
     if data_ is None:
         return False
 

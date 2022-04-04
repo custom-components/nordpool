@@ -3,19 +3,15 @@ from unittest.mock import patch
 
 import pytest
 
-"""
+from pytest_homeassistant_custom_component.test_util.aiohttp import mock_aiohttp_client
+from pytest_homeassistant_custom_component.common import load_fixture
 
-        data_schema = {
-            vol.Required("region", default=None): vol.In(regions),
-            vol.Optional("currency", default=""): vol.In(currencys),
-            vol.Optional("VAT", default=True): bool,
-            vol.Optional("precision", default=3): vol.Coerce(int),
-            vol.Optional("low_price_cutoff", default=1.0): vol.Coerce(float),
-            vol.Optional("price_in_cents", default=False): bool,
-            vol.Optional("price_type", default="kWh"): vol.In(price_types),
-            vol.Optional("additional_costs", default=""): str,
-        }
-"""
+
+@pytest.fixture
+def aioclient_mock():
+    """Fixture to mock aioclient calls."""
+    with mock_aiohttp_client() as mock_session:
+        yield mock_session
 
 
 MOCK_CONFIG = {
@@ -46,6 +42,3 @@ def skip_notifications_fixture():
         "homeassistant.components.persistent_notification.async_dismiss"
     ):
         yield
-
-
-# pytest_plugins = ("myapp.testsupport.myplugin",)
