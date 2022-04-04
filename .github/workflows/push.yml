@@ -1,11 +1,6 @@
-name: Push actions
+name: push
 
 on: [push]
-
-  #push:
-    #branches:
-    #  - master
-    #  - dev
 
 jobs:
   validate:
@@ -27,33 +22,33 @@ jobs:
     runs-on: "ubuntu-latest"
     name: Check style formatting
     steps:
-        - uses: "actions/checkout@v2"
-        - uses: "actions/setup-python@v1"
-          with:
-            python-version: "3.x"
-        - run: python3 -m pip install black
-        - run: black .
+      - uses: "actions/checkout@v2"
+      - uses: "actions/setup-python@v1"
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install black
+      - run: black .
 
-   tests:
-     runs-on: "ubuntu-latest"
-     strategy:
-      matrix:
-        python-version: ["3.9"]
-     name: Run tests
-     steps:
+  tests:
+    runs-on: "ubuntu-latest"
+    strategy:
+    matrix:
+      python-version: ["3.9"]
+    name: Run tests
+    steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-       - name: Install requirements
-         run: |
+      - name: Install requirements
+        run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest
           if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
 
-       - name: Run tests
-         run: |
+      - name: Run tests
+        run: |
            pytest \
              -vv \
              --timeout=9 \
@@ -62,4 +57,4 @@ jobs:
              --cov custom_components.nordpool \
              -o console_output_style=count \
              -p no:sugar \
-             tests
+             tests\

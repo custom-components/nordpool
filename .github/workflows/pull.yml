@@ -2,11 +2,6 @@ name: Pull request
 
 on: [pull_request]
 
-  #push:
-    #branches:
-    #  - master
-    #  - dev
-
 jobs:
   validate:
     runs-on: "ubuntu-latest"
@@ -34,26 +29,26 @@ jobs:
         - run: python3 -m pip install black
         - run: black .
 
-   tests:
-     runs-on: "ubuntu-latest"
-     strategy:
-      matrix:
-        python-version: ["3.9"]
-     name: Run tests
-     steps:
+  tests:
+    runs-on: "ubuntu-latest"
+    strategy:
+    matrix:
+      python-version: ["3.9"]
+    name: Run tests
+    steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-       - name: Install requirements
-         run: |
+      - name: Install requirements
+        run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest
           if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
 
-       - name: Run tests
-         run: |
+      - name: Run tests
+        run: |
            pytest \
              -vv \
              --timeout=9 \
