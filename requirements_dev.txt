@@ -1,0 +1,2 @@
+homeassistant==2022.4.0b3
+pytest-homeassistant-custom-component==0.8.3

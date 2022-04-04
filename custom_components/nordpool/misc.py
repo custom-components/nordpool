@@ -113,7 +113,7 @@ def test_valid_nordpooldata(data_, region=None):
             for area, real_data in v.items():
                 # _LOGGER.debug("area %s", area)
                 if region is None or area in region:
-                    # if region is not None and area in region:
+
                     if any(
                         [
                             i["value"] == float("inf")
