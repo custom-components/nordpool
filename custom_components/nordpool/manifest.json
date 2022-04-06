@@ -1,14 +1,19 @@
-
 {
   "domain": "nordpool",
   "name": "nordpool",
   "documentation": "https://github.com/custom-components/nordpool/",
   "issue_tracker": "https://github.com/custom-components/nordpool/issues",
   "dependencies": [],
-  "after_dependencies": ["http"],
+  "after_dependencies": [
+    "http"
+  ],
   "config_flow": true,
-  "codeowners": ["@hellowlol"],
+  "codeowners": [
+    "@hellowlol"
+  ],
   "iot_class": "cloud_polling",
-  "requirements": ["nordpool>=0.2"],
-  "version": "0.0.4"
+  "requirements": [
+    "nordpool>=0.2"
+  ],
+  "version": "0.0.5"
 }
