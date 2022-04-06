@@ -6,7 +6,7 @@ from statistics import mean
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_REGION, EVENT_TIME_CHANGED
+from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.template import Template, attach
@@ -228,7 +228,7 @@ class NordpoolSensor(Entity):
             value = self._current_price
 
         if value is None or math.isinf(value):
-            _LOGGER.debug("api returned junk infinty %s", value)
+            # _LOGGER.debug("api returned junk infinty %s", value)
             return None
 
         # Used to inject the current hour.
@@ -458,18 +458,11 @@ class NordpoolSensor(Entity):
     async def async_added_to_hass(self) -> None:
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
-
-        # This is way to way to broad and should be removed later...
-        # async def wrapper():
-        #    try:
-        #        await self.check_stuff()
-        #    except Exception:
-        #        _LOGGER.exception("Failed to run check_stuff")
-
-        _LOGGER.debug("called async_added_to_hass %s", self.name)
         async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
 
-        await self.check_stuff()
+        # We want to run the first request in the background so the integration get added to ha
+        # and don't timeout because of HTTP retries because of missing data/api issues.
+        self._hass.async_create_task(self.check_stuff())
 
     # async def async_will_remove_from_hass(self):
     #     """This needs some testing.."""

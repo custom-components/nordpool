@@ -130,9 +130,16 @@ def join_result_for_correct_time(results, dt):
             )
 
             for val in values:
-                local = val["start"].astimezone(zone)
-                if start_of_day <= local and local <= end_of_day:
-                    fin["areas"][key]["values"].append(val)
+                local_start = val["start"].astimezone(zone)
+                local_end = val["end"].astimezone(zone)
+                if start_of_day <= local_start and local_start <= end_of_day:
+                    # Dropping values that has the same start and ends as this sometimes happen during dst change
+                    if local_start == local_end:
+                        _LOGGER.info(
+                            "Found the same start and end dropping it. %s", val
+                        )
+                    else:
+                        fin["areas"][key]["values"].append(val)
 
     _LOGGER.debug("Combines result: %s", fin)
 

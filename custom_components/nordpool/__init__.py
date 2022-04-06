@@ -57,12 +57,9 @@ _REGIONS = {
 
 
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
-
-
 NAME = DOMAIN
 VERSION = "0.0.4"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
-
 STARTUP = f"""
 -------------------------------------------------------------------
 {NAME}
@@ -260,7 +257,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
 
-    entry.add_update_listener(async_reload_entry)
+    # entry.add_update_listener(async_reload_entry)
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return res
 
 

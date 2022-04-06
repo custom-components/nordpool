@@ -6,7 +6,6 @@ from typing import Union
 from datetime import datetime
 
 import pytz
-from homeassistant.helpers.template import Template, is_template_string
 from homeassistant.util import dt as dt_util
 from pytz import timezone
 
@@ -30,19 +29,19 @@ _LOGGER = logging.getLogger(__name__)
 
 def predicate(value: Union[bool, None]) -> bool:
     """Helper to stop the retry on None values."""
-    _LOGGER.debug("Predicate with %s", value)
+    _LOGGER.debug("Should retry %s", bool(value))
     if value is None:
         _LOGGER.debug("No data is available yet. Stopping retries")
         return False
     return not_(value)
 
 
-def add_junk(d: dict) -> dict:
+def add_junk(data: dict) -> dict:
     """Used to add inf values to a dict"""
     for key in ["Average", "Min", "Max", "Off-peak 1", "Off-peak 2", "Peak"]:
-        d[key] = float("inf")
+        data[key] = float("inf")
 
-    return d
+    return data
 
 
 def stock(d: datetime):
@@ -91,17 +90,15 @@ def is_new(date=None, typ="day") -> bool:
         return False
 
 
-def is_inf(d) -> bool:
-    if d == float("inf"):
+def is_inf(value) -> bool:
+    if value == float("inf"):
         return True
     return False
 
 
 def test_valid_nordpooldata(data_, region=None):
     """Checks that the data is OK."""
-    _LOGGER.debug("Checking for inf value in data for %s", region)
-
-    _LOGGER.debug(data_)
+    # _LOGGER.debug("Checking for inf value in data for %s", region)
 
     if data_ is None:
         return False
@@ -115,15 +112,10 @@ def test_valid_nordpooldata(data_, region=None):
             for area, real_data in v.items():
                 # _LOGGER.debug("area %s", area)
                 if region is None or area in region:
-
                     if any(
-                        [
-                            i["value"] == float("inf")
-                            for i in real_data.get("values", {})
-                        ]
+                        i["value"] == float("inf") for i in real_data.get("values", {})
                     ):
                         _LOGGER.debug("Found infinty invalid data in area %s", area)
-
                         return False
 
     return True
