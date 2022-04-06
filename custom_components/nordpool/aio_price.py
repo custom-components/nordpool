@@ -205,9 +205,13 @@ class AioPrices(Prices):
             data = await self._fetch_json(data_type, end_date, areas)
             return self._parse_json(data, areas)
         else:
-            yesterday = datetime.now() - timedelta(days=1)
-            today = datetime.now()
-            tomorrow = datetime.now() + timedelta(days=1)
+            # Just so its easier to patch.
+            if end_date is None:
+                end_date = datetime().now()
+
+            yesterday = end_date - timedelta(days=1)
+            today = end_date
+            tomorrow = end_date + timedelta(days=1)
 
             # days = [yesterday, today, tomorrow]
             # Workaround for api changes.

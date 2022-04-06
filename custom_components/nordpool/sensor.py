@@ -66,6 +66,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     use_cents = config.get("price_in_cents")
     ad_template = config.get("additional_costs")
     api = hass.data[DOMAIN]
+    api.add_area(region)
     sensor = NordpoolSensor(
         friendly_name,
         region,

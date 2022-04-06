@@ -74,12 +74,19 @@ If you have any issues with this you need to open an issue here:
 class NordpoolData:
     """Handles the updates."""
 
+    _areas = []
+
     def __init__(self, hass: HomeAssistant):
         self._hass = hass
         self._last_tick = None
         self._data = defaultdict(dict)
         self.currency = []
         self.listeners = []
+
+    @classmethod
+    def add_area(cls, value):
+        if value not in cls._areas:
+            cls._areas.append(value)
 
     async def _update(self, *args, type_="today", dt=None) -> bool:
         _LOGGER.debug("calling _update %s %s", type_, dt)
@@ -99,7 +106,10 @@ class NordpoolData:
             # We only verify the the areas that has the correct currency, example AT is always inf for all other currency then EUR
             # Now this will fail for any users that has a non local currency for the region they selected.
             # Thats a problem for another day..
-            regions_to_verify = [k for k, v in _REGIONS.items() if v[0] == currency]
+            # If the user has multiple sensors in the same currency all of there data must be ok.
+            regions_to_verify = self._areas or [
+                k for k, v in _REGIONS.items() if v[0] == currency
+            ]
             data_ok = test_valid_nordpooldata(data, region=regions_to_verify)
 
             if data_ok is False:
