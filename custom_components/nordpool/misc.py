@@ -29,7 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def predicate(value: Union[bool, None]) -> bool:
     """Helper to stop the retry on None values."""
-    _LOGGER.debug("Should retry %s", bool(value))
+    # _LOGGER.debug("Should retry %s", bool(value))
     if value is None:
         _LOGGER.debug("No data is available yet. Stopping retries")
         return False

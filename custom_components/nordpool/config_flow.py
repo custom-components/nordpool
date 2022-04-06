@@ -75,7 +75,7 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _valid_template(self, user_template):
         try:
-            _LOGGER.debug(user_template)
+            _LOGGER.debug("User template, %s", user_template)
             ut = Template(user_template, self.hass).async_render()
             if isinstance(ut, float):
                 return True

@@ -7,6 +7,7 @@ from os.path import abspath, dirname
 from pprint import pprint
 
 import requests
+
 # https://repl.it/repls/WildImpishMass
 from dateutil import tz
 from dateutil.parser import parse as parse_dt
@@ -19,7 +20,7 @@ class PP(elspot.Prices):
         self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
 
     def _fetch_json(self, data_type, end_date=None):
-        ''' Fetch JSON from API '''
+        """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
         if end_date is None:
             end_date = date.today() + timedelta(days=1)
@@ -31,24 +32,15 @@ class PP(elspot.Prices):
             data_type = 23
 
         # Create request to API
-        r = requests.get(self.API_URL % data_type, params={
-            'currency': self.currency,
-            'endDate': end_date.strftime('%d-%m-%Y'),
-        })
+        r = requests.get(
+            self.API_URL % data_type,
+            params={
+                "currency": self.currency,
+                "endDate": end_date.strftime("%d-%m-%Y"),
+            },
+        )
         # Return JSON response
         return r.json()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,7 +69,7 @@ tzs = {
     "FR": "Europe/Paris",
     "BE": "Europe/Brussels",
     "AT": "Europe/Vienna",
-    "DE-LU": "Europe/Berlin"
+    "DE-LU": "Europe/Berlin",
 }
 
 
@@ -91,7 +83,7 @@ def add_junk(d):
 
 def join_result_for_correct_time(results):
     """Parse a list of responses from the api
-       to extract the correct hours in there timezone.
+    to extract the correct hours in there timezone.
 
 
     """
@@ -138,23 +130,23 @@ def join_result_for_correct_time(results):
                     #
                     if n == 1:
                         # this is yesterday
-                        print("outlier %s %s %s %s" % (key, val["start"], val["end"], val["value"]))
+                        print(
+                            "outlier %s %s %s %s"
+                            % (key, val["start"], val["end"], val["value"])
+                        )
                     fin["areas"][key]["values"].append(val)
 
     return fin
-
-
 
 
 if __name__ == "__main__":
     import click
 
     @click.command()
-    @click.option('--region', '-r', default="Kr.sand")
-    @click.option('--currency', '-c', default="NOK")
-    @click.option('--vat', '-v', default=0)
+    @click.option("--region", "-r", default="Kr.sand")
+    @click.option("--currency", "-c", default="NOK")
+    @click.option("--vat", "-v", default=0)
     def manual_check(region, currency, vat):
-
 
         ts = tz.gettz(tzs[region])
         utc = datetime.utcnow()
@@ -168,7 +160,7 @@ if __name__ == "__main__":
         yesterday = spot.hourly(end_date=dt_yesterday)
         today = spot.hourly(end_date=dt_today)
         tomorrow = spot.hourly(end_date=dt_today + timedelta(days=1))
-        #print(today)
+        # print(today)
         print(pprint(today.get("areas")))
         return
 
@@ -195,7 +187,9 @@ if __name__ == "__main__":
             if len(values):
                 print("Report for region %s" % key)
             for vvv in sorted(values, key=itemgetter("start")):
-                print("from %s to %s price %s" % (vvv["start"], vvv["end"], vvv["value"]))
+                print(
+                    "from %s to %s price %s" % (vvv["start"], vvv["end"], vvv["value"])
+                )
             if len(values):
                 print("total hours %s" % len(values))
 
