@@ -13,7 +13,8 @@
   ],
   "iot_class": "cloud_polling",
   "requirements": [
-    "nordpool>=0.2"
+    "nordpool>=0.2",
+    "backoff>=1.11.1"
   ],
   "version": "0.0.5"
 }

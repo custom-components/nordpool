@@ -9,7 +9,7 @@ from pytz import timezone
 
 
 def stock(d):
-    """convert datetime to stocholm time."""
+    """convert datetime to stockholm time."""
     return d.astimezone(timezone("Europe/Stockholm"))
 
 

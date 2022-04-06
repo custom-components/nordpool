@@ -130,9 +130,16 @@ def join_result_for_correct_time(results, dt):
             )
 
             for val in values:
-                local = val["start"].astimezone(zone)
-                if start_of_day <= local and local <= end_of_day:
-                    fin["areas"][key]["values"].append(val)
+                local_start = val["start"].astimezone(zone)
+                local_end = val["end"].astimezone(zone)
+                if start_of_day <= local_start and local_start <= end_of_day:
+                    # Dropping values that has the same start and ends as this sometimes happen during dst change
+                    if local_start == local_end:
+                        _LOGGER.info(
+                            "Found the same start and end dropping it. %s", val
+                        )
+                    else:
+                        fin["areas"][key]["values"].append(val)
 
     _LOGGER.debug("Combines result: %s", fin)
 
@@ -140,6 +147,8 @@ def join_result_for_correct_time(results, dt):
 
 
 class AioPrices(Prices):
+    """Aioprices"""
+
     def __init__(self, currency, client, tz=None):
         super().__init__(currency)
         self.client = client
@@ -147,14 +156,13 @@ class AioPrices(Prices):
         self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
 
     async def _io(self, url, **kwargs):
-
         resp = await self.client.get(url, params=kwargs)
         _LOGGER.debug("requested %s %s", resp.url, kwargs)
 
         return await resp.json()
 
     async def _fetch_json(self, data_type, end_date=None, areas=None):
-        """ Fetch JSON from API """
+        """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
         if end_date is None:
             end_date = date.today() + timedelta(days=1)
@@ -168,7 +176,8 @@ class AioPrices(Prices):
             endDate=end_date.strftime("%d-%m-%Y"),
         )
 
-    async def fetch(self, data_type, end_date=None, areas=[]):
+    # https://github.com/custom-components/integration_blueprint/issues/71
+    async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.
         Inputs:
@@ -189,19 +198,20 @@ class AioPrices(Prices):
                 - list of values (dictionary with start and endtime and value)
                 - possible other values, such as min, max, average for hourly
         """
+        if areas is None:
+            areas = []
 
-        # Check how to handle all time zone in this,
-        # dunno how to do this yet.
-        # stock = datetime.utcnow().astimezone(tz.gettz("Europe/Stockholm"))
-        # stock_offset = stock.utcoffset().total_seconds()
-        # compare utc offset
         if self.tz == tz.gettz("Europe/Stockholm"):
             data = await self._fetch_json(data_type, end_date, areas)
             return self._parse_json(data, areas)
         else:
-            yesterday = datetime.now() - timedelta(days=1)
-            today = datetime.now()
-            tomorrow = datetime.now() + timedelta(days=1)
+            # Just so its easier to patch.
+            if end_date is None:
+                end_date = datetime().now()
+
+            yesterday = end_date - timedelta(days=1)
+            today = end_date
+            tomorrow = end_date + timedelta(days=1)
 
             # days = [yesterday, today, tomorrow]
             # Workaround for api changes.
@@ -248,30 +258,48 @@ class AioPrices(Prices):
             res = await asyncio.gather(*jobs)
 
             raw = [self._parse_json(i, areas) for i in res]
-            return join_result_for_correct_time(raw, end_date)
+            result = join_result_for_correct_time(raw, end_date)
+            # test_result = test_valid_nordpooldata(result)
+            # _LOGGER.debug("DATA STATUS %s", test_result)
+            return result
 
-    async def hourly(self, end_date=None, areas=[]):
-        """ Helper to fetch hourly data, see Prices.fetch() """
+    async def hourly(self, end_date=None, areas=None):
+        """Helper to fetch hourly data, see Prices.fetch()"""
+        if areas is None:
+            areas = []
+
         return await self.fetch(self.HOURLY, end_date, areas)
 
-    async def daily(self, end_date=None, areas=[]):
-        """ Helper to fetch daily data, see Prices.fetch() """
+    async def daily(self, end_date=None, areas=None):
+        """Helper to fetch daily data, see Prices.fetch()"""
+        if areas is None:
+            areas = []
+
         return await self.fetch(self.DAILY, end_date, areas)
 
-    async def weekly(self, end_date=None, areas=[]):
-        """ Helper to fetch weekly data, see Prices.fetch() """
+    async def weekly(self, end_date=None, areas=None):
+        """Helper to fetch weekly data, see Prices.fetch()"""
+        if areas is None:
+            areas = []
+
         return await self.fetch(self.WEEKLY, end_date, areas)
 
-    async def monthly(self, end_date=None, areas=[]):
-        """ Helper to fetch monthly data, see Prices.fetch() """
+    async def monthly(self, end_date=None, areas=None):
+        """Helper to fetch monthly data, see Prices.fetch()"""
+        if areas is None:
+            areas = []
+
         return await self.fetch(self.MONTHLY, end_date, areas)
 
-    async def yearly(self, end_date=None, areas=[]):
-        """ Helper to fetch yearly data, see Prices.fetch() """
+    async def yearly(self, end_date=None, areas=None):
+        """Helper to fetch yearly data, see Prices.fetch()"""
+        if areas is None:
+            areas = []
+
         return await self.fetch(self.YEARLY, end_date, areas)
 
     def _conv_to_float(self, s):
-        """ Convert numbers to float. Return infinity, if conversion fails. """
+        """Convert numbers to float. Return infinity, if conversion fails."""
         try:
             return float(s.replace(",", ".").replace(" ", ""))
         except ValueError:

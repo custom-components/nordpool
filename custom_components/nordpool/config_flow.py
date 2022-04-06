@@ -4,7 +4,7 @@ import re
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.helpers.template import is_template_string, Template
+from homeassistant.helpers.template import Template
 
 from . import DOMAIN
 from .sensor import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE
@@ -75,7 +75,7 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _valid_template(self, user_template):
         try:
-            _LOGGER.debug(user_template)
+            _LOGGER.debug("User template, %s", user_template)
             ut = Template(user_template, self.hass).async_render()
             if isinstance(ut, float):
                 return True
@@ -83,7 +83,7 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 return False
         except Exception as e:
             _LOGGER.error(e)
-            pass
+
         return False
 
     async def async_step_import(self, user_input):  # pylint: disable=unused-argument
