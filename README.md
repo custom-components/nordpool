@@ -1,5 +1,5 @@
 # Price Analyzer based on Nordpool Prices for Home Assistant
-# Shamelessly based on a fork from https://github.com/custom-components/nordpool, as i don't know Python.
+## Shamelessly based on a fork from https://github.com/custom-components/nordpool, as i don't know Python.
 
 Price Analyzer creates sensor a with the recommended temperature correction for your thermostats, based on todays and tomorrows prices, between 1 and -1 degrees celcius.
 This is meant to work kind of like Tibbers smart control for thermostats. If the price is going up in an hour or two, it will boost the thermostat. If there is a peak, or the price is falling soon, the thermostat will 'cool down a bit' to save power. 
