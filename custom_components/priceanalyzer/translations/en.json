@@ -1,0 +1,25 @@
+{
+    "config": {
+        "title": "PriceAnalyzer",
+        "step": {
+            "user": {
+                "title": "PriceAnalyzer Sensor",
+                "description": "Setup a PriceAnalyzer sensor",
+                "data": {
+                    "region": "Region",
+                    "currency": "NOK",
+                    "VAT": "Include VAT",
+                    "precision": "How many decimals to show",
+                    "low_price_cutoff": "low price cut off",
+                    "price_in_cents": "Price in Cents",
+                    "price_type": "Price in format",
+                    "additional_costs": "Template for additional costs"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Name already exists",
+            "invalid_template": "The template is invalid, check https://github.com/custom-components/nordpool"
+        }
+    }
+}

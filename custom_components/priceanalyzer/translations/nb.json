@@ -1,0 +1,25 @@
+{
+    "config": {
+        "title": "PriceAnalyzer",
+        "step": {
+            "user": {
+                "title": "PriceAnalyzer",
+                "description": "Opprett en PriceAnalyzer sensor",
+                "data": {
+                    "region": "Region",
+                    "currency": "NOK",
+                    "VAT": "Inkluder MVA",
+                    "precision": "Antall desimaler som vises",
+                    "low_price_cutoff": "Grense for lav-pris",
+                    "price_in_cents": "Pris i øre",
+                    "price_type": "Pris i format",
+                    "additional_costs": "Mal for tilleggskostnader"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Navnet eksisterer allerede",
+            "invalid_template": "Malen inneholder feil, se https://github.com/custom-components/nordpool"
+        }
+    }
+}
