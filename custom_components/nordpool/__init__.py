@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
