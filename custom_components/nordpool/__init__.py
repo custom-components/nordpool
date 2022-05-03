@@ -150,8 +150,8 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
         cb_update_tomorrow = async_track_time_change_in_tz(
             hass,
             new_data_cb,
-            hour=13,
-            minute=RANDOM_MINUTE,
+            hour=21#13,
+            minute=23#RANDOM_MINUTE,
             second=RANDOM_SECOND,
             tz=timezone("Europe/Stockholm"),
         )
