@@ -7,7 +7,7 @@ from statistics import mean
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_REGION, EVENT_TIME_CHANGED
+from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.template import Template, attach
@@ -416,7 +416,7 @@ class NordpoolSensor(Entity):
         return self._api.tomorrow_valid()
 
     async def _update_current_price(self) -> None:
-        """ update the current price (price this hour)"""
+        """update the current price (price this hour)"""
         local_now = dt_utils.now()
 
         data = await self._api.today(self._area, self._currency)

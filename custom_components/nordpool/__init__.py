@@ -18,7 +18,7 @@ from .events import async_track_time_change_in_tz
 
 DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
-RANDOM_MINUTE = randint(0, 10)
+RANDOM_MINUTE = randint(10, 30)
 RANDOM_SECOND = randint(0, 59)
 EVENT_NEW_DATA = "nordpool_update"
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.5"
+VERSION = "0.0.6"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
