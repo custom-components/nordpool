@@ -28,10 +28,10 @@ def stock(d):
 @bind_hass
 def async_track_utc_time_change(
     hass: HomeAssistant,
-    action: Callable[[datetime], Awaitable[None] | None],
-    hour: Any | None = None,
-    minute: Any | None = None,
-    second: Any | None = None,
+    action: None,
+    hour: Optional[Any] = None,
+    minute: Optional[Any] = None,
+    second: Optional[Any] = None,
     tz: Optional[Any] = None,
 ) -> CALLBACK_TYPE:
     """Add a listener that will fire if time matches a pattern."""
@@ -92,7 +92,8 @@ def async_track_utc_time_change(
 @bind_hass
 def async_track_time_change_in_tz(
     hass: HomeAssistant,
-    action: Callable[[datetime], Awaitable[None] | None],
+    action: None,
+    # action: Callable[[datetime], Awaitable[None] | None],
     hour: Optional[Any] = None,
     minute: Optional[Any] = None,
     second: Optional[Any] = None,
