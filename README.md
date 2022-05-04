@@ -16,6 +16,8 @@ More stuff will probably come, like recommendations to turn on/off water heater 
 Initial commit a bit before a release is ready, just as a proof of concept.
 
 
+If you have any input, i'm happy to hear about it. This 'algorithm' has worked great for me over the last two years, but has changed a lot every now and then.
+
 ## Installation
 
 ### Option 1: HACS
@@ -25,14 +27,22 @@ It will searchable as 'priceanalyzer'. Click it, and select 'Download this repos
 Then restart Home Assistant, and go to the integrations page to configure it.
 It will then create a new sensor, sensor.priceanalyzer in your installation.
 
-More info to come.
 
 Takes the same input as the nordpool component, as of now.
+
+
+## Upcoming / TODO:
+Pause / Abort: Add a switch entity to abort or pause PriceAnalyzer for the rest of the day, in case you see that it miscalculates, or that you want to override it. This can always be done by templating in HA, but it should be supported natively.
 
 
 
 ### How-to
 
+Create an Input Number, to use as a target temperature for the climate-entity/thermostat. In the example below, this is called input_number.sokkeltemp.
+As the trigger, use both this input number, and the priceanalyzer sensor as a state trigger.
+As the action, call the service climate.set_temperature, with the desired climate-entity as entity_id, area, device, or what you want.
+Set the temperature to the target temp (yout input number + the priceanalyzer-sensor).
+Now, whenever the price goes up or down, PriceAnalyzer will change the temperature based on the price.
 
 ```
     - id: adjustsokkeltemp
@@ -43,7 +53,7 @@ Takes the same input as the nordpool component, as of now.
           event: start
         - platform: state
           entity_id:
-            - sensor.sokkeltemp
+            - input_number.sokkeltemp
             - sensor.priceanalyzer
       action:
         - service: climate.set_temperature
