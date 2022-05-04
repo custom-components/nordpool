@@ -92,7 +92,7 @@ def async_track_utc_time_change(
 @bind_hass
 def async_track_time_change_in_tz(
     hass: HomeAssistant,
-    action: Callable[..., None],
+    action: Callable[[datetime], Awaitable[None] | None],
     hour: Optional[Any] = None,
     minute: Optional[Any] = None,
     second: Optional[Any] = None,
