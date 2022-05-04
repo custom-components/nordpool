@@ -112,6 +112,9 @@ class PriceAnalyzerEditFlow(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
+
+        _LOGGER.error('priceanalyzer config entry: %s', self.config_entry)
+
         data_schema = {
             vol.Required("region", default=self.config_entry.options.get("region")): vol.In(regions),
             vol.Optional("currency", default=self.config_entry.options.get("currency")): vol.In(currencys),

@@ -160,7 +160,7 @@ class NordpoolSensor(Entity):
 
         self._current_hour = None
         self._today_calculated = None
-        
+        self._tomorrow_calculated = None
         
 
         # Holds the data for today and morrow.
@@ -177,6 +177,7 @@ class NordpoolSensor(Entity):
         self._percent_threshold = None
         self._diff = None
         self._ten_cheapest_today = None
+    
 
         # Values for tomorrow
         self._average_tomorrow = None
@@ -187,7 +188,7 @@ class NordpoolSensor(Entity):
         self._peak_tomorrow = None
         self._percent_threshold_tomorrow = None
         self._diff_tomorrow = None
-
+        self._ten_cheapest_tomorrow = None
 
 
 
@@ -210,7 +211,7 @@ class NordpoolSensor(Entity):
 
     @property
     def name(self) -> str:
-        return 'priceanalyzer'
+        return 'Price Analyzer'
 
     @property
     def should_poll(self):
@@ -252,11 +253,15 @@ class NordpoolSensor(Entity):
 
     @property
     def state(self) -> float:
-        if self._today_calculated != None:
-            now = datetime.now()
-            return self._today_calculated[now.hour]['temperature_correction']
+        if self.current_hour:
+            return self.current_hour['temperature_correction']
         else:
             return None
+        # if self._today_calculated != None:
+        #     now = datetime.now()
+        #     return self._today_calculated[now.hour]['temperature_correction']
+        # else:
+        #     return None
 
     @property
     def low_price(self) -> bool:
@@ -276,24 +281,24 @@ class NordpoolSensor(Entity):
             else None
         )
 
-    def _is_gaining(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3) -> bool:        
-        percent_threshold = (1 - float(self._percent_threshold))
+    def _is_gaining(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow) -> bool:        
+        threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
+        percent_threshold = (1 - float(threshold))
         return ((price_now / price_next_hour) < percent_threshold) or ((price_now / price_next_hour2) < percent_threshold)# or ((price_now / price_next_hour3) < percent_threshold)
 
-    def _is_falling(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3) -> bool:        
-        percent_threshold = (1 + float(self._percent_threshold))
+    def _is_falling(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow) -> bool:        
+        threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
+        percent_threshold = (1 + float(threshold))
         return ((price_now / price_next_hour) > percent_threshold) or ((price_now / price_next_hour2) > percent_threshold) or ((price_now / price_next_hour3) > percent_threshold)
 
 
-    def _get_temperature_correction(self, now, is_gaining, is_falling,is_max, is_low_price, is_over_peak, is_tomorrow) -> float:
+    def _get_temperature_correction(self, now, is_gaining, is_falling,is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average) -> float:
         #pricedifference = min / max # property
         #Todo, is_garinnig and is_falling is missing threshold, else alles good i think.
         
         diff = self._diff_tomorrow if is_tomorrow else self._diff
-        if(diff < 1.5 and False):
+        if(diff < 1.5):
             return 0
-        
-
 
         price_now = self._calc_price(now["value"], fake_dt=now["start"])
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
@@ -304,7 +309,7 @@ class NordpoolSensor(Entity):
         #elif (is_over_peak == False and is_gaining == True):
         #elif (is_low_price == True and is_gaining == True):
             return 1
-        elif is_falling:
+        elif is_falling and is_over_average == True:
             return -1
         elif is_low_price and (is_gaining == False or is_falling): 
             return 0
@@ -397,6 +402,10 @@ class NordpoolSensor(Entity):
             self._average = mean(formatted_prices)
             self._min = min(formatted_prices)
             self._max = max(formatted_prices)
+            
+            self._add_raw_calculated(data,False)
+            
+
 
     def _update_tomorrow(self, data) -> None:
 
@@ -425,16 +434,19 @@ class NordpoolSensor(Entity):
                 )
                 for i in data
             ]
-            offpeak1 = formatted_prices[0:8]
-            peak = formatted_prices[9:17]
-            offpeak2 = formatted_prices[20:]
-
-            self._peak_tomorrow = mean(peak)
-            self._off_peak_1_tomorrow = mean(offpeak1)
-            self._off_peak_2_tomorrow = mean(offpeak2)
-            self._average_tomorrow = mean(formatted_prices)
-            self._min_tomorrow = min(formatted_prices)
-            self._max_tomorrow = max(formatted_prices)
+            
+            if formatted_prices[0] != None: 
+                offpeak1 = formatted_prices[0:8]
+                peak = formatted_prices[9:17]
+                offpeak2 = formatted_prices[20:]
+                
+                self._peak_tomorrow = mean(peak)
+                self._off_peak_1_tomorrow = mean(offpeak1)
+                self._off_peak_2_tomorrow = mean(offpeak2)
+                self._average_tomorrow = mean(formatted_prices)
+                self._min_tomorrow = min(formatted_prices)
+                self._max_tomorrow = max(formatted_prices)
+                self._add_raw_calculated(data,True)
 
 
 
@@ -491,12 +503,18 @@ class NordpoolSensor(Entity):
         ]
 
     @property
+    def current_hour(self) -> list:
+        if self._today_calculated != None:
+            now = datetime.now()
+            return self._today_calculated[now.hour]
+        else:
+            return []
+        
+    @property
     def extra_state_attributes(self) -> dict:
         now = datetime.now()
 
-        current_hour = None
-        if self._today_calculated != None:
-            current_hour = self._today_calculated[now.hour]
+        
         
         return {
             "display_name" : self._attr_name,
@@ -508,11 +526,27 @@ class NordpoolSensor(Entity):
             'off_peak_1': self._off_peak_1,
             'off_peak_2': self._off_peak_2,
             'average': self._average,
-            "current_hour": current_hour,
+            "current_hour": self.current_hour,
             "raw_today": self.today_calculated,
             "raw_tomorrow": self.tomorrow_calculated,
-            "ten_cheapest_today": self._ten_cheapest_today
+            "ten_cheapest_today": self._ten_cheapest_today,
+            "ten_cheapest_tomorrow": self._ten_cheapest_tomorrow,
         }
+
+
+    def _format_time(self, data):
+        local_times = []
+        for item in data:
+            i = {
+                "start": dt_utils.as_local(item["start"]),
+                "end": dt_utils.as_local(item["end"]),
+                "value": item["value"],
+            }
+
+            local_times.append(i)
+
+        return local_times
+
 
     def _add_raw(self, data):
         result = []
@@ -526,8 +560,8 @@ class NordpoolSensor(Entity):
         return result
 
 
-    def _set_cheapest_hours(self):
-        if len(self._data_today.get("values")):
+    def _set_cheapest_hours_today(self):
+        if self._data_today != None and len(self._data_today.get("values")):
             data = sorted(self._data_today.get("values"), key=itemgetter("value"))
             formatted_prices = [
                 {
@@ -542,17 +576,27 @@ class NordpoolSensor(Entity):
             
             ten_cheapest_today = formatted_prices[:10]
             self._ten_cheapest_today = ten_cheapest_today
+            
+    def _set_cheapest_hours_tomorrow(self):
+        if self._data_tomorrow != None and len(self._data_tomorrow.get("values")):
+            data = sorted(self._data_tomorrow.get("values"), key=itemgetter("value"))
+            formatted_prices = [
+                {
+                    'start' : i.get('start'),
+                    'end' : i.get('end'),
+                    'value' : self._calc_price(
+                        i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
+                        )
+                }
+                for i in data
+            ]
+            
+            ten_cheapest_tomorrow = formatted_prices[:10]
+            self._ten_cheapest_tomorrow = ten_cheapest_tomorrow
 
-
-    # def calculatePricesForList(self, list):
-    #     return [
-    #         self._calc_price(i["value"], fake_dt=i["start"])
-    #         for i in list
-    #         if i
-    #     ]
 
     def _add_raw_calculated(self, data, is_tomorrow):
-
+        
         if is_tomorrow and self.tomorrow_valid == False:
             return []
 
@@ -563,29 +607,34 @@ class NordpoolSensor(Entity):
         #{%-set percentThreshold = ((nordpool.attributes.min / nordpool.attributes.max) - 1) -%}
         #{% set percentThreshold = (percentThreshold / 4) * -1 %}
             
-        difference = ((self._min / self._max) - 1)
-        self._percent_threshold = ((difference / 4) * -1)
-        self._diff = self._max / self._min
-        self._set_cheapest_hours()
+        if is_tomorrow == False:
+            difference = ((self._min / self._max) - 1)
+            self._percent_threshold = ((difference / 4) * -1)
+            self._diff = self._max / self._min
+            self._set_cheapest_hours_today()
 
 
-        if self.tomorrow_valid:
+        if self._api.tomorrow_valid() == True and is_tomorrow == True:
             max_tomorrow = self._max_tomorrow
             min_tomorrow = self._min_tomorrow
             difference = ((min_tomorrow / max_tomorrow) - 1)
             self._percent_threshold_tomorrow = ((difference / 4) * -1)    
             self._diff_tomorrow = max_tomorrow / min_tomorrow
+            self._set_cheapest_hours_tomorrow()
 
+
+        data = self._format_time(data)
         peak = self._peak_tomorrow if is_tomorrow else self._peak
         max_price = self._max_tomorrow if is_tomorrow else self._max
         average = self._average_tomorrow if is_tomorrow else self._average
         local_now = dt_utils.now()
-        for res in self._someday(data):
+        for res in data:
 
             price_now = float(self._calc_price(res["value"], fake_dt=res["start"]))
             is_max = price_now == max_price
             is_low_price = price_now < average * self._low_price_cutoff
             is_over_peak = price_now > peak
+            is_over_average = price_now > average
 
             # item = {
             #     "data_today": self._data_today,
@@ -603,11 +652,12 @@ class NordpoolSensor(Entity):
             next_hour3 = self.get_hour(hour+3, is_tomorrow)
 
             if next_hour != None and next_hour2 != None and next_hour3 != None:    
-                price_next_hour3 = float(self._calc_price(next_hour3["value"], fake_dt=next_hour3["start"])) or price_now
-                price_next_hour2 = float(self._calc_price(next_hour2["value"], fake_dt=next_hour2["start"])) or price_now
-                price_next_hour = float(self._calc_price(next_hour["value"], fake_dt=next_hour["start"])) or price_now
-                is_gaining = self._is_gaining(hour, res, price_now, price_next_hour, price_next_hour2, price_next_hour3)
-                is_falling = self._is_falling(hour, res, price_now, price_next_hour, price_next_hour2, price_next_hour3)
+                
+                price_next_hour3 = self._calc_price(next_hour3["value"], fake_dt=next_hour3["start"]) or price_now
+                price_next_hour2 = self._calc_price(next_hour2["value"], fake_dt=next_hour2["start"]) or price_now
+                price_next_hour = self._calc_price(next_hour["value"], fake_dt=next_hour["start"]) or price_now
+                is_gaining = self._is_gaining(hour, res, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow)
+                is_falling = self._is_falling(hour, res, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow)
                 percent_diff = price_next_hour / price_now
             else:
                 is_gaining = None
@@ -625,9 +675,12 @@ class NordpoolSensor(Entity):
                 'is_max': is_max,
                 'is_low_price': is_low_price,
                 'is_over_peak' : is_over_peak,
+                'is_over_average': is_over_average
             }
 
-            item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow)
+            item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
+            item['is_five_most_expensive'] = self._is_five_most_expensive(item, is_tomorrow)
+            item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average)
             hour += 1
             if item["start"] == start_of(local_now, "hour"):
                 self._current_hour = item
@@ -636,8 +689,43 @@ class NordpoolSensor(Entity):
 
         if is_tomorrow == False:
             self._today_calculated = result
+        else:
+            self._tomorrow_calculated = result
+            
         return result
 
+    def _is_ten_cheapest(self, item, is_tomorrow):
+        ten_cheapest = self._ten_cheapest_tomorrow if is_tomorrow else self._ten_cheapest_today
+        if ten_cheapest == None:
+            return False
+        
+        if any(obj['start'] == item['start'] for obj in ten_cheapest ):
+            return True
+        return False
+
+    def _is_five_most_expensive(self, item, is_tomorrow):
+        five_most_expensive = self._get_five_most_expensive_hours(is_tomorrow)
+        if any(obj['start'] == item['start'] for obj in five_most_expensive):
+            return True
+        return False
+
+    def _get_five_most_expensive_hours(self, is_tomorrow):
+        hours = self._data_tomorrow if is_tomorrow else self._data_today
+        if len(hours.get("values")):
+            data = sorted(hours.get("values"), key=itemgetter("value"), reverse=True)
+            formatted_prices = [
+                {
+                    'start' : i.get('start'),
+                    'end' : i.get('end'),
+                    'value' : self._calc_price(
+                        i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
+                        )
+                }
+                for i in data
+            ]
+        five_most_expensive = formatted_prices[:5]
+        return five_most_expensive
+        
     @property
     def raw_today(self):
         return self._add_raw(self._data_today)
@@ -648,20 +736,26 @@ class NordpoolSensor(Entity):
 
     @property
     def today_calculated(self):
-        return self._add_raw_calculated(self._data_today,False)
+        if self._today_calculated != None and len(self._today_calculated):
+            return self._today_calculated
+        else:
+            return []
 
     @property
     def tomorrow_calculated(self):
-        if self.tomorrow_valid:
-            return self._add_raw_calculated(self._data_tomorrow,True)
+        if self._tomorrow_calculated != None and len(self._tomorrow_calculated):
+            return self._tomorrow_calculated
         else:
             return []
 
     @property
     def tomorrow_valid(self):
         return self._api.tomorrow_valid()
-        return isinstance(self._data_tomorrow, list) and len(self._data_tomorrow)
         
+        
+    @property
+    def tomorrow_loaded(self):
+        return isinstance(self._data_tomorrow, list) and len(self._data_tomorrow)
 
     async def _update_current_price(self) -> None:
         """ update the current price (price this hour)"""
@@ -685,6 +779,15 @@ class NordpoolSensor(Entity):
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
 
+
+        if self._data_tomorrow is None or len(self._data_tomorrow.get("values")) < 1:
+            _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
+            tomorrow = await self._api.tomorrow(self._area, self._currency)
+            if tomorrow:
+                self._data_tomorrow = tomorrow
+                self._update_tomorrow(tomorrow)
+
+
         if self._data_today is None:
             _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it.")
             today = await self._api.today(self._area, self._currency)
@@ -692,12 +795,7 @@ class NordpoolSensor(Entity):
                 self._data_today = today
                 self._update(today)
 
-        if self._data_tomorrow is None:
-            _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
-            tomorrow = await self._api.tomorrow(self._area, self._currency)
-            if tomorrow:
-                self._data_tomorrow = tomorrow
-                self._update_tomorrow(tomorrow)
+                
 
         # We can just check if this is the first hour.
 
@@ -706,12 +804,23 @@ class NordpoolSensor(Entity):
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
+                self.today_calculated = self._tomorrow_calculated
+                self._average = self._average_tomorrow
+                self._max = self._max_tomorrow
+                self._min = self._min_tomorrow
+                self._off_peak_1 = self._off_peak_1_tomorrow
+                self._off_peak_2 = self._off_peak_2_tomorrow
+                self._peak = self._peak_tomorrow
+                self._percent_threshold = self._percent_threshold_tomorrow
+                self._diff = self._diff_tomorrow
+                self._ten_cheapest_today = self._ten_cheapest_tomorrow
+                
                 self._update(self._data_today)
                 self._data_tomorrow = None
             else:
                 today = await self._api.today(self._area, self._currency)
                 if today:
-                    self._data_today = today
+                    self._data_today = today                    
                     self._update(today)
 
         # Updates the current for this hour.
@@ -723,6 +832,9 @@ class NordpoolSensor(Entity):
 
         self._last_tick = dt_utils.now()
         self.async_write_ha_state()
+        #self._data_today !== None and len(self._data_today.get("values")
+        if self.tomorrow_valid and (self._tomorrow_calculated != None or len(self._tomorrow_calculated) < 1):
+            self.check_stuff()
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
