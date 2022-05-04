@@ -211,7 +211,7 @@ class NordpoolSensor(Entity):
 
     @property
     def name(self) -> str:
-        return 'Price Analyzer'
+        return 'Priceanalyzer'
 
     @property
     def should_poll(self):
@@ -833,7 +833,7 @@ class NordpoolSensor(Entity):
         self._last_tick = dt_utils.now()
         self.async_write_ha_state()
         #self._data_today !== None and len(self._data_today.get("values")
-        if self.tomorrow_valid and (self._tomorrow_calculated != None or len(self._tomorrow_calculated) < 1):
+        if self.tomorrow_valid and (self._tomorrow_calculated != None and len(self._tomorrow_calculated) < 1):
             self.check_stuff()
 
     async def async_added_to_hass(self):

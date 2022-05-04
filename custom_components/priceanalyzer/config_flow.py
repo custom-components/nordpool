@@ -46,7 +46,7 @@ class PriceAnalyzerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
             template_ok = await self._valid_template(user_input["additional_costs"])
             if template_ok:
-                return self.async_create_entry(title="Nordpool Custom", data=user_input)
+                return self.async_create_entry(title="Price Analyzer", data=user_input)
             else:
                 self._errors["base"] = "invalid_template"
 
