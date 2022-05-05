@@ -38,32 +38,13 @@ Pause / Abort: Add a switch entity to abort or pause PriceAnalyzer for the rest 
 
 ### How-to
 
-Create an Input Number, to use as a target temperature for the climate-entity/thermostat. In the example below, this is called input_number.sokkeltemp.
-As the trigger, use both this input number, and the priceanalyzer sensor as a state trigger.
-As the action, call the service climate.set_temperature, with the desired climate-entity as entity_id, area, device, or what you want.
-Set the temperature to the target temp (yout input number + the priceanalyzer-sensor).
+Create an Input Number, to use as a target temperature for the climate-entity/thermostat. 
 Now, whenever the price goes up or down, PriceAnalyzer will change the temperature based on the price.
 
-```
-    - id: adjustsokkeltemp
-      alias: Climate Sokkel - Adjust temp
-      mode: restart
-      trigger:
-        - platform: homeassistant
-          event: start
-        - platform: state
-          entity_id:
-            - input_number.sokkeltemp
-            - sensor.priceanalyzer
-      action:
-        - service: climate.set_temperature
-          data_template:
-            entity_id: climate.sokkel
-            temperature: >-
-              {%-set baseTemp = states.input_number.sokkeltemp.state | float(default=0)%}
-              {%-set priceanalyzer = states.sensor.priceanalyzer.state | float(default=0)%}
-              {{baseTemp + priceanalyzer}}
-```
+[![Then, use this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Ferlendsellie%2FHomeAssistantConfig%2Fblob%2Fmaster%2Fblueprints%2Fautomation%2Ferlendsellie%2Fpriceanalyzer.yaml)
+[![Create Input Helper.](https://my.home-assistant.io/badges/helpers.svg)](https://my.home-assistant.io/redirect/helpers/)
+
+
 ![Apex Card Example](priceanalyzer.png?raw=true "Apex Card Example")
 
 Add this Apex Charts Card to see the schedule for the sensor for today and tomorrow(if available):
