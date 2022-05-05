@@ -103,7 +103,7 @@ apex_config:
       max: 1000
       min: 0
 series:
-  - entity: sensor.priceanalyzer_se2
+  - entity: sensor.priceanalyzer
     yaxis_id: pris
     extend_to: now
     name: Price
@@ -124,7 +124,7 @@ series:
         return today.concat(tomorrow);
       }
       return today;
-  - entity: sensor.priceanalyzer_se2
+  - entity: sensor.priceanalyzer
     yaxis_id: binary
     name: Opp
     type: area
@@ -146,7 +146,7 @@ series:
         return today.concat(tomorrow);
       }
       return today;
-  - entity: sensor.priceanalyzer_se2
+  - entity: sensor.priceanalyzer
     yaxis_id: binary
     name: Ned
     type: area
