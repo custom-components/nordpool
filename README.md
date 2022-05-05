@@ -40,9 +40,13 @@ Pause / Abort: Add a switch entity to abort or pause PriceAnalyzer for the rest 
 
 Create an Input Number, to use as a target temperature for the climate-entity/thermostat you want to control with priceanalyzer. 
 Follow this to create an input number:
+
 [![Create Input Helper.](https://my.home-assistant.io/badges/helpers.svg)](https://my.home-assistant.io/redirect/helpers/)
+
 Then, import this blueprint, and choose your newly created input number, the priceanalyzer sensor, and the climate entity you want to control.
+
 [![Then, use this blueprint.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Ferlendsellie%2FHomeAssistantConfig%2Fblob%2Fmaster%2Fblueprints%2Fautomation%2Ferlendsellie%2Fpriceanalyzer.yaml)
+
 
 
 Now, whenever the price goes up or down, PriceAnalyzer will change the temperature based on the price.
