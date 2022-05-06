@@ -18,7 +18,7 @@ from .events import async_track_time_change_in_tz
 
 DOMAIN = "priceanalyzer"
 _LOGGER = logging.getLogger(__name__)
-RANDOM_MINUTE = randint(0, 10)
+RANDOM_MINUTE = randint(10, 30)
 RANDOM_SECOND = randint(0, 59)
 EVENT_NEW_DATA = "priceanalyzer_update"
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.5"
+VERSION = "0.0.7"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
@@ -79,7 +79,7 @@ class NordpoolData:
     async def update_tomorrow(self, n: datetime):
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
-        self._tomorrow_valid = True
+        #self._tomorrow_valid = True
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns todays or tomorrows prices in a area in the currency"""
@@ -96,6 +96,9 @@ class NordpoolData:
             await self.update_today(None)
             await self.update_tomorrow(None)
 
+        if(day == 'tomorrow'):
+            self._tomorrow_valid = True
+
         return self._data.get(currency, {}).get(day, {}).get(area)
 
     def tomorrow_valid(self) -> bool:
@@ -103,7 +106,7 @@ class NordpoolData:
 
     async def today(self, area: str, currency: str) -> dict:
         """Returns todays prices in a area in the requested currency"""
-        res = await self._someday(area, currency, "today")
+        res = await self._someday(area, currency, "today")  
         return res
 
     async def tomorrow(self, area: str, currency: str):

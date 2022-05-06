@@ -7,7 +7,7 @@ from statistics import mean
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_REGION, EVENT_TIME_CHANGED
+from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.template import Template, attach
@@ -92,6 +92,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     vat = config.get("VAT")
     use_cents = config.get("price_in_cents")
     ad_template = config.get("additional_costs")
+    percent_difference = config.get("percent_difference")
     api = hass.data[DOMAIN]
     sensor = NordpoolSensor(
         friendly_name,
@@ -104,7 +105,8 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
         use_cents,
         api,
         ad_template,
-        hass,
+        percent_difference,
+        hass
     )
 
     add_devices([sensor])
@@ -135,6 +137,7 @@ class NordpoolSensor(Entity):
         use_cents,
         api,
         ad_template,
+        percent_difference,
         hass,
     ) -> None:
         # friendly_name is ignored as it never worked.
@@ -149,6 +152,7 @@ class NordpoolSensor(Entity):
         self._api = api
         self._ad_template = ad_template
         self._hass = hass
+        self.percent_difference = percent_difference or 50;
 
         if vat is True:
             self._vat = _REGIONS[area][2]
@@ -211,7 +215,7 @@ class NordpoolSensor(Entity):
 
     @property
     def name(self) -> str:
-        return 'Priceanalyzer'
+        return 'Priceanalyzer_' + self._area
 
     @property
     def should_poll(self):
@@ -292,12 +296,13 @@ class NordpoolSensor(Entity):
         return ((price_now / price_next_hour) > percent_threshold) or ((price_now / price_next_hour2) > percent_threshold) or ((price_now / price_next_hour3) > percent_threshold)
 
 
-    def _get_temperature_correction(self, now, is_gaining, is_falling,is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average) -> float:
+    def _get_temperature_correction(self, now, is_gaining, is_falling,is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive) -> float:
         #pricedifference = min / max # property
         #Todo, is_garinnig and is_falling is missing threshold, else alles good i think.
         
         diff = self._diff_tomorrow if is_tomorrow else self._diff
-        if(diff < 1.5):
+        percent_difference = (self.percent_difference + 100) /100
+        if(diff < percent_difference):
             return 0
 
         price_now = self._calc_price(now["value"], fake_dt=now["start"])
@@ -305,7 +310,7 @@ class NordpoolSensor(Entity):
 
         if is_max:
             return -1
-        elif is_gaining:
+        elif is_gaining and is_five_most_expensive == False:
         #elif (is_over_peak == False and is_gaining == True):
         #elif (is_low_price == True and is_gaining == True):
             return 1
@@ -402,7 +407,6 @@ class NordpoolSensor(Entity):
             self._average = mean(formatted_prices)
             self._min = min(formatted_prices)
             self._max = max(formatted_prices)
-            
             self._add_raw_calculated(data,False)
             
 
@@ -439,7 +443,6 @@ class NordpoolSensor(Entity):
                 offpeak1 = formatted_prices[0:8]
                 peak = formatted_prices[9:17]
                 offpeak2 = formatted_prices[20:]
-                
                 self._peak_tomorrow = mean(peak)
                 self._off_peak_1_tomorrow = mean(offpeak1)
                 self._off_peak_2_tomorrow = mean(offpeak2)
@@ -665,6 +668,8 @@ class NordpoolSensor(Entity):
                 price_next_hour = None
                 percent_diff = None
 
+
+            
             item = {
                 "start": res["start"],
                 "end": res["end"],
@@ -677,10 +682,11 @@ class NordpoolSensor(Entity):
                 'is_over_peak' : is_over_peak,
                 'is_over_average': is_over_average
             }
-
+            
+            is_five_most_expensive = self._is_five_most_expensive(item, is_tomorrow)
             item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
-            item['is_five_most_expensive'] = self._is_five_most_expensive(item, is_tomorrow)
-            item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average)
+            item['is_five_most_expensive'] = is_five_most_expensive
+            item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive)
             hour += 1
             if item["start"] == start_of(local_now, "hour"):
                 self._current_hour = item
@@ -691,6 +697,10 @@ class NordpoolSensor(Entity):
             self._today_calculated = result
         else:
             self._tomorrow_calculated = result
+            
+            
+        _LOGGER.debug('PriceAnalyzer list done rendering, %s %s', self.name, result)
+        self.async_write_ha_state()
             
         return result
 
@@ -781,30 +791,33 @@ class NordpoolSensor(Entity):
 
 
         if self._data_tomorrow is None or len(self._data_tomorrow.get("values")) < 1:
-            _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
+            _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow is none, trying to fetch it.")
             tomorrow = await self._api.tomorrow(self._area, self._currency)
             if tomorrow:
                 self._data_tomorrow = tomorrow
                 self._update_tomorrow(tomorrow)
+            else:
+                _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow could not be fetched!, %s", tomorrow)
+                
 
 
         if self._data_today is None:
-            _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it.")
+            _LOGGER.debug("PriceAnalyzerSensor _data_today is none, trying to fetch it.")
             today = await self._api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
-
+            else:
+                _LOGGER.error("PriceAnalyzerSensor _data_today could not be fetched!, %s", tomorrow)
                 
 
         # We can just check if this is the first hour.
-
         if is_new(self._last_tick, typ="day"):
             # if now.hour == 0:
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
-                self.today_calculated = self._tomorrow_calculated
+                self._today_calculated = self._tomorrow_calculated
                 self._average = self._average_tomorrow
                 self._max = self._max_tomorrow
                 self._min = self._min_tomorrow
@@ -834,6 +847,8 @@ class NordpoolSensor(Entity):
         self.async_write_ha_state()
         #self._data_today !== None and len(self._data_today.get("values")
         if self.tomorrow_valid and (self._tomorrow_calculated != None and len(self._tomorrow_calculated) < 1):
+            self.check_stuff()
+        if self.tomorrow_valid and self._data_tomorrow == None:
             self.check_stuff()
 
     async def async_added_to_hass(self):

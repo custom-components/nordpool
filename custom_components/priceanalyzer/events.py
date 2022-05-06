@@ -1,11 +1,22 @@
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Awaitable, Callable
 
-from homeassistant.const import ATTR_NOW, EVENT_TIME_CHANGED
-from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
+#
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback, HassJob
 from homeassistant.loader import bind_hass
 from homeassistant.util import dt as dt_util
+from homeassistant.helpers.event import (
+    async_track_time_interval,
+    async_track_point_in_utc_time,
+)
 from pytz import timezone
+
+# For targeted patching in tests
+time_tracker_utcnow = dt_util.utcnow
+
+
+__ALL__ = ["stock", "async_track_time_change_in_tz"]
 
 
 def stock(d):
@@ -17,71 +28,72 @@ def stock(d):
 @bind_hass
 def async_track_utc_time_change(
     hass: HomeAssistant,
-    action: Callable[..., None],
+    action: None,
     hour: Optional[Any] = None,
     minute: Optional[Any] = None,
     second: Optional[Any] = None,
     tz: Optional[Any] = None,
 ) -> CALLBACK_TYPE:
     """Add a listener that will fire if time matches a pattern."""
+    # This is function is modifies to support timezones.
+
     # We do not have to wrap the function with time pattern matching logic
     # if no pattern given
     if all(val is None for val in (hour, minute, second)):
+        # Previously this relied on EVENT_TIME_FIRED
+        # which meant it would not fire right away because
+        # the caller would always be misaligned with the call
+        # time vs the fire time by < 1s. To preserve this
+        # misalignment we use async_track_time_interval here
+        return async_track_time_interval(hass, action, timedelta(seconds=1))
 
-        @callback
-        def time_change_listener(event: Event) -> None:
-            """Fire every time event that comes in."""
-            hass.async_run_job(action, event.data[ATTR_NOW])
-
-        return hass.bus.async_listen(EVENT_TIME_CHANGED, time_change_listener)
-
+    job = HassJob(action)
     matching_seconds = dt_util.parse_time_expression(second, 0, 59)
     matching_minutes = dt_util.parse_time_expression(minute, 0, 59)
     matching_hours = dt_util.parse_time_expression(hour, 0, 23)
 
-    next_time = None
-
-    def calculate_next(now: datetime) -> None:
+    def calculate_next(now: datetime) -> datetime:
         """Calculate and set the next time the trigger should fire."""
-        nonlocal next_time
-
-        localized_now = now.astimezone(tz) if tz else now
-        next_time = dt_util.find_next_time_expression_time(
-            localized_now, matching_seconds, matching_minutes, matching_hours
+        ts_now = now.astimezone(tz) if tz else now
+        return dt_util.find_next_time_expression_time(
+            ts_now, matching_seconds, matching_minutes, matching_hours
         )
 
-    # Make sure rolling back the clock doesn't prevent the timer from
-    # triggering.
-    last_now: Optional[datetime] = None
+    time_listener: CALLBACK_TYPE | None = None
 
     @callback
-    def pattern_time_change_listener(event: Event) -> None:
+    def pattern_time_change_listener(_: datetime) -> None:
         """Listen for matching time_changed events."""
-        nonlocal next_time, last_now
+        nonlocal time_listener
 
-        now = event.data[ATTR_NOW]
+        now = time_tracker_utcnow()
+        hass.async_run_hass_job(job, now.astimezone(tz) if tz else now)
 
-        if last_now is None or now < last_now:
-            # Time rolled back or next time not yet calculated
-            calculate_next(now)
+        time_listener = async_track_point_in_utc_time(
+            hass,
+            pattern_time_change_listener,
+            calculate_next(now + timedelta(seconds=1)),
+        )
 
-        last_now = now
+    time_listener = async_track_point_in_utc_time(
+        hass, pattern_time_change_listener, calculate_next(dt_util.utcnow())
+    )
 
-        if next_time <= now:
-            hass.async_run_job(action, now.astimezone(tz) if tz else now)
-            calculate_next(now + timedelta(seconds=1))
+    @callback
+    def unsub_pattern_time_change_listener() -> None:
+        """Cancel the time listener."""
+        assert time_listener is not None
+        time_listener()
 
-    # We can't use async_track_point_in_utc_time here because it would
-    # break in the case that the system time abruptly jumps backwards.
-    # Our custom last_now logic takes care of resolving that scenario.
-    return hass.bus.async_listen(EVENT_TIME_CHANGED, pattern_time_change_listener)
+    return unsub_pattern_time_change_listener
 
 
 @callback
 @bind_hass
 def async_track_time_change_in_tz(
     hass: HomeAssistant,
-    action: Callable[..., None],
+    action: None,
+    # action: Callable[[datetime], Awaitable[None] | None],
     hour: Optional[Any] = None,
     minute: Optional[Any] = None,
     second: Optional[Any] = None,
