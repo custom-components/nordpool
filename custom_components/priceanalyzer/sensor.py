@@ -407,7 +407,7 @@ class NordpoolSensor(Entity):
             self._average = mean(formatted_prices)
             self._min = min(formatted_prices)
             self._max = max(formatted_prices)
-            self._add_raw_calculated(data,False)
+        self._add_raw_calculated(False)
             
 
 
@@ -449,7 +449,7 @@ class NordpoolSensor(Entity):
                 self._average_tomorrow = mean(formatted_prices)
                 self._min_tomorrow = min(formatted_prices)
                 self._max_tomorrow = max(formatted_prices)
-                self._add_raw_calculated(data,True)
+            self._add_raw_calculated(True)
 
 
 
@@ -598,11 +598,20 @@ class NordpoolSensor(Entity):
             self._ten_cheapest_tomorrow = ten_cheapest_tomorrow
 
 
-    def _add_raw_calculated(self, data, is_tomorrow):
-        
+    def _add_raw_calculated(self, is_tomorrow):
+
         if is_tomorrow and self.tomorrow_valid == False:
             return []
-
+        
+        data = self._data_tomorrow if is_tomorrow else self._data_today
+        data = sorted(data.get("values"), key=itemgetter("start"))
+        formatted_prices = [
+            self._calc_price(
+                i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
+            )
+            for i in data
+        ]
+        
         result = []
         hour = 0
         
@@ -794,6 +803,7 @@ class NordpoolSensor(Entity):
             _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow is none, trying to fetch it.")
             tomorrow = await self._api.tomorrow(self._area, self._currency)
             if tomorrow:
+                _LOGGER.debug("PriceAnalyzerSensor FETCHED _data_tomorrow!, %s", tomorrow)
                 self._data_tomorrow = tomorrow
                 self._update_tomorrow(tomorrow)
             else:

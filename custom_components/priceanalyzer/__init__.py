@@ -112,6 +112,7 @@ class NordpoolData:
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrows prices in a area in the requested currency"""
         res = await self._someday(area, currency, "tomorrow")
+        _LOGGER.debug("Tomorrows price array is %s.", res)
         return res
 
 
