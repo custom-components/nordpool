@@ -384,7 +384,7 @@ class NordpoolSensor(Entity):
         else:
             _LOGGER.debug("Cant update _update_current_price because it was no data")
 
-            
+
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
         but i dont trust that to continue forever. Thats why we sort it ourselfs."""
@@ -514,6 +514,8 @@ class NordpoolSensor(Entity):
             self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
             self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
             self._peak = self._calc_price(data.get("Peak"))
+            self._add_raw_calculated(False)
+
         else:
             data = sorted(data.get("values"), key=itemgetter("start"))
             formatted_prices = [
@@ -532,7 +534,7 @@ class NordpoolSensor(Entity):
             self._average = mean(formatted_prices)
             self._min = min(formatted_prices)
             self._max = max(formatted_prices)
-        self._add_raw_calculated(False)
+            self._add_raw_calculated(False)
 
 
 
@@ -555,6 +557,8 @@ class NordpoolSensor(Entity):
             self._off_peak_1_tomorrow = self._calc_price(data.get("Off-peak 1"))
             self._off_peak_2_tomorrow = self._calc_price(data.get("Off-peak 2"))
             self._peak_tomorrow = self._calc_price(data.get("Peak"))
+            self._add_raw_calculated(True)
+
         else:
             data = sorted(data.get("values"), key=itemgetter("start"))
             formatted_prices = [
@@ -574,7 +578,7 @@ class NordpoolSensor(Entity):
                 self._average_tomorrow = mean(formatted_prices)
                 self._min_tomorrow = min(formatted_prices)
                 self._max_tomorrow = max(formatted_prices)
-            self._add_raw_calculated(True)
+                self._add_raw_calculated(True)
 
 
 
