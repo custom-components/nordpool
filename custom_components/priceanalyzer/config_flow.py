@@ -130,7 +130,7 @@ class PriceAnalyzerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 #     #         step_id="init",
 #     #         data_schema=vol.Schema(data_schema),
 #     #     )
-    
+
 #     async def async_step_init(self, _user_input=None):
 #         """Manage the options."""
 #         return await self.async_step_user_remove_me(self, _user_input)

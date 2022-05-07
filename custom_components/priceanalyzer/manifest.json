@@ -4,17 +4,10 @@
   "documentation": "https://github.com/erlendsellie/priceanalyzer/",
   "issue_tracker": "https://github.com/erlendsellie/priceanalyzer/issues",
   "dependencies": [],
-  "after_dependencies": [
-    "http"
-  ],
+  "after_dependencies": ["http"],
   "config_flow": true,
-  "codeowners": [
-    "@hellowlol",
-    "@erlendsellie"
-  ],
+  "codeowners": ["@hellowlol", "@erlendsellie"],
   "iot_class": "cloud_polling",
-  "requirements": [
-    "nordpool>=0.2"
-  ],
-  "version": "0.0.3"
+  "requirements": ["nordpool>=0.2"],
+  "version": "0.0.4"
 }
