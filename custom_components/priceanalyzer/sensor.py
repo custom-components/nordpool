@@ -822,9 +822,13 @@ class NordpoolSensor(Entity):
         # Updates the current for this hour.
         await self._update_current_price()
 
+
+        #try to force tomorrow.
         tomorrow = await self._api.tomorrow(self._area, self._currency)
         if tomorrow:
+            _LOGGER.debug("PriceAnalyzerSensor force FETCHED _data_tomorrow!, %s", tomorrow)
             self._data_tomorrow = tomorrow
+            self._update_tomorrow(tomorrow)
 
         self._last_tick = dt_utils.now()
         self.async_write_ha_state()
