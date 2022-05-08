@@ -59,7 +59,7 @@ class PriceAnalyzerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional("price_in_cents", default=False): bool,
             vol.Optional("price_type", default="kWh"): vol.In(price_types),
             vol.Optional("additional_costs", default="{{0.01|float}}"): str,
-            vol.Optional("percent_difference", default=50): int,
+            vol.Optional("percent_difference", default=20): int,
         }
 
         placeholders = {
