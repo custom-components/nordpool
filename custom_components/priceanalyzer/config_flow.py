@@ -78,10 +78,10 @@ class PriceAnalyzerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        return PriceAnalyzerEditFlow(config_entry)
+    # @staticmethod
+    # @callback
+    # def async_get_options_flow(config_entry):
+    #     return PriceAnalyzerEditFlow(config_entry)
 
     async def _valid_template(self, user_template):
         try:
@@ -109,48 +109,21 @@ class PriceAnalyzerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 #     def __init__(self, config_entry):
 #         self.config_entry = config_entry
 
-#     # async def async_step_init(self, user_input=None):
-#     #     if user_input is not None:
-#     #         return self.async_create_entry(title="", data=user_input)
-
-
-#     #     _LOGGER.debug('priceanalyzer config entry: %s', self.config_entry.OptionsFlow)
-#     #     data_schema = {
-#     #         vol.Required("region", default=self.config_entry.options.get("region")),
-#     #         vol.Optional("currency", default=self.config_entry.options.get("currency")),
-#     #         vol.Optional("VAT", default=self.config_entry.options.get("VAT")),
-#     #         vol.Optional("precision", default=self.config_entry.options.get("precision")),
-#     #         vol.Optional("low_price_cutoff", default=self.config_entry.options.get("low_price_cutoff")),
-#     #         vol.Optional("price_in_cents", default=self.config_entry.options.get("price_in_cents")),
-#     #         vol.Optional("price_type", default=self.config_entry.options.get("price_type")),
-#     #         vol.Optional("additional_costs", default=self.config_entry.options.get("additional_costs")),
-#     #     }
-
-#     #     return self.async_show_form(
-#     #         step_id="init",
-#     #         data_schema=vol.Schema(data_schema),
-#     #     )
-
-#     async def async_step_init(self, _user_input=None):
-#         """Manage the options."""
-#         return await self.async_step_user_remove_me(self, _user_input)
-
-#     async def async_step_user_remove_me(self, user_input=None):
+#     async def async_step_init(self, user_input=None):
 #         """Handle a flow initialized by the user."""
 #         if user_input is not None:
 #             return self.async_create_entry(title="", data=user_input)
 
-#         _LOGGER.debug('priceanalyzer config entry: %s', self.config_entry.OptionsFlow)
-#         data_schema = {
-#             vol.Required("region", default=self.config_entry.options.get("region")),
-#             vol.Optional("currency", default=self.config_entry.options.get("currency")),
-#             vol.Optional("VAT", default=self.config_entry.options.get("VAT")),
-#             vol.Optional("precision", default=self.config_entry.options.get("precision")),
-#             vol.Optional("low_price_cutoff", default=self.config_entry.options.get("low_price_cutoff")),
-#             vol.Optional("price_in_cents", default=self.config_entry.options.get("price_in_cents")),
-#             vol.Optional("price_type", default=self.config_entry.options.get("price_type")),
-#             vol.Optional("additional_costs", default=self.config_entry.options.get("additional_costs")),
+#         schema = {
+#             vol.Required("region", default=self.config_entry.data["region"]): vol.In(regions),
+#             vol.Optional("currency", default=self.config_entry.data["currency"]): vol.In(currencys),
+#             vol.Optional("VAT", default=self.config_entry.data["VAT"]): bool,
+#             vol.Optional("precision", default=self.config_entry.data["precision"]): vol.Coerce(int),
+#             vol.Optional("low_price_cutoff", default=self.config_entry.data["low_price_cutoff"]): vol.Coerce(float),
+#             vol.Optional("price_in_cents", default=self.config_entry.data["price_in_cents"]): bool,
+#             vol.Optional("price_type", default=self.config_entry.data["price_type"]): vol.In(price_types),
+#             vol.Optional("additional_costs", default=self.config_entry.data["additional_costs"]): str,
+#             vol.Optional("percent_difference", default=self.config_entry.data["percent_difference"]): int,
 #         }
 
-
-#         return self.async_show_form(step_id="user", data_schema=vol.Schema(schema))
+#         return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))

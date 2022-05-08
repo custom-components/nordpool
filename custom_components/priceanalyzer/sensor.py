@@ -650,6 +650,9 @@ class NordpoolSensor(Entity):
         data = self._data_tomorrow if is_tomorrow else self._data_today
         data = sorted(data.get("values"), key=itemgetter("start"))
 
+
+        _LOGGER.debug('PriceAnalyzer Adding raw calculated for %s with , %s ', self.name, data)
+
         result = []
         hour = 0
 
