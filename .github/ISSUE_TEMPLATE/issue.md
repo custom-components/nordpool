@@ -26,7 +26,7 @@ If you are unsure about the version check the const.py file.
 
 ```yaml
 
-Add your logs here.
+Add your configuration here.
 
 ```
 
