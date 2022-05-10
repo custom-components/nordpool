@@ -9,5 +9,5 @@
   "codeowners": ["@hellowlol", "@erlendsellie"],
   "iot_class": "cloud_polling",
   "requirements": ["nordpool>=0.2"],
-  "version": "0.0.5"
+  "version": "0.0.6"
 }

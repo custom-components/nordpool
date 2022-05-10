@@ -149,10 +149,10 @@ class NordpoolSensor(Entity):
         self._precision = precision
         self._low_price_cutoff = low_price_cutoff
         self._use_cents = use_cents
-        self._api = api
+        self.api = api
         self._ad_template = ad_template
         self._hass = hass
-        self.percent_difference = percent_difference or 50;
+        self.percent_difference = percent_difference or 20
 
         if vat is True:
             self._vat = _REGIONS[area][2]
@@ -311,7 +311,7 @@ class NordpoolSensor(Entity):
 
     @property
     def current_hour(self) -> list:
-        if self._today_calculated != None:
+        if self._today_calculated is not None:
             now = datetime.now()
             return self._today_calculated[now.hour]
         else:
@@ -361,7 +361,7 @@ class NordpoolSensor(Entity):
 
     @property
     def tomorrow_valid(self):
-        return self._api.tomorrow_valid()
+        return self.api.tomorrow_valid()
 
 
     @property
@@ -372,7 +372,7 @@ class NordpoolSensor(Entity):
         """ update the current price (price this hour)"""
         local_now = dt_utils.now()
 
-        data = await self._api.today(self._area, self._currency)
+        data = await self.api.today(self._area, self._currency)
         if data:
             for item in self._someday(data):
                 if item["start"] == start_of(local_now, "hour"):
@@ -433,15 +433,22 @@ class NordpoolSensor(Entity):
         price_now = self._calc_price(item["value"], fake_dt=item["start"])
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
 
+
+
+
+        #special handling for high price at end of day:
+        if not is_tomorrow and item['start'].hour == 23 and (item['price_next_hour'] / item['value']) < 0.80:
+            return -1
+
         if is_max:
             return -1
-        elif is_gaining and is_five_most_expensive == False:
+        elif is_gaining and not is_five_most_expensive:
         #elif (is_over_peak == False and is_gaining == True):
         #elif (is_low_price == True and is_gaining == True):
             return 1
         elif is_falling and is_over_average == True:
             return -1
-        elif is_low_price and (is_gaining == False or is_falling):
+        elif is_low_price and (not is_gaining or is_falling):
             return 0
         elif (is_over_peak and is_falling) or is_over_off_peak_1:
             return -1
@@ -540,7 +547,7 @@ class NordpoolSensor(Entity):
 
     def _update_tomorrow(self, data) -> None:
 
-        if self._api.tomorrow_valid() == False:
+        if not self.api.tomorrow_valid():
             return
         """Set attrs."""
         _LOGGER.debug("Called _update setting attrs for the day")
@@ -663,7 +670,7 @@ class NordpoolSensor(Entity):
             self._set_cheapest_hours_today()
 
 
-        if self._api.tomorrow_valid() == True and is_tomorrow == True:
+        if self.api.tomorrow_valid() == True and is_tomorrow == True:
             max_tomorrow = self._max_tomorrow
             min_tomorrow = self._min_tomorrow
             difference = ((min_tomorrow / max_tomorrow) - 1)
@@ -776,8 +783,8 @@ class NordpoolSensor(Entity):
 
 
         if self._data_tomorrow is None or len(self._data_tomorrow.get("values")) < 1:
-            _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow is none, trying to fetch it.")
-            tomorrow = await self._api.tomorrow(self._area, self._currency)
+            _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow is none, trying to fetch it")
+            tomorrow = await self.api.tomorrow(self._area, self._currency)
             if tomorrow:
                 _LOGGER.debug("PriceAnalyzerSensor FETCHED _data_tomorrow!, %s", tomorrow)
                 self._data_tomorrow = tomorrow
@@ -788,8 +795,8 @@ class NordpoolSensor(Entity):
 
 
         if self._data_today is None:
-            _LOGGER.debug("PriceAnalyzerSensor _data_today is none, trying to fetch it.")
-            today = await self._api.today(self._area, self._currency)
+            _LOGGER.debug("PriceAnalyzerSensor _data_today is none, trying to fetch it")
+            today = await self.api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
@@ -816,8 +823,9 @@ class NordpoolSensor(Entity):
 
                 self._update(self._data_today)
                 self._data_tomorrow = None
+                self._tomorrow_calculated = None
             else:
-                today = await self._api.today(self._area, self._currency)
+                today = await self.api.today(self._area, self._currency)
                 if today:
                     self._data_today = today
                     self._update(today)
@@ -827,7 +835,7 @@ class NordpoolSensor(Entity):
 
 
         #try to force tomorrow.
-        tomorrow = await self._api.tomorrow(self._area, self._currency)
+        tomorrow = await self.api.tomorrow(self._area, self._currency)
         if tomorrow:
             _LOGGER.debug("PriceAnalyzerSensor force FETCHED _data_tomorrow!, %s", tomorrow)
             self._data_tomorrow = tomorrow
@@ -845,7 +853,7 @@ class NordpoolSensor(Entity):
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass %s", self.name)
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
+        async_dispatcher_connect(self.api._hass, EVENT_NEW_DATA, self.check_stuff)
 
         await self.check_stuff()
 

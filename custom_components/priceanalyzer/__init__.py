@@ -43,7 +43,7 @@ If you have any issues with this you need to open an issue here:
 
 
 class NordpoolData:
-    def __init__(self, hass: HomeAssistant):
+    def __init__(self, hass: HomeAssistant) -> None:
         self._hass = hass
         self._last_tick = None
         self._data = defaultdict(dict)
@@ -106,7 +106,7 @@ class NordpoolData:
 
     async def today(self, area: str, currency: str) -> dict:
         """Returns todays prices in a area in the requested currency"""
-        res = await self._someday(area, currency, "today")  
+        res = await self._someday(area, currency, "today")
         return res
 
     async def tomorrow(self, area: str, currency: str):
