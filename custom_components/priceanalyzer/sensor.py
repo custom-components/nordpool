@@ -437,7 +437,7 @@ class NordpoolSensor(Entity):
 
 
         #special handling for high price at end of day:
-        if not is_tomorrow and item['start'].hour == 23 and (item['price_next_hour'] / item['value']) < 0.80:
+        if not is_tomorrow and item['start'].hour == 23 and item['price_next_hour'] is not None and (item['price_next_hour'] / item['value']) < 0.80:
             return -1
 
         if is_max:
