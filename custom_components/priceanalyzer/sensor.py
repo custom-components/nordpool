@@ -565,6 +565,9 @@ class NordpoolSensor(Entity):
             self._off_peak_2_tomorrow = self._calc_price(data.get("Off-peak 2"))
             self._peak_tomorrow = self._calc_price(data.get("Peak"))
             self._add_raw_calculated(True)
+            # Reevaluate Today, when tomorrows prices are available
+            self._add_raw_calculated(False)
+            
 
         else:
             data = sorted(data.get("values"), key=itemgetter("start"))
@@ -586,6 +589,8 @@ class NordpoolSensor(Entity):
                 self._min_tomorrow = min(formatted_prices)
                 self._max_tomorrow = max(formatted_prices)
                 self._add_raw_calculated(True)
+                # Reevaluate Today, when tomorrows prices are available
+                self._add_raw_calculated(False)
 
 
 
@@ -655,8 +660,12 @@ class NordpoolSensor(Entity):
             return []
 
         data = self._data_tomorrow if is_tomorrow else self._data_today
+        if data is None:
+            self.check_stuff()
+            return
         data = sorted(data.get("values"), key=itemgetter("start"))
 
+        
 
         _LOGGER.debug('PriceAnalyzer Adding raw calculated for %s with , %s ', self.name, data)
 
