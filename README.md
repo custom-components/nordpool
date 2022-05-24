@@ -15,8 +15,10 @@ From the [latest release](https://github.com/custom-components/nordpool/releases
 cd YOUR_HASS_CONFIG_DIRECTORY    # same place as configuration.yaml
 mkdir -p custom_components/nordpool
 cd custom_components/nordpool
-unzip nordpool.X.Y-Z.zip
+unzip nordpool-X.Y.Z.zip
+mv nordpool-X.Y.Z/custom_components/nordpool/* .  
 ```
+
 
 ### Usage
 
