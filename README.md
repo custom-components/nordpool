@@ -1,4 +1,6 @@
 ## nordpool custom component for home assistant
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MAXZPYVPD8XS6)
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/2ys3cdCZk)
 
 ## Installation
 
@@ -101,7 +103,7 @@ sensor:
 
 run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help``` you can run the script anyhere python is installed. (install the required packages pyyaml and click using `pip install packagename`)
 
-### Debug loggning
+### Debug logging
 Add this to your configuration.yaml to debug the component.
 
 ```
