@@ -287,36 +287,19 @@ class NordpoolSensor(Entity):
         """Set attrs."""
         _LOGGER.debug("Called _update setting attrs for the day")
 
-        # if has_junk(data):
-        #    # _LOGGER.debug("It was junk infinity in api response, fixed it.")
+        if data is None:
+            return
+
         d = extract_attrs(data.get("values"))
         data.update(d)
 
-        if self._ad_template.template == DEFAULT_TEMPLATE:
-            self._average = self._calc_price(data.get("Average"))
-            self._min = self._calc_price(data.get("Min"))
-            self._max = self._calc_price(data.get("Max"))
-            self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
-            self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
-            self._peak = self._calc_price(data.get("Peak"))
-        else:
-            data = sorted(data.get("values"), key=itemgetter("start"))
-            formatted_prices = [
-                self._calc_price(
-                    i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
-                )
-                for i in data
-            ]
-            offpeak1 = formatted_prices[0:8]
-            peak = formatted_prices[9:17]
-            offpeak2 = formatted_prices[20:]
+        self._average = self._calc_price(data.get("Average"))
+        self._min = self._calc_price(data.get("Min"))
+        self._max = self._calc_price(data.get("Max"))
+        self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
+        self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
+        self._peak = self._calc_price(data.get("Peak"))
 
-            self._peak = mean(peak)
-            self._off_peak_1 = mean(offpeak1)
-            self._off_peak_2 = mean(offpeak2)
-            self._average = mean(formatted_prices)
-            self._min = min(formatted_prices)
-            self._max = max(formatted_prices)
 
     @property
     def current_price(self) -> float:
