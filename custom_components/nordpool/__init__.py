@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import partial
 from random import randint
+from types import MappingProxyType
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -176,12 +177,17 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
+    # If any options is passed they should override default config.
+    d = dict(entry.data)
+    d.update(dict(entry.options))
+    # So many broken rules :P
+    entry.data = MappingProxyType(d)
+
     res = await _dry_setup(hass, entry.data)
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
-
-    # entry.add_update_listener(async_reload_entry)
+    entry.add_update_listener(async_reload_entry)
     return res
 
 

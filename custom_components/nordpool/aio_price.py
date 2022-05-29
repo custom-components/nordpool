@@ -154,7 +154,7 @@ class AioPrices(Prices):
         return await resp.json()
 
     async def _fetch_json(self, data_type, end_date=None, areas=None):
-        """ Fetch JSON from API """
+        """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
         if end_date is None:
             end_date = date.today() + timedelta(days=1)
@@ -251,27 +251,27 @@ class AioPrices(Prices):
             return join_result_for_correct_time(raw, end_date)
 
     async def hourly(self, end_date=None, areas=[]):
-        """ Helper to fetch hourly data, see Prices.fetch() """
+        """Helper to fetch hourly data, see Prices.fetch()"""
         return await self.fetch(self.HOURLY, end_date, areas)
 
     async def daily(self, end_date=None, areas=[]):
-        """ Helper to fetch daily data, see Prices.fetch() """
+        """Helper to fetch daily data, see Prices.fetch()"""
         return await self.fetch(self.DAILY, end_date, areas)
 
     async def weekly(self, end_date=None, areas=[]):
-        """ Helper to fetch weekly data, see Prices.fetch() """
+        """Helper to fetch weekly data, see Prices.fetch()"""
         return await self.fetch(self.WEEKLY, end_date, areas)
 
     async def monthly(self, end_date=None, areas=[]):
-        """ Helper to fetch monthly data, see Prices.fetch() """
+        """Helper to fetch monthly data, see Prices.fetch()"""
         return await self.fetch(self.MONTHLY, end_date, areas)
 
     async def yearly(self, end_date=None, areas=[]):
-        """ Helper to fetch yearly data, see Prices.fetch() """
+        """Helper to fetch yearly data, see Prices.fetch()"""
         return await self.fetch(self.YEARLY, end_date, areas)
 
     def _conv_to_float(self, s):
-        """ Convert numbers to float. Return infinity, if conversion fails. """
+        """Convert numbers to float. Return infinity, if conversion fails."""
         try:
             return float(s.replace(",", ".").replace(" ", ""))
         except ValueError:
