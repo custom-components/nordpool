@@ -6,6 +6,7 @@ from random import randint
 from types import MappingProxyType
 
 import voluptuous as vol
+from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -114,7 +115,7 @@ class NordpoolData:
 
 
 async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
-    """Set up using yaml config file."""
+    """Helper"""
 
     if DOMAIN not in hass.data:
         api = NordpoolData(hass)
@@ -171,8 +172,8 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
 
 
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
-    """Set up using yaml config file."""
-    return await _dry_setup(hass, config)
+    """Setup using yaml isnt supported."""
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
