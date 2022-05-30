@@ -95,14 +95,14 @@ def join_result_for_correct_time(results, dt):
     """
     # utc = datetime.utcnow()
     fin = defaultdict(dict)
-    _LOGGER.debug("join_result_for_correct_time %s", dt)
+    # _LOGGER.debug("join_result_for_correct_time %s", dt)
     utc = dt
 
     for day_ in results:
         for key, value in day_.get("areas", {}).items():
             zone = tzs.get(key)
             if zone is None:
-                _LOGGER.debug("Skipping %s", key)
+                # _LOGGER.debug("Skipping %s", key)
                 continue
             else:
                 zone = tz.gettz(zone)
@@ -134,7 +134,7 @@ def join_result_for_correct_time(results, dt):
                 if start_of_day <= local and local <= end_of_day:
                     fin["areas"][key]["values"].append(val)
 
-    _LOGGER.debug("Combines result: %s", fin)
+    # _LOGGER.debug("Combines result: %s", fin)
 
     return fin
 
@@ -149,7 +149,7 @@ class AioPrices(Prices):
     async def _io(self, url, **kwargs):
 
         resp = await self.client.get(url, params=kwargs)
-        _LOGGER.debug("requested %s %s", resp.url, kwargs)
+        # _LOGGER.debug("requested %s %s", resp.url, kwargs)
 
         return await resp.json()
 

@@ -1,14 +1,13 @@
-from enum import unique
 import logging
 import math
-from datetime import datetime
 from operator import itemgetter
 from statistics import mean
-import homeassistant.util.uuid as uuid_util
-from homeassistant.helpers.entity import async_generate_entity_id
+
+
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
+
+# from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
@@ -57,29 +56,11 @@ _CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
-DEFAULT_NAME = "Elspot"
+DEFAULT_NAME = "Nordpool"
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
 
 DEFAULT_TEMPLATE = "{{0.0|float}}"
-
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
-            list(_REGIONS.keys())
-        ),
-        vol.Optional("friendly_name", default=""): cv.string,
-        # This is only needed if you want the some area but want the prices in a non local currency
-        vol.Optional("currency", default=""): cv.string,
-        vol.Optional("VAT", default=True): cv.boolean,
-        vol.Optional("precision", default=3): cv.positive_int,
-        vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
-        vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
-        vol.Optional("price_in_cents", default=False): cv.boolean,
-        vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
-    }
-)
 
 
 def _dry_setup(hass, config, add_devices, discovery_info=None, unique_id=None):
@@ -250,7 +231,7 @@ class NordpoolSensor(Entity):
             value = self._current_price
 
         if value is None or math.isinf(value):
-            _LOGGER.debug("api returned junk infinty %s", value)
+            _LOGGER.debug("%s api returned junk infinty %s", self.unique_id, value)
             return None
 
         # Used to inject the current hour.
@@ -319,7 +300,7 @@ class NordpoolSensor(Entity):
     @property
     def current_price(self) -> float:
         res = self._calc_price()
-        _LOGGER.debug("Current hours price for %s is %s", self.name, res)
+        _LOGGER.debug("Current hours price for %s is %s", self.unique_id, res)
         return res
 
     def _someday(self, data) -> list:

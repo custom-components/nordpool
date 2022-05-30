@@ -24,13 +24,8 @@ RANDOM_MINUTE = randint(10, 30)
 RANDOM_SECOND = randint(0, 59)
 EVENT_NEW_DATA = "nordpool_update"
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
-
-
-CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
-
-
 NAME = DOMAIN
-VERSION = "0.0.7"
+VERSION = "1.0.0"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
