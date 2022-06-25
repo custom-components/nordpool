@@ -9,6 +9,8 @@
                     "region": "Region",
                     "currency": "NOK",
                     "VAT": "Include VAT",
+                    "use_custom_VAT": "Use custom VAT value",
+                    "custom_VAT_value": "Custom VAT value",
                     "precision": "How many decimals to show",
                     "low_price_cutoff": "low price cut off",
                     "price_in_cents": "Price in Cents",

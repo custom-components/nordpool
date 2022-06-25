@@ -70,6 +70,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         # This is only needed if you want the some area but want the prices in a non local currency
         vol.Optional("currency", default=""): cv.string,
         vol.Optional("VAT", default=True): cv.boolean,
+        vol.Optional("use_custom_VAT", default=False): cv.boolean,
+        vol.Optional("custom_VAT_value", default=0.25): cv.small_float,
         vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
@@ -90,6 +92,8 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     low_price_cutoff = config.get("low_price_cutoff")
     currency = config.get("currency")
     vat = config.get("VAT")
+    use_custom_vat = config.get("use_custom_VAT")
+    custom_vat_value = config.get("custom_VAT_value")
     use_cents = config.get("price_in_cents")
     ad_template = config.get("additional_costs")
     api = hass.data[DOMAIN]
@@ -101,6 +105,8 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
         low_price_cutoff,
         currency,
         vat,
+        use_custom_vat,
+        custom_vat_value,
         use_cents,
         api,
         ad_template,
@@ -132,6 +138,8 @@ class NordpoolSensor(Entity):
         low_price_cutoff,
         currency,
         vat,
+        use_custom_vat,
+        custom_vat_value,
         use_cents,
         api,
         ad_template,
@@ -150,7 +158,10 @@ class NordpoolSensor(Entity):
         self._hass = hass
 
         if vat is True:
-            self._vat = _REGIONS[area][2]
+            if use_custom_vat is True:
+                self._vat = custom_vat_value
+            else:
+                self._vat = _REGIONS[area][2]
         else:
             self._vat = 0
 

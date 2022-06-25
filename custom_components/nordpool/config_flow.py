@@ -52,6 +52,8 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required("region", default=None): vol.In(regions),
             vol.Optional("currency", default=""): vol.In(currencys),
             vol.Optional("VAT", default=True): bool,
+            vol.Optional("use_custom_VAT", default=False): bool,
+            vol.Optional("custom_VAT_value", default=0.25): vol.Coerce(float),
             vol.Optional("precision", default=3): vol.Coerce(int),
             vol.Optional("low_price_cutoff", default=1.0): vol.Coerce(float),
             vol.Optional("price_in_cents", default=False): bool,
@@ -62,6 +64,7 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         placeholders = {
             "region": regions,
             "currency": currencys,
+            "custom_VAT_value": "0.25",
             "price_type": price_types,
             "additional_costs": "{{0.0|float}}",
         }
