@@ -48,9 +48,9 @@ sensor:
     VAT: True
     
     # Do you want to use a custom VAT value? Default False
-    # n.b. This custom value is only used if VAT is included
+    # n.b. This custom value is only used if VAT is set to True (see above)
     use_custom_VAT: False
-    # Custom VAT value written as decimal (e.g. 25% is 0.25)
+    # Custom VAT value written as decimal (e.g. 25% VAT is 0.25)
     custom_VAT_value: 0.25
   
     # What currency the api fetches the prices in
