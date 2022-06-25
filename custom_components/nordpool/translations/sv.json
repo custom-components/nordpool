@@ -10,6 +10,8 @@
                     "friendly_name": "Visningsnamn",
                     "currency": "SEK",
                     "VAT": "Inkludera moms",
+                    "use_custom_VAT": "Använd anpassat momsvärde",
+                    "custom_VAT_value": "Anpassat momsvärde",
                     "precision": "Hur många decimaler ska visas",
                     "low_price_cutoff": "Lägsta prisnivå",
                     "price_in_cents": "Pris i ören",

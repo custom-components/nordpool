@@ -10,6 +10,8 @@
                     "friendly_name": "Kuvatav nimi",
                     "currency": "EUR",
                     "VAT": "Koos käibemaksuga",
+                    "use_custom_VAT": "Kasutage kohandatud käibemaksu väärtust",
+                    "custom_VAT_value": "Kohandatud käibemaksu väärtus",
                     "precision": "Mitu kohta peale koma",
                     "low_price_cutoff": "Madala hinna tase",
                     "price_in_cents": "Hind sentides",

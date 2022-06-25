@@ -9,6 +9,8 @@
                     "region": "Region",
                     "currency": "NOK",
                     "VAT": "Inkluder MVA",
+                    "use_custom_VAT": "Bruk egendefinert mva-verdi",
+                    "custom_VAT_value": "Egendefinert mva-verdi",
                     "precision": "Antall desimaler som vises",
                     "low_price_cutoff": "Grense for lav-pris",
                     "price_in_cents": "Pris i øre",

@@ -10,6 +10,8 @@
                     "friendly_name": "Nimi käyttöliittymässä",
                     "currency": "EUR",
                     "VAT": "Sisällytä ALV",
+                    "use_custom_VAT": "Käytä mukautettua ALV-arvoa",
+                    "custom_VAT_value": "Muokattu ALV-arvo",
                     "precision": "Desimaalien lukumäärä",
                     "low_price_cutoff": "Matalan hinnan raja-arvo",
                     "price_in_cents": "Hinta senteissä",
