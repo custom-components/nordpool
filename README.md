@@ -22,7 +22,7 @@ If you have any input, i'm happy to hear about it. This 'algorithm' has worked g
 
 ### Option 1: HACS
 
-Under HACS -> Integrations, select the hamburger menu in the top right corner and add 'https://github.com/erlendsellie/priceanalyzer/' as an integration.
+Under HACS -> Integrations, select the 'Three dots' icon in the top right corner and add 'https://github.com/erlendsellie/priceanalyzer/' as an integration.
 It will searchable as 'priceanalyzer'. Click it, and select 'Download this repository with Hacs'.
 Then restart Home Assistant, and go to the integrations page to configure it.
 It will then create a new sensor, sensor.priceanalyzer in your installation.
