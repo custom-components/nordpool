@@ -424,23 +424,17 @@ class NordpoolSensor(Entity):
         return ((price_now / price_next_hour) > percent_threshold) or ((price_now / price_next_hour2) > percent_threshold) or ((price_now / price_next_hour3) > percent_threshold)
 
 
-    def _is_falling_alot_next_hour(self, item) -> bool:
-        if item['price_next_hour'] is not None and (item['price_next_hour'] / item['value']) < 0.60:
-            return -1
-
-
     def _get_temperature_correction(self, item, is_gaining, is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive) -> float:
         diff = self._diff_tomorrow if is_tomorrow else self._diff
         percent_difference = (self.percent_difference + 100) /100
-        if(diff < percent_difference):
-            return 0
+        # TODO this calculation is not considering additional costs.
+        #if(diff < percent_difference):
+        #    return 0
 
         price_now = self._calc_price(item["value"], fake_dt=item["start"])
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
 
-        #todo is really high spike
-        # must also be within 5 most expensive, to not trigger when there is a big valley for the day
-        # with otherwise high prices. But this could still just end up with just 'block' the 5 most expensive.
+
 
 
         #special handling for high price at end of day:
@@ -448,8 +442,6 @@ class NordpoolSensor(Entity):
             return -1
 
         if is_max:
-            return -1
-        elif self._is_falling_alot_next_hour(item):
             return -1
         elif is_gaining and not is_five_most_expensive:
         #elif (is_over_peak == False and is_gaining == True):
@@ -459,8 +451,12 @@ class NordpoolSensor(Entity):
             return -1
         elif is_low_price and (not is_gaining or is_falling):
             return 0
-        elif (is_over_peak and is_falling) or is_over_off_peak_1:
-            return -1
+        # elif (is_over_peak and is_falling) or is_over_off_peak_1:
+        #     return -1
+        #TODO is_over_off_peak_1 is not considering additionatla costs i think, so this is wrong.
+        # Nope, the case is that it's just set hours, and not considering
+        # the actual price, so useless as is. Must still get the price, and just
+        # add the additional costs to get it 'more right'?
         else:
             return 0
 
@@ -566,6 +562,7 @@ class NordpoolSensor(Entity):
         d = extract_attrs(data.get("values"))
         data.update(d)
 
+        #TODO This else is not right at all for calculating.
         if self._ad_template.template == DEFAULT_TEMPLATE:
             self._average_tomorrow = self._calc_price(data.get("Average"))
             self._min_tomorrow = self._calc_price(data.get("Min"))
@@ -576,7 +573,7 @@ class NordpoolSensor(Entity):
             self._add_raw_calculated(True)
             # Reevaluate Today, when tomorrows prices are available
             self._add_raw_calculated(False)
-
+            
 
         else:
             data = sorted(data.get("values"), key=itemgetter("start"))
@@ -587,7 +584,7 @@ class NordpoolSensor(Entity):
                 for i in data
             ]
 
-            if len(formatted_prices) and formatted_prices[0] is not None:
+            if formatted_prices[0] != None:
                 offpeak1 = formatted_prices[0:8]
                 peak = formatted_prices[9:17]
                 offpeak2 = formatted_prices[20:]
@@ -674,7 +671,7 @@ class NordpoolSensor(Entity):
             return
         data = sorted(data.get("values"), key=itemgetter("start"))
 
-
+        
 
         _LOGGER.debug('PriceAnalyzer Adding raw calculated for %s with , %s ', self.name, data)
 
@@ -809,7 +806,7 @@ class NordpoolSensor(Entity):
                 self._update_tomorrow(tomorrow)
             else:
                 _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow could not be fetched!, %s", tomorrow)
-
+                self._data_tomorrow = None
 
 
         if self._data_today is None:
@@ -819,7 +816,7 @@ class NordpoolSensor(Entity):
                 self._data_today = today
                 self._update(today)
             else:
-                _LOGGER.error("PriceAnalyzerSensor _data_today could not be fetched!, %s", tomorrow)
+                _LOGGER.error("PriceAnalyzerSensor _data_today could not be fetched!, %s", today)
 
 
         # We can just check if this is the first hour.
