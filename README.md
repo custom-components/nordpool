@@ -94,7 +94,7 @@ series:
     yaxis_id: pris
     extend_to: now
     name: Price
-    unit: NOK/kWh
+    unit: Øre/kWh
     curve: stepline
     color: tomato
     show:
