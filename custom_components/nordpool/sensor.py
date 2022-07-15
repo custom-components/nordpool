@@ -33,7 +33,7 @@ _REGIONS = {
     "Bergen": ["NOK", "Norway", 0.25],
     "Molde": ["NOK", "Norway", 0.25],
     "Tr.heim": ["NOK", "Norway", 0.25],
-    "Tromsø": ["NOK", "Norway", 0.25],
+    "Tromsø": ["NOK", "Norway", 0.0],
     "SE1": ["SEK", "Sweden", 0.25],
     "SE2": ["SEK", "Sweden", 0.25],
     "SE3": ["SEK", "Sweden", 0.25],
