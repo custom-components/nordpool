@@ -48,8 +48,11 @@ sensor:
     VAT: True
 
     # What currency the api fetches the prices in
-    # this is only need if you want a sensor in a non local currecy
+    # this is only need if you want a sensor in a non local currency
     currency: "EUR"
+    
+    # Option to show prices in cents (or the equivalent in local currency)
+    price_in_cents: false
 
     # Helper so you can set your "low" price
     # low_price = hour_price < average * low_price_cutoff
