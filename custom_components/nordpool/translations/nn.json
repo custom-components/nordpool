@@ -1,0 +1,25 @@
+{
+    "config": {
+        "title": "Nordpool",
+        "step": {
+            "user": {
+                "title": "Nordpool Sensor",
+                "description": "Opprett ein Nordpool-sensor",
+                "data": {
+                    "region": "Region",
+                    "currency": "NOK",
+                    "VAT": "Inkluder MVA",
+                    "precision": "Talet på desimal som vert vist",
+                    "low_price_cutoff": "Grense for låg-pris",
+                    "price_in_cents": "Pris i øre",
+                    "price_type": "Pris i format",
+                    "additional_costs": "Mal for tilleggskostnadar"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Namnet eksisterer allereie",
+            "invalid_template": "Malen inneheld ein feil, sjå https://github.com/custom-components/nordpool"
+        }
+    }
+}
