@@ -743,7 +743,6 @@ class NordpoolSensor(Entity):
 
             is_five_most_expensive = self._is_five_most_expensive(item, is_tomorrow)
             item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
-            item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
             item['is_five_most_expensive'] = is_five_most_expensive
             item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive)
             hour += 1
