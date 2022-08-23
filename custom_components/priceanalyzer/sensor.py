@@ -435,7 +435,7 @@ class NordpoolSensor(Entity):
         
         # TODO this calculation is not considering additional costs.
          if(diff < percent_difference):
-             return 0
+            return 0
 
         price_now = self._calc_price(item["value"], fake_dt=item["start"])
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
