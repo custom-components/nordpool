@@ -94,7 +94,7 @@ sensor:
     {% if now().hour >=6 and now().hour <23 %}
         {{s.summer_day+s.hourly_fixed_cost+s.cert|float}}
     {% else %}
-        {{s.night+s.hourly_fixed_cost+s.cert|float}}
+        {{s.summer_night+s.hourly_fixed_cost+s.cert|float}}
     {% endif %}
 {% else %}
     {% if now().hour >=6 and now().hour <23 %}
