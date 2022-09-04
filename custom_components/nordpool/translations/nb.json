@@ -21,5 +21,23 @@
             "name_exists": "Navnet eksisterer allerede",
             "invalid_template": "Malen inneholder feil, se https://github.com/custom-components/nordpool"
         }
+    },
+    "options": {
+        "step": {
+            "edit": {
+                "title": "Nordpool Sensor",
+                "description": "Endre en Nordpool sensor",
+                "data": {
+                    "region": "Område",
+                    "currency": "valuta",
+                    "VAT": "Inkluder moms",
+                    "precision": "Antall desimaler",
+                    "low_price_cutoff": "Lav pris",
+                    "price_in_cents": "Pris i øre",
+                    "price_type": "Pristype",
+                    "additional_costs": "Mal for ekstra kostnader"
+                }
+            }
+        }
     }
 }

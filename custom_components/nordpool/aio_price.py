@@ -95,14 +95,14 @@ def join_result_for_correct_time(results, dt):
     """
     # utc = datetime.utcnow()
     fin = defaultdict(dict)
-    _LOGGER.debug("join_result_for_correct_time %s", dt)
+    # _LOGGER.debug("join_result_for_correct_time %s", dt)
     utc = dt
 
     for day_ in results:
         for key, value in day_.get("areas", {}).items():
             zone = tzs.get(key)
             if zone is None:
-                _LOGGER.debug("Skipping %s", key)
+                # _LOGGER.debug("Skipping %s", key)
                 continue
             else:
                 zone = tz.gettz(zone)
@@ -134,7 +134,7 @@ def join_result_for_correct_time(results, dt):
                 if start_of_day <= local and local <= end_of_day:
                     fin["areas"][key]["values"].append(val)
 
-    _LOGGER.debug("Combines result: %s", fin)
+    # _LOGGER.debug("Combines result: %s", fin)
 
     return fin
 
@@ -149,12 +149,12 @@ class AioPrices(Prices):
     async def _io(self, url, **kwargs):
 
         resp = await self.client.get(url, params=kwargs)
-        _LOGGER.debug("requested %s %s", resp.url, kwargs)
+        # _LOGGER.debug("requested %s %s", resp.url, kwargs)
 
         return await resp.json()
 
     async def _fetch_json(self, data_type, end_date=None, areas=None):
-        """ Fetch JSON from API """
+        """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
         if end_date is None:
             end_date = date.today() + timedelta(days=1)
@@ -251,27 +251,27 @@ class AioPrices(Prices):
             return join_result_for_correct_time(raw, end_date)
 
     async def hourly(self, end_date=None, areas=[]):
-        """ Helper to fetch hourly data, see Prices.fetch() """
+        """Helper to fetch hourly data, see Prices.fetch()"""
         return await self.fetch(self.HOURLY, end_date, areas)
 
     async def daily(self, end_date=None, areas=[]):
-        """ Helper to fetch daily data, see Prices.fetch() """
+        """Helper to fetch daily data, see Prices.fetch()"""
         return await self.fetch(self.DAILY, end_date, areas)
 
     async def weekly(self, end_date=None, areas=[]):
-        """ Helper to fetch weekly data, see Prices.fetch() """
+        """Helper to fetch weekly data, see Prices.fetch()"""
         return await self.fetch(self.WEEKLY, end_date, areas)
 
     async def monthly(self, end_date=None, areas=[]):
-        """ Helper to fetch monthly data, see Prices.fetch() """
+        """Helper to fetch monthly data, see Prices.fetch()"""
         return await self.fetch(self.MONTHLY, end_date, areas)
 
     async def yearly(self, end_date=None, areas=[]):
-        """ Helper to fetch yearly data, see Prices.fetch() """
+        """Helper to fetch yearly data, see Prices.fetch()"""
         return await self.fetch(self.YEARLY, end_date, areas)
 
     def _conv_to_float(self, s):
-        """ Convert numbers to float. Return infinity, if conversion fails. """
+        """Convert numbers to float. Return infinity, if conversion fails."""
         try:
             return float(s.replace(",", ".").replace(" ", ""))
         except ValueError:

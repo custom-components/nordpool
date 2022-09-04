@@ -1,12 +1,13 @@
 import logging
 import math
-from datetime import datetime
 from operator import itemgetter
 from statistics import mean
 
+
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
+
+# from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
@@ -55,32 +56,15 @@ _CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
-DEFAULT_NAME = "Elspot"
+DEFAULT_NAME = "Nordpool"
+ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
 
 DEFAULT_TEMPLATE = "{{0.0|float}}"
 
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
-            list(_REGIONS.keys())
-        ),
-        vol.Optional("friendly_name", default=""): cv.string,
-        # This is only needed if you want the some area but want the prices in a non local currency
-        vol.Optional("currency", default=""): cv.string,
-        vol.Optional("VAT", default=True): cv.boolean,
-        vol.Optional("precision", default=3): cv.positive_int,
-        vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
-        vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
-        vol.Optional("price_in_cents", default=False): cv.boolean,
-        vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
-    }
-)
-
-
-def _dry_setup(hass, config, add_devices, discovery_info=None):
-    """Setup the damn platform using yaml."""
+def _dry_setup(hass, config, add_devices, discovery_info=None, unique_id=None):
+    """Setup the platform"""
     _LOGGER.debug("Dumping config %r", config)
     _LOGGER.debug("timezone set in ha %r", hass.config.time_zone)
     region = config.get(CONF_REGION)
@@ -93,6 +77,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     use_cents = config.get("price_in_cents")
     ad_template = config.get("additional_costs")
     api = hass.data[DOMAIN]
+
     sensor = NordpoolSensor(
         friendly_name,
         region,
@@ -105,24 +90,26 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
         api,
         ad_template,
         hass,
+        unique_id,
     )
 
     add_devices([sensor])
 
 
 async def async_setup_platform(hass, config, add_devices, discovery_info=None) -> None:
-    _dry_setup(hass, config, add_devices)
     return True
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
-    _dry_setup(hass, config, async_add_devices)
+    _dry_setup(hass, config, async_add_devices, unique_id=config_entry.entry_id)
     return True
 
 
 class NordpoolSensor(Entity):
+    """Sensor"""
+
     def __init__(
         self,
         friendly_name,
@@ -136,9 +123,8 @@ class NordpoolSensor(Entity):
         api,
         ad_template,
         hass,
+        unique_id,
     ) -> None:
-        # friendly_name is ignored as it never worked.
-        # rename the sensor in the ui if you dont like the name.
         self._area = area
         self._currency = currency or _REGIONS[area][0]
         self._price_type = price_type
@@ -148,6 +134,8 @@ class NordpoolSensor(Entity):
         self._api = api
         self._ad_template = ad_template
         self._hass = hass
+        self._attr_unique_id = unique_id
+        self._unique_id = unique_id
 
         if vat is True:
             self._vat = _REGIONS[area][2]
@@ -188,7 +176,7 @@ class NordpoolSensor(Entity):
 
     @property
     def name(self) -> str:
-        return self.unique_id
+        return "nordpool"
 
     @property
     def should_poll(self):
@@ -213,17 +201,8 @@ class NordpoolSensor(Entity):
         return "%s/%s" % (_currency, self._price_type)
 
     @property
-    def unique_id(self):
-        name = "nordpool_%s_%s_%s_%s_%s_%s" % (
-            self._price_type,
-            self._area,
-            self._currency,
-            self._precision,
-            self._low_price_cutoff,
-            self._vat,
-        )
-        name = name.lower().replace(".", "")
-        return name
+    def unique_id(self) -> None:
+        return self._unique_id
 
     @property
     def device_info(self):
@@ -252,7 +231,7 @@ class NordpoolSensor(Entity):
             value = self._current_price
 
         if value is None or math.isinf(value):
-            _LOGGER.debug("api returned junk infinty %s", value)
+            _LOGGER.debug("%s api returned junk infinty %s", self.unique_id, value)
             return None
 
         # Used to inject the current hour.
@@ -321,7 +300,7 @@ class NordpoolSensor(Entity):
     @property
     def current_price(self) -> float:
         res = self._calc_price()
-        # _LOGGER.debug("Current hours price for %s is %s", self.name, res)
+        _LOGGER.debug("Current hours price for %s is %s", self.unique_id, res)
         return res
 
     def _someday(self, data) -> list:
@@ -384,8 +363,10 @@ class NordpoolSensor(Entity):
             "currency": self._currency,
             "country": _REGIONS[self._area][1],
             "region": self._area,
-            "low price": self.low_price,
+            "low_price": self.low_price,
             "tomorrow_valid": self.tomorrow_valid,
+            "precision": self._precision,
+            "unique_id": self.unique_id,
             "today": self.today,
             "tomorrow": self.tomorrow,
             "raw_today": self.raw_today,

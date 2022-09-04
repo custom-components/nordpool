@@ -3,8 +3,10 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from functools import partial
 from random import randint
+from types import MappingProxyType
 
 import voluptuous as vol
+from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -22,13 +24,8 @@ RANDOM_MINUTE = randint(10, 30)
 RANDOM_SECOND = randint(0, 59)
 EVENT_NEW_DATA = "nordpool_update"
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
-
-
-CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
-
-
 NAME = DOMAIN
-VERSION = "0.0.7"
+VERSION = "1.0.0"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
@@ -113,7 +110,7 @@ class NordpoolData:
 
 
 async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
-    """Set up using yaml config file."""
+    """Helper"""
 
     if DOMAIN not in hass.data:
         api = NordpoolData(hass)
@@ -170,18 +167,23 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
 
 
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
-    """Set up using yaml config file."""
-    return await _dry_setup(hass, config)
+    """Setup using yaml isnt supported."""
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
+    # If any options is passed they should override default config.
+    d = dict(entry.data)
+    d.update(dict(entry.options))
+    # So many broken rules :P
+    entry.data = MappingProxyType(d)
+
     res = await _dry_setup(hass, entry.data)
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
-
-    # entry.add_update_listener(async_reload_entry)
+    entry.add_update_listener(async_reload_entry)
     return res
 
 
