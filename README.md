@@ -1,7 +1,7 @@
 # Price Analyzer based on Nordpool Prices for Home Assistant
 #### Shamelessly based on a fork from https://github.com/custom-components/nordpool, as i don't know Python.
 
-If you like this, [buy me a beer.](http://paypal.me/erlendsellie).
+If you like this, you can [buy me a beer](http://paypal.me/erlendsellie).
 
 If you like being in control of your electricity usage, sign up for Tibber using my my referral link, and get 50 EUR off smart home gadgets in their store:
 [https://invite.tibber.com/yuxfw0uu](https://invite.tibber.com/yuxfw0uu)
