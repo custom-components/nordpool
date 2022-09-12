@@ -437,7 +437,9 @@ class NordpoolSensor(Entity):
         if(diff < percent_difference):
             return 0
 
-        price_now = self._calc_price(item["value"], fake_dt=item["start"])
+        price_now = item["value"]
+        price_next_hour = float(item["price_next_hour"]) if item["price_next_hour"] is not None else item["price_next_hour"]
+        
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
 
 
@@ -448,7 +450,7 @@ class NordpoolSensor(Entity):
             return -1
         elif self._is_falling_alot_next_hour(item):
             return -1
-        elif is_gaining and not is_five_most_expensive:
+        elif is_gaining and (price_now < price_next_hour) and (not is_five_most_expensive):
         #elif (is_over_peak == False and is_gaining == True):
         #elif (is_low_price == True and is_gaining == True):
             return 1
