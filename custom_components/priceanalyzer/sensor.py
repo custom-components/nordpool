@@ -181,6 +181,7 @@ class NordpoolSensor(Entity):
         self._percent_threshold = None
         self._diff = None
         self._ten_cheapest_today = None
+        self._five_cheapest_today = None
 
 
         # Values for tomorrow
@@ -193,6 +194,7 @@ class NordpoolSensor(Entity):
         self._percent_threshold_tomorrow = None
         self._diff_tomorrow = None
         self._ten_cheapest_tomorrow = None
+        self._five_cheapest_tomorrow = None
 
 
 
@@ -333,7 +335,9 @@ class NordpoolSensor(Entity):
             "raw_today": self.today_calculated,
             "raw_tomorrow": self.tomorrow_calculated,
             "ten_cheapest_today": self._ten_cheapest_today,
+            "five_cheapest_today": self._five_cheapest_today,
             "ten_cheapest_tomorrow": self._ten_cheapest_tomorrow,
+            "five_cheapest_tomorrow": self._ten_cheapest_tomorrow,
         }
 
 
@@ -648,6 +652,7 @@ class NordpoolSensor(Entity):
 
             ten_cheapest_today = formatted_prices[:10]
             self._ten_cheapest_today = ten_cheapest_today
+            self._five_cheapest_today = formatted_prices[:5]
 
     def _set_cheapest_hours_tomorrow(self):
         if self._data_tomorrow != None and len(self._data_tomorrow.get("values")):
@@ -665,6 +670,7 @@ class NordpoolSensor(Entity):
 
             ten_cheapest_tomorrow = formatted_prices[:10]
             self._ten_cheapest_tomorrow = ten_cheapest_tomorrow
+            self._five_cheapest_tomorrow = formatted_prices[:5]
 
 
     def _add_raw_calculated(self, is_tomorrow):
@@ -745,6 +751,7 @@ class NordpoolSensor(Entity):
 
             is_five_most_expensive = self._is_five_most_expensive(item, is_tomorrow)
             item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
+            item['is_five_cheapest'] = self._is_five_cheapest(item,is_tomorrow)
             item['is_five_most_expensive'] = is_five_most_expensive
             item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive)
             hour += 1
@@ -772,6 +779,17 @@ class NordpoolSensor(Entity):
         if any(obj['start'] == item['start'] for obj in ten_cheapest ):
             return True
         return False
+
+    def _is_five_cheapest(self, item, is_tomorrow):
+        five_cheapest = self._five_cheapest_tomorrow if is_tomorrow else self._five_cheapest_today
+        if five_cheapest == None:
+            return False
+
+        if any(obj['start'] == item['start'] for obj in five_cheapest ):
+            return True
+        return False
+
+
 
     def _is_five_most_expensive(self, item, is_tomorrow):
         five_most_expensive = self._get_five_most_expensive_hours(is_tomorrow)
@@ -842,6 +860,7 @@ class NordpoolSensor(Entity):
                 self._percent_threshold = self._percent_threshold_tomorrow
                 self._diff = self._diff_tomorrow
                 self._ten_cheapest_today = self._ten_cheapest_tomorrow
+                self._five_cheapest_today = self._five_cheapest_tomorrow
 
                 self._update(self._data_today)
                 self._data_tomorrow = None
