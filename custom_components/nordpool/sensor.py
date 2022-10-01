@@ -246,6 +246,15 @@ class NordpoolSensor(Entity):
             else None
         )
 
+    @property
+    def price_percent_to_average(self) -> float:
+        """Price in percent to average price"""
+        return (
+            self.current_price / self._average
+            if self.current_price and self._average
+            else None
+        )
+
     def _calc_price(self, value=None, fake_dt=None) -> float:
         """Calculate price based on the users settings."""
         if value is None:
@@ -385,6 +394,7 @@ class NordpoolSensor(Entity):
             "country": _REGIONS[self._area][1],
             "region": self._area,
             "low price": self.low_price,
+            "price_percent_to_average": self.price_percent_to_average,
             "tomorrow_valid": self.tomorrow_valid,
             "today": self.today,
             "tomorrow": self.tomorrow,
