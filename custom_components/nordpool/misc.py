@@ -103,7 +103,7 @@ def extract_attrs(data) -> dict:
     if len(data):
         data = sorted(data, key=itemgetter("start"))
         offpeak1 = [i.get("value") for i in data[0:8]]
-        peak = [i.get("value") for i in data[9:17]]
+        peak = [i.get("value") for i in data[8:20]]
         offpeak2 = [i.get("value") for i in data[20:]]
 
         d["Peak"] = mean(peak)
