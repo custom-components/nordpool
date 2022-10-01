@@ -169,6 +169,7 @@ class NordpoolSensor(Entity):
         self._off_peak_2 = None
         self._peak = None
 
+         _LOGGER.debug("Template %s", str(ad_template))
         # Check incase the sensor was setup using config flow.
         # This blow up if the template isnt valid.
         if not isinstance(self._ad_template, Template):
@@ -255,27 +256,28 @@ class NordpoolSensor(Entity):
             _LOGGER.debug("api returned junk infinty %s", value)
             return None
 
-        # Used to inject the current hour.
-        # so template can be simplified using now
-        if fake_dt is not None:
+        def faker():
+            def inner(*args, **kwargs):
+                return fake_dt
 
-            def faker():
-                def inner(*args, **kwargs):
-                    return fake_dt
-
-                return pass_context(inner)
-
-            template_value = self._ad_template.async_render(now=faker())
-        else:
-            template_value = self._ad_template.async_render()
+            return pass_context(inner)
 
         # The api returns prices in MWh
         if self._price_type in ("MWh", "mWh"):
-            price = template_value / 1000 + value * float(1 + self._vat)
-        else:
-            price = template_value + value / _PRICE_IN[self._price_type] * (
-                float(1 + self._vat)
+            price = value / 1000 * float(1 + self._vat)
+            template_value = self._ad_template.async_render(
+                now=faker(), current_price=price
             )
+            #_LOGGER.debug("Template value are %s", template_value)
+
+            price += template_value
+        else:
+            price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+            template_value = self._ad_template.async_render(
+                now=faker(), current_price=price
+            )
+            _LOGGER.debug("Template value are %s", template_value)
+            price += template_value
 
         # Convert price to cents if specified by the user.
         if self._use_cents:
