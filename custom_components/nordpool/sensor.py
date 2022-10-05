@@ -169,7 +169,7 @@ class NordpoolSensor(Entity):
         self._off_peak_2 = None
         self._peak = None
 
-         _LOGGER.debug("Template %s", str(ad_template))
+        _LOGGER.debug("Template %s", str(ad_template))
         # Check incase the sensor was setup using config flow.
         # This blow up if the template isnt valid.
         if not isinstance(self._ad_template, Template):
