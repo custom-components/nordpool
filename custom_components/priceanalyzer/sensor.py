@@ -429,7 +429,7 @@ class NordpoolSensor(Entity):
 
 
     def _is_falling_alot_next_hour(self, item) -> bool:
-        if item['price_next_hour'] is not None and (item['price_next_hour'] / item['value']) < 0.60:
+        if item['price_next_hour'] is not None and (item['price_next_hour'] / max([item['value'],0.00001])) < 0.60:
             return -1
 
 
@@ -447,8 +447,12 @@ class NordpoolSensor(Entity):
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
 
 
+        #TODO Check currency
+        ## don't return -1 if price is really cheap.
+        if price_now < 0.05 and is_gaining == False: 
+            return 0
         #special handling for high price at end of day:
-        if not is_tomorrow and item['start'].hour == 23 and item['price_next_hour'] is not None and (item['price_next_hour'] / item['value']) < 0.80:
+        if not is_tomorrow and item['start'].hour == 23 and item['price_next_hour'] is not None and (price_next_hour / price_now) < 0.80:
             return -1
         if is_max:
             return -1
@@ -693,13 +697,13 @@ class NordpoolSensor(Entity):
         if is_tomorrow == False:
             difference = ((self._min / self._max) - 1)
             self._percent_threshold = ((difference / 4) * -1)
-            self._diff = self._max / self._min
+            self._diff = self._max / max([self._min,0.00001])
             self._set_cheapest_hours_today()
 
 
         if self.api.tomorrow_valid() == True and is_tomorrow == True:
             max_tomorrow = self._max_tomorrow
-            min_tomorrow = self._min_tomorrow
+            min_tomorrow = max([self._min_tomorrow,0.00001])
             difference = ((min_tomorrow / max_tomorrow) - 1)
             self._percent_threshold_tomorrow = ((difference / 4) * -1)
             self._diff_tomorrow = max_tomorrow / min_tomorrow
