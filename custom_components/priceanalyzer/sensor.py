@@ -449,22 +449,20 @@ class NordpoolSensor(Entity):
 
         price_now = max([item["value"],0.00001])
         
-        price_next_hour = float(item["price_next_hour"]) if item["price_next_hour"] is not None else item["price_next_hour"]
+        price_next_hour = float(item["price_next_hour"]) if item["price_next_hour"] is not None else price_now
         price_next_hour = max([price_next_hour,0.00001])
         
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
 
+        isprettycheap = price_now < 0.05
 
         #TODO Check currency
-        ## don't return -1 if price is really cheap.
-        if price_now < 0.05 and is_gaining == False: 
-            return 0
         #special handling for high price at end of day:
-        if not is_tomorrow and item['start'].hour == 23 and item['price_next_hour'] is not None and (price_next_hour / price_now) < 0.80:
+        if not is_tomorrow and item['start'].hour == 23 and item['price_next_hour'] is not None and (price_next_hour / price_now) < 0.80 and isprettycheap == False:
             return -1
         if is_max:
             return -1
-        elif self._is_falling_alot_next_hour(item):
+        elif self._is_falling_alot_next_hour(item) and isprettycheap == False:
             return -1
         elif is_gaining and (price_now < price_next_hour) and (not is_five_most_expensive):
         #elif (is_over_peak == False and is_gaining == True):
