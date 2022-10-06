@@ -163,7 +163,20 @@ series:
       return today;
 ```
 
+### Additional Costs
+Add a template as additional costs, and PriceAnalyzer will also evaluate changes in grid price. This example is from MøreNett, where the Gridprice is cheaper at night:
 
+```
+{%set hour = now().hour%}
+{%set extra = 0.01%}
+{%set price = extra%}
+{%if hour > 21 or hour < 6%}
+  {%set price = price + 0.1375 %}
+{%else%}
+  {%set price = price + 0.2125 %}
+{% endif %}
+{{price | round(4)}}
+```
 
 ### Debug loggning
 Add this to your configuration.yaml to debug the component.
