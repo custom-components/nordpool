@@ -419,12 +419,18 @@ class NordpoolSensor(Entity):
 
     def _is_gaining(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow) -> bool:
         threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
+        price_next_hour = max([price_next_hour,0.00001])
+        price_next_hour2 = max([price_next_hour2,0.00001])
+        price_next_hour3 = max([price_next_hour3,0.00001])
         percent_threshold = (1 - float(threshold))
         return ((price_now / price_next_hour) < percent_threshold) or ((price_now / price_next_hour2) < percent_threshold)# or ((price_now / price_next_hour3) < percent_threshold)
 
     def _is_falling(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow) -> bool:
         threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
         percent_threshold = (1 + float(threshold))
+        price_next_hour = max([price_next_hour,0.00001])
+        price_next_hour2 = max([price_next_hour2,0.00001])
+        price_next_hour3 = max([price_next_hour3,0.00001])
         return ((price_now / price_next_hour) > percent_threshold) or ((price_now / price_next_hour2) > percent_threshold) or ((price_now / price_next_hour3) > percent_threshold)
 
 
@@ -441,8 +447,10 @@ class NordpoolSensor(Entity):
         if(diff < percent_difference):
             return 0
 
-        price_now = item["value"]
+        price_now = max([item["value"],0.00001])
+        
         price_next_hour = float(item["price_next_hour"]) if item["price_next_hour"] is not None else item["price_next_hour"]
+        price_next_hour = max([price_next_hour,0.00001])
         
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
 
