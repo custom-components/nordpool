@@ -268,7 +268,7 @@ class NordpoolSensor(Entity):
             template_value = self._ad_template.async_render(
                 now=faker(), current_price=price
             )
-            #_LOGGER.debug("Template value are %s", template_value)
+            # _LOGGER.debug("Template value are %s", template_value)
 
             price += template_value
         else:
