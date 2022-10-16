@@ -9,7 +9,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.template import is_template_string, Template
 
 from . import DOMAIN
-from .sensor import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE
+from .const import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE
 
 regions = sorted(list(_REGIONS.keys()))
 currencys = sorted(list(set(v[0] for k, v in _REGIONS.items())))

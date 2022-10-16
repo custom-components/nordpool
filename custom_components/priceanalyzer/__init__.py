@@ -7,6 +7,13 @@ from random import randint
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
+
+from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.const import CONF_REGION, CONF_ID
+import homeassistant.helpers.config_validation as cv
+from .data import Data
+
+
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_time_change
@@ -15,32 +22,32 @@ from pytz import timezone
 
 from .aio_price import AioPrices
 from .events import async_track_time_change_in_tz
+from .const import (
+    DOMAIN,
+    DATA,
+    RANDOM_MINUTE,
+    RANDOM_SECOND,
+    PLATFORM_SCHEMA,
+    EVENT_NEW_DATA, 
+    _CURRENCY_LIST,
+    PLATFORMS,
+    CONFIG_SCHEMA,
+    NAME,
+    VERSION,
+    ISSUEURL,
+    STARTUP,
+    _CENT_MULTIPLIER,
+    _REGIONS,
+    _CURRENCY_TO_LOCAL,
+    _CURRENTY_TO_CENTS,
+    DEFAULT_CURRENCY,
+    DEFAULT_REGION,
+    DEFAULT_NAME,
+    DEFAULT_TEMPLATE,
+    PLATFORM_SCHEMA
+    )   
 
-DOMAIN = "priceanalyzer"
 _LOGGER = logging.getLogger(__name__)
-RANDOM_MINUTE = randint(10, 30)
-RANDOM_SECOND = randint(0, 59)
-EVENT_NEW_DATA = "priceanalyzer_update"
-_CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
-
-
-CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
-
-
-NAME = DOMAIN
-VERSION = "0.0.7"
-ISSUEURL = "https://github.com/custom-components/nordpool/issues"
-
-STARTUP = f"""
--------------------------------------------------------------------
-{NAME}
-Version: {VERSION}
-This is a custom component
-If you have any issues with this you need to open an issue here:
-{ISSUEURL}
--------------------------------------------------------------------
-"""
-
 
 class NordpoolData:
     def __init__(self, hass: HomeAssistant) -> None:
@@ -73,7 +80,7 @@ class NordpoolData:
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, n: datetime):
-        _LOGGER.debug("Updating tomorrows prices.")
+        _LOGGER.debug("Updating todays prices.")
         await self._update("today")
 
     async def update_tomorrow(self, n: datetime):
@@ -112,16 +119,24 @@ class NordpoolData:
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrows prices in a area in the requested currency"""
         res = await self._someday(area, currency, "tomorrow")
-        _LOGGER.debug("Tomorrows price array is %s.", res)
         return res
 
 
-async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
-    """Set up using yaml config file."""
+async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
+    """Set up using yaml config file."""    
+    config = configEntry.data
 
-    if DOMAIN not in hass.data:
+    if DATA not in hass.data:
+        hass.data[DATA] = {}
+
+    if DOMAIN not in hass.data and True: 
+        # TODO This is the reason why only one sensor sets up correctly at startup.
+        # When the first sensor sets up, the rest does not because domain is in hass.data.
+        # If we remove it like this, i think every sensor will use the same api instance?
+        #nope, data is called with config from Oslo, for Trondheim.
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
+        
 
         async def new_day_cb(n):
             """Cb to handle some house keeping when it a new day."""
@@ -170,20 +185,56 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
         api.listeners.append(cb_new_hr)
         api.listeners.append(cb_new_day)
 
+
+
+    pa_config = config
+    api = NordpoolData(hass) if hass.data[DOMAIN] is None else hass.data[DOMAIN]
+    _LOGGER.debug("Dumping config %r", pa_config)
+    _LOGGER.debug("timezone set in ha %r", hass.config.time_zone)
+    region = pa_config.get(CONF_REGION)
+    friendly_name = pa_config.get("friendly_name", "")
+    price_type = pa_config.get("price_type")
+    precision = pa_config.get("precision")
+    low_price_cutoff = pa_config.get("low_price_cutoff")
+    currency = pa_config.get("currency")
+    vat = pa_config.get("VAT")
+    use_cents = pa_config.get("price_in_cents")
+    ad_template = pa_config.get("additional_costs")
+    percent_difference = pa_config.get("percent_difference")
+    data = Data(
+        friendly_name,
+        region,
+        price_type,
+        precision,
+        low_price_cutoff,
+        currency,
+        vat,
+        use_cents,
+        api,
+        ad_template,
+        percent_difference,
+        hass,
+    )
+    
+    hass.data[DATA][region] = data
     return True
 
 
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up using yaml config file."""
+    return True
     return await _dry_setup(hass, config)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
-    res = await _dry_setup(hass, entry.data)
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "sensor")
-    )
+    res = await _dry_setup(hass, entry)
+    # hass.async_create_task(
+    #     hass.config_entries.async_forward_entry_setup(entry, "sensor")
+    # )
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+
+
 
     # entry.add_update_listener(async_reload_entry)
     return res
