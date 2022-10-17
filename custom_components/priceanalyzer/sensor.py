@@ -11,7 +11,21 @@ from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity, DeviceInfo
 
+import json
 from .data import Data
+from .const import (
+    HOT_WATER_CONFIG,
+    HOT_WATER_DEFAULT_CONFIG,
+    TEMP_DEFAULT,
+    TEMP_FIVE_MOST_EXPENSIVE,
+    TEMP_IS_FALLING,
+    TEMP_FIVE_CHEAPEST,
+    TEMP_TEN_CHEAPEST,
+    TEMP_LOW_PRICE,
+    TEMP_NOT_CHEAP_NOT_EXPENSIVE,
+    TEMP_MINIMUM
+)
+
 
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
@@ -117,7 +131,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     region = config.get(CONF_REGION)
     data = hass.data[DATA][region]
     pricecorrection = PriceAnalyzerSensor(data)
-    vvbsensor = VVBSensor(data)
+    vvbsensor = VVBSensor(data, config)
     
     sensors = [
         pricecorrection,
@@ -141,12 +155,16 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     return True
 
 class VVBSensor(Entity):
-    def __init__(self,data) -> None:
+    def __init__(self,data, config) -> None:
         self._data = data
         self._hass = self._data.api._hass
+        self._config = config
 
     def getTemp(self, current_hour, is_tomorrow = False, reason = False) -> float:
-        temp = 75
+        
+        
+        
+        temp = self.getConfigKey(TEMP_DEFAULT) or 75
         reasonText = 'Default temp'
         current_hour
         if current_hour:
@@ -156,32 +174,60 @@ class VVBSensor(Entity):
             is_five_most_expensive = current_hour['is_five_most_expensive'] is True
             is_five_cheapest = current_hour['is_five_cheapest'] is True
             is_ten_cheapest = current_hour['is_ten_cheapest'] is True
+            is_min_price = current_hour['is_min'] is True
+            
             
             if small_price_difference:
                 temp = temp
                 reasonText = 'Small price difference'
             elif is_five_most_expensive:
-                temp = 40
+                temp = self.getConfigKey(TEMP_FIVE_MOST_EXPENSIVE)
                 reasonText = 'Is five most expensive'
             elif temp_correction_down:
-                temp = 50
+                temp = self.getConfigKey(TEMP_IS_FALLING)
                 reasonText = 'Is falling'
+            elif is_min_price:
+                temp = self.getConfigKey(TEMP_MINIMUM)
+                reasonText = 'Is minimum price'
             elif is_five_cheapest:
-                temp = 75
+                temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
                 reasonText = 'Is five cheapest'
             elif is_ten_cheapest:
-                temp = 65
+                temp = self.getConfigKey(TEMP_TEN_CHEAPEST)
                 reasonText = 'Is ten cheapest'
             elif is_low_price:
-                temp = 60
+                temp = self.getConfigKey(TEMP_LOW_PRICE)
                 reasonText = 'Is low price'
             else:
-                temp = 50
+                temp = self.getConfigKey(TEMP_NOT_CHEAP_NOT_EXPENSIVE)
                 reasonText = 'Not cheap, not expensive. '
         # hour = current_hour['start'] if current_hour else None 
         # _LOGGER.debug("called getTemp for  %s with temp %s for hour %s", self.name, temp, hour)
         return temp if (reason is False) else reasonText
 
+
+    def getConfigKey(self, key=TEMP_DEFAULT):
+        
+        config = self._config.get(HOT_WATER_CONFIG, "")
+    
+        list = {}
+        if config:
+            list = json.loads(config)
+    
+        else:
+            list = HOT_WATER_DEFAULT_CONFIG
+    
+            
+        #todo support incomplete userconfig.
+        _LOGGER.debug("Config for VVB for %s: %s", self.name, list)
+        
+        if(key in list.keys()):
+            return list[key]
+        else:
+            return HOT_WATER_DEFAULT_CONFIG[key]
+    
+
+    
     @property
     def state(self) -> float:
         return self.getTemp(self._data.current_hour) # todo, binary sensor can use this and cast to bool temp > 50

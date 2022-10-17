@@ -14,7 +14,8 @@
                     "low_price_cutoff": "Matalan hinnan raja-arvo",
                     "price_in_cents": "Hinta senteissä",
                     "price_type": "Hinnan yksikkö",
-                    "additional_costs": "Sivukulujen laskenta Template"
+                    "additional_costs": "Sivukulujen laskenta Template",
+                    "hot_water_config" : "Object for setting custom degrees for Hot Water sensor"
                 }
             }
         },

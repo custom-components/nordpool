@@ -9,7 +9,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.template import is_template_string, Template
 
 from . import DOMAIN
-from .const import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE
+from .const import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE, HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON
 
 regions = sorted(list(_REGIONS.keys()))
 currencys = sorted(list(set(v[0] for k, v in _REGIONS.items())))
@@ -60,6 +60,7 @@ class PriceAnalyzerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Optional("price_type", default="kWh"): vol.In(price_types),
             vol.Optional("additional_costs", default="{{0.01|float}}"): str,
             vol.Optional("percent_difference", default=20): int,
+            vol.Optional(HOT_WATER_CONFIG, default=HOT_WATER_DEFAULT_CONFIG_JSON): str,
         }
 
         placeholders = {

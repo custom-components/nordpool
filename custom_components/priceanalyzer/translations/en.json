@@ -14,7 +14,8 @@
           "price_in_cents": "Price in Cents",
           "price_type": "Price in format",
           "additional_costs": "Template for additional costs",
-          "percent_difference": "Percent difference between Min and Max for the day before bothering"
+          "percent_difference": "Percent difference between Min and Max for the day before bothering",
+          "hot_water_config" : "Object for setting custom degrees for Hot Water sensor"
         }
       }
     },

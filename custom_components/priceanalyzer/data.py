@@ -638,12 +638,14 @@ class Data():
         data = self._format_time(data)
         peak = self._peak_tomorrow if is_tomorrow else self._peak
         max_price = self._max_tomorrow if is_tomorrow else self._max
+        min_price = self._min_tomorrow if is_tomorrow else self._min
         average = self._average_tomorrow if is_tomorrow else self._average
         local_now = dt_utils.now()
         for res in data:
 
             price_now = float(self._calc_price(res["value"], fake_dt=res["start"]))
             is_max = price_now == max_price
+            is_min = price_now == min_price
             is_low_price = price_now < average * self._low_price_cutoff
             is_over_peak = price_now > peak
             is_over_average = price_now > average
@@ -673,6 +675,7 @@ class Data():
                 "is_gaining": is_gaining,
                 "is_falling": is_falling,
                 'is_max': is_max,
+                'is_min': is_min,
                 'is_low_price': is_low_price,
                 'is_over_peak' : is_over_peak,
                 'is_over_average': is_over_average

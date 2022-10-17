@@ -13,7 +13,8 @@
                     "low_price_cutoff": "Grense for lav-pris",
                     "price_in_cents": "Pris i øre",
                     "price_type": "Pris i format",
-                    "additional_costs": "Mal for tilleggskostnader"
+                    "additional_costs": "Mal for tilleggskostnader",
+                    "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren"
                 }
             }
         },

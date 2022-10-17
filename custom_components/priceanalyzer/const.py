@@ -1,5 +1,7 @@
 
 import logging
+import json
+
 from random import randint
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 import voluptuous as vol
@@ -81,6 +83,31 @@ DEFAULT_NAME = "Elspot"
 
 DEFAULT_TEMPLATE = "{{0.0|float}}"
 
+
+#config for hot water temperature.
+TEMP_DEFAULT = 'default_temp'
+TEMP_FIVE_MOST_EXPENSIVE = 'five_most_expensive'
+TEMP_IS_FALLING = 'is_falling'
+TEMP_FIVE_CHEAPEST = 'five_cheapest'
+TEMP_TEN_CHEAPEST = 'ten_cheapest'
+TEMP_LOW_PRICE = 'low_price'
+TEMP_NOT_CHEAP_NOT_EXPENSIVE = 'not_cheap_not_expensive'
+TEMP_MINIMUM = 'min_price_for_day'
+
+HOT_WATER_CONFIG = 'hot_water_config'
+HOT_WATER_DEFAULT_CONFIG = {
+    TEMP_DEFAULT : 75,
+    TEMP_FIVE_MOST_EXPENSIVE : 40,
+    TEMP_IS_FALLING : 50,
+    TEMP_FIVE_CHEAPEST : 70,
+    TEMP_TEN_CHEAPEST : 65,
+    TEMP_LOW_PRICE : 60,
+    TEMP_NOT_CHEAP_NOT_EXPENSIVE : 50,
+    TEMP_MINIMUM : 75
+}
+
+HOT_WATER_DEFAULT_CONFIG_JSON = json.dumps(HOT_WATER_DEFAULT_CONFIG)
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
@@ -95,5 +122,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
+        vol.Optional(HOT_WATER_CONFIG, default=HOT_WATER_DEFAULT_CONFIG_JSON): cv.string,
     }
 )
