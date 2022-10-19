@@ -24,6 +24,7 @@ The sensor looks a lot like the nordpool-sensor, with a list of todays and tomor
 A sensor for the recommended thermostat setting for your smartified hot water heater with temperature monitoring.
 This sensor will calculate when to heat the tank to max, and when to just keep the tank 'hot enough', based on todays and tomorrows prices.
 You can provide your own temperatures for the sensor when setting up or editing the PriceAnalyzer integration. The default config is as follows:
+
 ```
 {
 	"default_temp": 75,
