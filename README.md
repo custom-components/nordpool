@@ -1,12 +1,14 @@
 # Price Analyzer based on Nordpool Prices for Home Assistant
-#### Shamelessly based on a fork from https://github.com/custom-components/nordpool, as i don't know Python.
+Shamelessly based on a fork from the wonderful https://github.com/custom-components/nordpool
 
 If you like this, you can [buy me a beer](http://paypal.me/erlendsellie) or a [Ko-fi](https://ko-fi.com/erlendsellie).
 
 If you like being in control of your electricity usage, sign up for Tibber using my my referral link, and get 50 EUR off smart home gadgets in their store:
 [https://invite.tibber.com/yuxfw0uu](https://invite.tibber.com/yuxfw0uu)
 
+PriceAnalyzer keeps your energy bill down, by analyzing the prices from Nordpool, and provides you sensors to automatically control your climate entities and hot water heater.
 
+###PriceAnalyzerSensor
 Price Analyzer creates sensor a with the recommended temperature correction for your thermostats, based on todays and tomorrows prices, between 1 and -1 degrees celcius.
 This is meant to work kind of like Tibbers smart control for thermostats. If the price is going up in an hour or two, it will boost the thermostat. If there is a peak, or the price is falling soon, the thermostat will 'cool down a bit' to save power. 
 
@@ -16,13 +18,41 @@ The sensor looks a lot like the nordpool-sensor, with a list of todays and tomor
 - the next hours price
 - if the price for that hour is over peak price.
 - if the price for that hour is over off peak 1 price.
+- If the price is the lowest price in the foreseeable future
 
-More stuff will probably come, like recommendations to turn on/off water heater as an attribute.
+###Hot water Heater sensor
+A sensor for the recommended thermostat setting for your smartified hot water heater with temperature monitoring.
+This sensor will calculate when to heat the tank to max, and when to just keep the tank 'hot enough', based on todays and tomorrows prices.
+You can provide your own temperatures for the sensor when setting up or editing the PriceAnalyzer integration. The default config is as follows:
+```
+{
+	"default_temp": 75,
+	"five_most_expensive": 40,
+	"is_falling": 50,
+	"five_cheapest": 70,
+	"ten_cheapest": 65,
+	"low_price": 60,
+	"not_cheap_not_expensive": 50,
+	"min_price_for_day": 75
+}
+```
+The default config may not suit your hot water heater and use-case, and will depend on how frequent your household take showers, how big the tank is, and where the temperature sensor(s) are placed. This config has worked great for me, have never given me a cold shower.
 
-Initial commit a bit before a release is ready, just as a proof of concept.
+The config can also be configured as binary on/off, if you don't have a temperature sensor on your water heater, like this: 
 
-
-If you have any input, i'm happy to hear about it. This 'algorithm' has worked great for me over the last two years, but has changed a lot every now and then.
+```
+{
+	"default_temp": "on",
+	"five_most_expensive": "off",
+	"is_falling": "off",
+	"five_cheapest": "on",
+	"ten_cheapest": "on",
+	"low_price": "on",
+	"not_cheap_not_expensive": "on",
+	"min_price_for_day": "on"
+}
+```
+Keep in mind that without temperature sensors on the heater, a cold shower can occur.
 
 ## Installation
 
@@ -34,7 +64,10 @@ Then restart Home Assistant, and go to the integrations page to configure it.
 It will then create a new sensor, sensor.priceanalyzer in your installation.
 
 
-Takes the same input as the nordpool component, as of now.
+Takes the same input as the nordpool component, except for:
+- Percent difference between Min and Max for the day before bothering
+- Settings for custom degrees for Hot Water sensor
+- Minimum max price for the day before PriceAnalyzer Hot Water is active
 
 
 ## Upcoming / TODO:
@@ -178,7 +211,18 @@ Add a template as additional costs, and PriceAnalyzer will also evaluate changes
 {{price | round(4)}}
 ```
 
+Example for adding the difference between day and night for the grid price tariff for Tensio: 
+```
+{%set hour = now().hour%}
+{%if hour > 21 or hour < 6%}
+  {{ 0.01 }}
+{%else%}
+  {{0.0787 + 0.01 }}
+{% endif %}
+
 ### Debug loggning
+```
+
 Add this to your configuration.yaml to debug the component.
 
 ```
@@ -187,7 +231,5 @@ logger:
   logs:
     nordpool: debug
     custom_components.priceanalyzer: debug
-    custom_components.priceanalyzer.sensor: debug
-    custom_components.priceanalyzer.aio_price: debug
 ```
 
