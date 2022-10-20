@@ -1,7 +1,7 @@
 {
     "name": "priceanalyzer",
     "render_readme": true,
-    "iot_class": "Cloud Push"
+    "iot_class": "cloud_polling"
 
 }
 
