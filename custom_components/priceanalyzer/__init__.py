@@ -231,6 +231,9 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     return True
     return await _dry_setup(hass, config)
 
+async def async_migrate_entry(title, domain) -> bool:
+    #sorry, we dont support migrate
+    return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
