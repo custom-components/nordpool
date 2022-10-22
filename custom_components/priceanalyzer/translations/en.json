@@ -1,6 +1,5 @@
 {
   "config": {
-    "title": "PriceAnalyzer",
     "step": {
       "user": {
         "title": "PriceAnalyzer Sensor",
