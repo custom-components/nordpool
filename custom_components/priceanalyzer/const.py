@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.30"
+VERSION = "1.0"
 ISSUEURL = "https://github.com/erlendsellie/priceanalyzer/issues"
 
 STARTUP = f"""

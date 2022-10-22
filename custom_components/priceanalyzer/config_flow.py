@@ -94,7 +94,7 @@ class Base:
 class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for Nordpool."""
 
-    VERSION = 1
+    VERSION = "1.0"
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     def __init__(self):
