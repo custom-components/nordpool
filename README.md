@@ -8,7 +8,7 @@ If you like being in control of your electricity usage, sign up for Tibber using
 
 PriceAnalyzer keeps your energy bill down, by analyzing the prices from Nordpool, and provides you sensors to automatically control your climate entities and hot water heater.
 
-##PriceAnalyzerSensor
+## PriceAnalyzerSensor
 Price Analyzer creates sensor a with the recommended temperature correction for your thermostats, based on todays and tomorrows prices, between 1 and -1 degrees celcius.
 This is meant to work kind of like Tibbers smart control for thermostats. If the price is going up in an hour or two, it will boost the thermostat. If there is a peak, or the price is falling soon, the thermostat will 'cool down a bit' to save power. 
 
@@ -20,7 +20,7 @@ The sensor looks a lot like the nordpool-sensor, with a list of todays and tomor
 - if the price for that hour is over off peak 1 price.
 - If the price is the lowest price in the foreseeable future
 
-##Hot water Heater sensor
+## Hot water Heater sensor
 A sensor for the recommended thermostat setting for your smartified hot water heater with temperature monitoring.
 This sensor will calculate when to heat the tank to max, and when to just keep the tank 'hot enough', based on todays and tomorrows prices.
 You can provide your own temperatures for the sensor when setting up or editing the PriceAnalyzer integration. The default config is as follows:
@@ -91,7 +91,7 @@ Then, import this blueprint, and choose your newly created input number, the pri
 Now, whenever the price goes up or down, PriceAnalyzer will change the temperature based on the price.
 
 
-###Apex Charts:
+### Apex Charts:
 
 ![Apex Card Example](priceanalyzer.png?raw=true "Apex Card Example")
 
