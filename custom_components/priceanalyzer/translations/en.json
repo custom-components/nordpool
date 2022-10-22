@@ -7,7 +7,7 @@
         "description": "Setup a PriceAnalyzer sensor",
         "data": {
           "region": "Region",
-          "currency": "NOK",
+          "currency": "currency",
           "VAT": "Include VAT",
           "precision": "How many decimals to show",
           "low_price_cutoff": "low price cut off",
@@ -15,7 +15,33 @@
           "price_type": "Price in format",
           "additional_costs": "Template for additional costs",
           "percent_difference": "Percent difference between Min and Max for the day before bothering",
-          "hot_water_config" : "Object for setting custom degrees for Hot Water sensor"
+          "hot_water_config" : "Settings for custom degrees for Hot Water sensor",
+          "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active"
+        }
+      }
+    },
+    "error": {
+      "name_exists": "Name already exists",
+      "invalid_template": "The template is invalid, check https://github.com/custom-components/nordpool"
+    }
+  },
+  "options": {
+    "step": {
+      "edit": {
+        "title": "PriceAnalyzer Sensor",
+        "description": "Setup a PriceAnalyzer sensor",
+        "data": {
+          "region": "Region",
+          "currency": "currency",
+          "VAT": "Include VAT",
+          "precision": "How many decimals to show",
+          "low_price_cutoff": "low price cut off",
+          "price_in_cents": "Price in Cents",
+          "price_type": "Price in format",
+          "additional_costs": "Template for additional costs",
+          "percent_difference": "Percent difference between Min and Max for the day before bothering",
+          "hot_water_config" : "Settings for custom degrees for Hot Water sensor",
+          "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active"
         }
       }
     },

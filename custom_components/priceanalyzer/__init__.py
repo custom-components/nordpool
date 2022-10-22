@@ -6,6 +6,8 @@ from random import randint
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.device_registry import DeviceEntry
+
 from homeassistant.core import Config, HomeAssistant
 
 from homeassistant.components.sensor import PLATFORM_SCHEMA
@@ -28,7 +30,8 @@ from .const import (
     RANDOM_MINUTE,
     RANDOM_SECOND,
     PLATFORM_SCHEMA,
-    EVENT_NEW_DATA, 
+    EVENT_NEW_DATA,
+    API_DATA_LOADED,
     _CURRENCY_LIST,
     PLATFORMS,
     CONFIG_SCHEMA,
@@ -75,6 +78,7 @@ class NordpoolData:
             data = await spot.hourly(end_date=dt)
             if data:
                 self._data[currency][type_] = data["areas"]
+                async_dispatcher_send(hass, API_DATA_LOADED)
             else:
                 _LOGGER.info("Some crap happend, retrying request later.")
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
@@ -103,8 +107,8 @@ class NordpoolData:
             await self.update_today(None)
             await self.update_tomorrow(None)
 
-        if(day == 'tomorrow'):
-            self._tomorrow_valid = True
+        #if(day == 'tomorrow'):
+            #self._tomorrow_valid = True
 
         return self._data.get(currency, {}).get(day, {}).get(area)
 
@@ -119,6 +123,8 @@ class NordpoolData:
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrows prices in a area in the requested currency"""
         res = await self._someday(area, currency, "tomorrow")
+        if res and len(res) > 0:
+            self._tomorrow_valid = True
         return res
 
 
@@ -229,15 +235,14 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
     res = await _dry_setup(hass, entry)
-    # hass.async_create_task(
-    #     hass.config_entries.async_forward_entry_setup(entry, "sensor")
-    # )
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
-
-
-
-    # entry.add_update_listener(async_reload_entry)
+    entry.add_update_listener(async_reload_entry)
     return res
+
+# async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry, options):
+#     res = await hass.config_entries.async_update_entry(entry,options)
+#     self.async_reload_entry(hass,entry)
+#     return res
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -252,6 +257,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return True
 
     return False
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    res = await device_entry.async_unload_entry(hass,config_entry)
+    return res
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:

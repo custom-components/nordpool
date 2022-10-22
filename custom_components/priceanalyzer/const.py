@@ -11,11 +11,13 @@ import homeassistant.helpers.config_validation as cv
 
 DOMAIN = "priceanalyzer"
 DATA = 'priceanalyzer_data'
+API_DATA_LOADED = 'priceanalyzer_api_data_loaded'
 
-RANDOM_MINUTE = randint(10, 30)
+RANDOM_MINUTE = randint(0, 5)
 RANDOM_SECOND = randint(0, 59)
 
 EVENT_NEW_DATA = "priceanalyzer_update"
+EVENT_CHECKED_STUFF = 'pricanalyzer_checked_stuff'
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 
 PLATFORMS = [
@@ -122,6 +124,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
+        vol.Optional("percent_difference", default=20): int,
+        vol.Optional("price_before_active", default=0.20): float,
         vol.Optional(HOT_WATER_CONFIG, default=HOT_WATER_DEFAULT_CONFIG_JSON): cv.string,
     }
 )

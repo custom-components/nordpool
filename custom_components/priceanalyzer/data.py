@@ -1,21 +1,22 @@
 import logging
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from operator import itemgetter
 from statistics import mean
+from datetime import date
+
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.entity import Entity, DeviceInfo
-
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
 from jinja2 import pass_context
 
-from .const import DOMAIN, EVENT_NEW_DATA, _REGIONS, _PRICE_IN
+from .const import DOMAIN, EVENT_NEW_DATA, _REGIONS, _PRICE_IN, EVENT_CHECKED_STUFF
 from .misc import extract_attrs, has_junk, is_new, start_of
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,24 +61,6 @@ DEFAULT_NAME = "Elspot"
 
 
 DEFAULT_TEMPLATE = "{{0.0|float}}"
-
-
-# PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-#     {
-#         vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(
-#             list(_REGIONS.keys())
-#         ),
-#         vol.Optional("friendly_name", default=""): cv.string,
-#         # This is only needed if you want the some area but want the prices in a non local currency
-#         vol.Optional("currency", default=""): cv.string,
-#         vol.Optional("VAT", default=True): cv.boolean,
-#         vol.Optional("precision", default=3): cv.positive_int,
-#         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
-#         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
-#         vol.Optional("price_in_cents", default=False): cv.boolean,
-#         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
-#     }
-# )
 
 
 
@@ -146,7 +129,7 @@ class Data():
         self._five_cheapest_today = None
         self.small_price_difference_today = None
         self.small_price_difference_tomorrow = None
-
+        self._cheapest_hours_in_future_sorted = []
 
         # Values for tomorrow
         self._average_tomorrow = None
@@ -293,14 +276,10 @@ class Data():
         if data:
             for item in self._someday(data):
                 if item["start"] == start_of(local_now, "hour"):
-                    # _LOGGER.info("start %s local_now %s", item["start"], start_of(local_now, "hour"))
                     self._current_price = item["value"]
-                    _LOGGER.debug(
-                        "Updated %s _current_price %s", self.device_name, item["value"]
-                    )
-        else:
-            #TODO this triggeres for sensors, other than the first.
-            _LOGGER.debug("Cant update _update_current_price because it was no data for %s", self._area)
+                    # _LOGGER.debug(
+                    #     "Updated %s _current_price %s", self.device_name, item["value"]
+                    # )
 
 
     def _someday(self, data) -> list:
@@ -349,8 +328,7 @@ class Data():
 
 
     def _is_falling_alot_next_hour(self, item) -> bool:
-        if item['price_next_hour'] is not None and (item['price_next_hour'] / max([item['value'],0.00001])) < 0.60:
-            return -1
+        return item['price_next_hour'] is not None and ((item['price_next_hour'] / max([item['value'],0.00001])) < 0.60)
 
 
     def _get_temperature_correction(self, item, is_gaining, is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive) -> float:
@@ -562,40 +540,18 @@ class Data():
 
     def _set_cheapest_hours_today(self):
         if self._data_today != None and len(self._data_today.get("values")):
-            data = sorted(self._data_today.get("values"), key=itemgetter("value"))
-            formatted_prices = [
-                {
-                    'start' : i.get('start'),
-                    'end' : i.get('end'),
-                    'value' : self._calc_price(
-                        i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
-                        )
-                }
-                for i in data
-            ]
-
-            ten_cheapest_today = formatted_prices[:10]
-            self._ten_cheapest_today = ten_cheapest_today
-            self._five_cheapest_today = formatted_prices[:5]
+            sorted = self.get_sorted_prices_for_day(False)
+            self._ten_cheapest_today = sorted[:10] if sorted else []
+            self._five_cheapest_today = sorted[:5:] if sorted else []
 
     def _set_cheapest_hours_tomorrow(self):
         if self._data_tomorrow != None and len(self._data_tomorrow.get("values")):
-            data = sorted(self._data_tomorrow.get("values"), key=itemgetter("value"))
-            #todo, seems like this function does not work with ad_template
-            formatted_prices = [
-                {
-                    'start' : i.get('start'),
-                    'end' : i.get('end'),
-                    'value' : self._calc_price(
-                        i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
-                        )
-                }
-                for i in data
-            ]
 
-            ten_cheapest_tomorrow = formatted_prices[:10]
-            self._ten_cheapest_tomorrow = ten_cheapest_tomorrow
-            self._five_cheapest_tomorrow = formatted_prices[:5]
+            sorted = self.get_sorted_prices_for_day(True)
+
+            self._ten_cheapest_tomorrow = sorted[:10] if sorted else []
+            self._five_cheapest_tomorrow = sorted[:5] if sorted else []
+            
 
 
     def _add_raw_calculated(self, is_tomorrow):
@@ -616,6 +572,9 @@ class Data():
         hour = 0
         percent_difference = (self.percent_difference + 100) /100
 
+
+        
+        
         if is_tomorrow == False:
             difference = ((self._min / self._max) - 1)
             self._percent_threshold = ((difference / 4) * -1)
@@ -685,7 +644,13 @@ class Data():
             item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
             item['is_five_cheapest'] = self._is_five_cheapest(item,is_tomorrow)
             item['is_five_most_expensive'] = is_five_most_expensive
+            item['is_falling_a_lot_next_hour'] = self._is_falling_alot_next_hour(item)
+            #Todo, add this when complete.
+            #item['is_low_compared_to_tomorrow'] = self._is_low_compared_to_tomorrow(item)
             item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive)
+            
+            #todo is a top?
+            
             hour += 1
             if item["start"] == start_of(local_now, "hour"):
                 self._current_hour = item
@@ -700,8 +665,6 @@ class Data():
 
         #_LOGGER.debug('PriceAnalyzer list done rendering, %s %s', self.device_name, result)
 
-        #todo problem
-        #self.async_write_ha_state()
         self.update_sensors()
 
         return result
@@ -725,6 +688,18 @@ class Data():
         return False
 
 
+    def _is_low_compared_to_tomorrow(self, item):
+        #get the 2 cheapest hours in the future.
+        future_five = self._cheapest_hours_in_future_sorted[2:]
+        # if self.tomorrow_loaded:
+        if any(obj['start'] == item['start'] for obj in future_five ):
+            today_date = dt_utils.now().date().strftime("%d")
+            item_date = dt_utils.as_local(item['start']).strftime("%d")
+            _LOGGER.debug("today_date: %s, item_date: ", today_date, item_date)
+            if today_date == item_date:
+                return True
+        return False
+
 
     def _is_five_most_expensive(self, item, is_tomorrow):
         five_most_expensive = self._get_five_most_expensive_hours(is_tomorrow)
@@ -732,10 +707,49 @@ class Data():
             return True
         return False
 
-    def _get_five_most_expensive_hours(self, is_tomorrow):
+
+    def get_prices_in_future_sorted(self, reverse=True):
+        return []
+        #todo, fix logic here.
+        
+
+        hours_today = self._data_today
+        #    hours_tomorrow = self._data_tomorrow if len(self._data_tomorrow) else []
+        #TypeError: object of type 'NoneType' has no len()
+
+        hours_tomorrow = self._data_tomorrow
+        today = hours_today.get("values")
+        
+        
+        #todo: this check does not seem to work.
+        if hours_tomorrow:
+            tomorrow = hours_tomorrow.get("values")
+            both = tomorrow + today
+        else:
+            both = today
+
+
+        formatted_prices = [
+            {       
+                    'start' : i.get('start'),
+                    'end' : i.get('end'),
+                    'value' : self._calc_price(
+                        i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
+                        )
+            }
+            for i in both
+        ]
+        
+        future_prices = []
+        for hour in formatted_prices:
+            if dt_utils.as_local(hour.get('start')) > (dt_utils.now() - timedelta(hours=1)):
+                future_prices.append(hour)
+        return sorted(future_prices, key=itemgetter("value"), reverse=reverse)
+
+    def get_sorted_prices_for_day(self, is_tomorrow, reverse=False):
         hours = self._data_tomorrow if is_tomorrow else self._data_today
+        data = hours.get("values")
         if len(hours.get("values")):
-            data = sorted(hours.get("values"), key=itemgetter("value"), reverse=True)
             formatted_prices = [
                 {
                     'start' : i.get('start'),
@@ -746,23 +760,19 @@ class Data():
                 }
                 for i in data
             ]
-        five_most_expensive = formatted_prices[:5]
-        return five_most_expensive
+        formatted_prices = sorted(formatted_prices, key=itemgetter("value"), reverse=reverse)
+        return formatted_prices
+    
+    def _get_five_most_expensive_hours(self, is_tomorrow):
+        sorted = self.get_sorted_prices_for_day(is_tomorrow, True)
+        return sorted[:5] if sorted else []
 
 
-    def set_sensors(self, sensors = []):
-        for sensor in sensors:
-            self._sensors.append(sensor)
-        _LOGGER.debug("Settings sensors updating %s with %s sensors", self._area, len(self._sensors))
+
         
     def update_sensors(self):
-        _LOGGER.debug("Trying writing State for %s for %s sensors", self._area, len(self._sensors))
-        for sensor in self._sensors:
-            _LOGGER.debug("Writing State for %s", sensor.name)
-            sensor._hass = self.api._hass
-            sensor.hass = self.api._hass
-            
-            sensor.async_write_ha_state()
+        async_dispatcher_send(self._hass, EVENT_CHECKED_STUFF)
+
         
 
     async def check_stuff(self) -> None:
@@ -822,6 +832,8 @@ class Data():
                     self._data_today = today
                     self._update(today)
 
+        self._cheapest_hours_in_future_sorted = self.get_prices_in_future_sorted()
+        
         # Updates the current for this hour.
         await self._update_current_price()
         
@@ -837,11 +849,7 @@ class Data():
             self._update_tomorrow(tomorrow)
 
         self._last_tick = dt_utils.now()
-        #todo problem
-        #self.async_write_ha_state()
         self.update_sensors()
-
-        #self._data_today !== None and len(self._data_today.get("values")
         if self.tomorrow_valid and (self._tomorrow_calculated != None and len(self._tomorrow_calculated) < 1):
             self.check_stuff()
         if self.tomorrow_valid and self._data_tomorrow == None:

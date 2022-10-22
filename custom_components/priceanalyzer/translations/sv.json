@@ -15,7 +15,8 @@
                     "price_in_cents": "Pris i ören",
                     "price_type": "Prisformat",
                     "additional_costs": "Mall för ytterligare kostnader",
-                    "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren"
+                    "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
+                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv"
                 }
             }
         },
@@ -23,5 +24,27 @@
             "name_exists": "Namnet existerar redan",
             "invalid_template": "Mallen är ogiltig, se https://github.com/custom-components/nordpool"
         }
+    },
+    "options": {
+        "step": {
+            "edit": {
+                "title": "PriceAnalyzer Sensor",
+                "description": "Konfigurera en PriceAnalyzer-sensor",
+                "data": {
+                    "region": "Region",
+                    "friendly_name": "Visningsnamn",
+                    "currency": "SEK",
+                    "VAT": "Inkludera moms",
+                    "precision": "Hur många decimaler ska visas",
+                    "low_price_cutoff": "Lägsta prisnivå",
+                    "price_in_cents": "Pris i ören",
+                    "price_type": "Prisformat",
+                    "additional_costs": "Mall för ytterligare kostnader",
+                    "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
+                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv"
+                }
+            }
+        }
     }
+    
 }
