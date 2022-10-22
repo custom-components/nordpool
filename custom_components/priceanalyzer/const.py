@@ -83,7 +83,7 @@ DEFAULT_REGION = "Kr.sand"
 DEFAULT_NAME = "Elspot"
 
 
-DEFAULT_TEMPLATE = "{{0.0|float}}"
+DEFAULT_TEMPLATE = "{{0.01|float}}"
 
 
 #config for hot water temperature.
