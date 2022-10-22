@@ -29,7 +29,7 @@
         "step": {
             "edit": {
                 "title": "PriceAnalyzer Sensor",
-                "description": "Konfigurera en PriceAnalyzer-sensor",
+                "description": "Rekonfigurera en PriceAnalyzer-sensor",
                 "data": {
                     "region": "Region",
                     "friendly_name": "Visningsnamn",

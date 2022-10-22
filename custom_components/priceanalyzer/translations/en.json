@@ -29,7 +29,7 @@
     "step": {
       "edit": {
         "title": "PriceAnalyzer Sensor",
-        "description": "Setup a PriceAnalyzer sensor",
+        "description": "Edit a PriceAnalyzer sensor",
         "data": {
           "region": "Region",
           "currency": "currency",

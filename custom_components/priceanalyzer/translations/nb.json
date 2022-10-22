@@ -29,7 +29,7 @@
         "step": {
             "edit": {
                 "title": "PriceAnalyzer",
-                "description": "Opprett en PriceAnalyzer sensor",
+                "description": "Rediger en PriceAnalyzer sensor",
                 "data": {
                     "region": "Region",
                     "currency": "NOK",
