@@ -223,8 +223,9 @@ Example for adding the difference between day and night for the grid price tarif
   {{0.0787 + 0.01 }}
 {% endif %}
 
-### Debug loggning
 ```
+
+### Debug logging
 
 Add this to your configuration.yaml to debug the component.
 
