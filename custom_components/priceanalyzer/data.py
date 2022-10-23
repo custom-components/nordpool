@@ -558,12 +558,10 @@ class Data():
         if is_tomorrow and self.tomorrow_valid == False:
             return []
 
-        data = self._data_tomorrow if is_tomorrow else self._data_today
+        data = self.api.tomorrow(self._area, self._currency) if is_tomorrow else self.api.today(self._area, self._currency)
         if data is None:
             self.check_stuff()
             return
-        data = sorted(data.get("values"), key=itemgetter("start"))
-
 
 
         _LOGGER.debug('PriceAnalyzer Adding raw calculated for %s with , %s ', self.device_name)
@@ -594,13 +592,13 @@ class Data():
             self._set_cheapest_hours_tomorrow()
             self.small_price_difference_tomorrow = (self._diff_tomorrow < percent_difference)  
 
-        data = self._format_time(data)
         peak = self._peak_tomorrow if is_tomorrow else self._peak
         max_price = self._max_tomorrow if is_tomorrow else self._max
         min_price = self._min_tomorrow if is_tomorrow else self._min
         average = self._average_tomorrow if is_tomorrow else self._average
         local_now = dt_utils.now()
-        for res in data:
+
+        for res in self._someday(data):
 
             price_now = float(self._calc_price(res["value"], fake_dt=res["start"]))
             is_max = price_now == max_price
