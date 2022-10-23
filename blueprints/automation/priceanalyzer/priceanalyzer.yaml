@@ -1,0 +1,54 @@
+blueprint:
+  name: PriceAnalyzer - Control Climate
+  description: >-
+    Control a climate entity with PriceAnalyzer(https://github.com/erlendsellie/priceanalyzer)
+    and an input number as a target temperature.
+    The climate target temperature will update whenever input number is changed, or PriceAnalyzer updates.
+  domain: automation
+  input:
+    sensor:
+      name: PriceAnalyzer
+      description: PriceAnalyzer Sensor
+      selector:
+        entity:
+          integration: priceanalyzer
+          domain: sensor
+    number:
+      name: Base Setpoint Temperature
+      description: Input Number Helper for base setpoint temperature
+      selector:
+        entity:
+          domain: input_number
+    climate:
+      name: Climate
+      description: Climate Entity to control
+      selector:
+        entity:
+          domain: climate
+  source_url: https://github.com/erlendsellie/HomeAssistantConfig/blob/master/blueprints/automation/priceanalyzer/priceanalyzer.yaml
+mode: restart
+max_exceeded: silent
+trigger_variables:
+  sensor: !input sensor
+  number: !input number
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: state
+    entity_id:
+      - !input sensor
+      - !input number
+action:
+  - variables:
+      sensor: !input sensor
+      number: !input number
+      climate: !input climate
+  - condition: template
+    value_template: "{{ states(climate) == 'heat' or states(climate) == 'off'}}"
+  - service: climate.set_temperature
+    data_template:
+      entity_id: !input climate
+      temperature: >-
+        {%-set baseTemp = states(number) | float(default=0)%}
+        {%-set priceanalyzer = states(sensor) | float(default=0)%}
+        {{baseTemp + priceanalyzer}}
