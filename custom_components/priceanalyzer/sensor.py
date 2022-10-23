@@ -275,7 +275,6 @@ class PriceAnalyzerSensor(Entity):
     @property
     def extra_state_attributes(self) -> dict:
         return {
-            "current_price" : self._data.current_hour['value'] if self._data.current_hour else None,
             "display_name" : self._data._attr_name,
             "low price": self._data.low_price,
             "tomorrow_valid": self._data.tomorrow_valid,
