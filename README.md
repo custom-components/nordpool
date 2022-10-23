@@ -59,7 +59,7 @@ Keep in mind that without temperature sensors on the heater, a cold shower can o
 
 ## Installation
 
-### Option 1: HACS
+### HACS
 
 Under HACS -> Integrations, select the 'Three dots' icon in the top right corner, select 'Custom Repository', and add 'https://github.com/erlendsellie/priceanalyzer/' as an integration (category).
 It will searchable as 'priceanalyzer'. Click it, and select 'Download this repository with Hacs'.
