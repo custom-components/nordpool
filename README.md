@@ -57,6 +57,11 @@ The config can also be configured as binary on/off, if you don't have a temperat
 ```
 Keep in mind that without temperature sensors on the heater, a cold shower can occur.
 
+## How to / Documentation
+
+See the Wiki!
+https://github.com/erlendsellie/priceanalyzer/wiki
+
 ## Installation
 
 ### HACS
@@ -100,139 +105,6 @@ Blueprint for the hot water heater sensor:
 
 
 
-### Apex Charts:
-
-![Apex Card Example](priceanalyzer.png?raw=true "Apex Card Example")
-
-Add this Apex Charts Card to see the schedule for the sensor for today and tomorrow(if available):
-
-```
-type: custom:apexcharts-card
-header:
-  show_states: true
-  title: PriceAnalyzer
-  show: true
-now:
-  show: true
-graph_span: 48h
-span:
-  start: day
-apex_config:
-  chart:
-    height: 500
-  stroke:
-    width: 1
-  yaxis:
-    - show: true
-      id: pris
-      decimalsInFloat: 0
-      floating: false
-      forceNiceScale: true
-      extend_to: end
-      min: auto
-      max: auto
-    - decimalsInFloat: 0
-      id: binary
-      floating: true
-      forceNiceScale: true
-      extend_to: now
-      show: false
-      opposite: true
-      max: 1000
-      min: 0
-series:
-  - entity: sensor.priceanalyzer
-    yaxis_id: pris
-    extend_to: now
-    name: Price
-    unit: Øre/kWh
-    curve: stepline
-    color: tomato
-    show:
-      legend_value: false
-      in_header: false
-    data_generator: |
-      let today =  entity.attributes.raw_today.map((entry) => {
-        return [new Date(entry.start), (entry.value) * 100];
-      });
-      if(entity.attributes.tomorrow_valid) {
-      let tomorrow = entity.attributes.raw_tomorrow.map((entry) => {
-              return [new Date(entry.start), (entry.value) * 100];
-            });
-        return today.concat(tomorrow);
-      }
-      return today;
-  - entity: sensor.priceanalyzer
-    yaxis_id: binary
-    name: Opp
-    type: area
-    curve: stepline
-    color: '#00360e'
-    opacity: 1
-    show:
-      in_header: false
-      legend_value: false
-    data_generator: |
-      let today =  entity.attributes.raw_today.map((entry) => {
-        return [new Date(entry.start), ((entry.temperature_correction > 0 ? 1 : 0) * 10000)];
-      });
-      if(entity.attributes.tomorrow_valid) {
-
-        let tomorrow = entity.attributes.raw_tomorrow.map((entry) => {
-          return [new Date(entry.start), ((entry.temperature_correction > 0 ? 1 : 0) * 10000)];
-        });
-        return today.concat(tomorrow);
-      }
-      return today;
-  - entity: sensor.priceanalyzer
-    yaxis_id: binary
-    name: Ned
-    type: area
-    curve: stepline
-    color: '#4f0500'
-    opacity: 1
-    show:
-      in_header: false
-      legend_value: false
-    data_generator: |
-      let today =  entity.attributes.raw_today.map((entry) => {
-        return [new Date(entry.start), ((entry.temperature_correction < 0 ? 1 : 0))];
-      });
-      if(entity.attributes.tomorrow_valid) {
-
-        let tomorrow = entity.attributes.raw_tomorrow.map((entry) => {
-          return [new Date(entry.start), ((entry.temperature_correction < 0 ? 1 : 0))];
-        });
-        return today.concat(tomorrow);
-      }
-      return today;
-```
-
-### Additional Costs
-Add a template as additional costs, and PriceAnalyzer will also evaluate changes in grid price. This example is from MøreNett, where the Gridprice is cheaper at night:
-
-```
-{%set hour = now().hour%}
-{%set extra = 0.01%}
-{%set price = extra%}
-{%if hour > 21 or hour < 6%}
-  {%set price = price + 0.1375 %}
-{%else%}
-  {%set price = price + 0.2125 %}
-{% endif %}
-{{price | round(4)}}
-```
-
-Example for adding the difference between day and night for the grid price tariff for Tensio: 
-```
-{%set hour = now().hour%}
-{%if hour > 21 or hour < 6%}
-  {{ 0.01 }}
-{%else%}
-  {{0.0787 + 0.01 }}
-{% endif %}
-
-```
 
 ### Debug logging
 
