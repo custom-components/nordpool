@@ -79,9 +79,18 @@ sensor:
 
 ```
 
+### Addition costs
+The idea behind a addition_costs is to allow the users to add costs related to the official price from Nordpool. 
+- Add simple or complex tariffs
+- Calculate VAT
+
+There are two special special arguments in that can be used in the template [(in addition to all default from Homeassistant](https://www.home-assistant.io/docs/configuration/templating/)):
+- ```now()```- this always refer to the current hour of the price
+- ```current_price``` Price for the current hour. This can be used for example be used to calculate your own VAT. Example add 10 % VAT of the current hour's price ```{{current_price * 0.1}}```
+
+##### Tariff example
 ```
-# Tariff example
-'{% set s = {
+{% set s = {
     "hourly_fixed_cost": 0.5352,
     "winter_night": 0.265,
     "winter_day": 0.465,
@@ -102,7 +111,7 @@ sensor:
     {%else%}
         {{s.winter_night+s.hourly_fixed_cost+s.cert|float}}
     {% endif %}
-{% endif %}'
+{% endif %}
 ```
 
 
