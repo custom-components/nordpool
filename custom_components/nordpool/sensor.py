@@ -285,7 +285,7 @@ class NordpoolSensor(Entity):
             template_value = self._ad_template.async_render(
                 now=faker(), current_price=price
             )
-            _LOGGER.debug("Template value are %s", template_value)
+            # _LOGGER.debug("Template value are %s", template_value)
             price += template_value
 
         # Convert price to cents if specified by the user.
@@ -378,11 +378,11 @@ class NordpoolSensor(Entity):
             "currency": self._currency,
             "country": _REGIONS[self._area][1],
             "region": self._area,
-            "low price": self.low_price,
+            "low_price": self.low_price,
             "price_percent_to_average": self.price_percent_to_average,
-            "tomorrow_valid": self.tomorrow_valid,
             "today": self.today,
             "tomorrow": self.tomorrow,
+            "tomorrow_valid": self.tomorrow_valid,
             "raw_today": self.raw_today,
             "raw_tomorrow": self.raw_tomorrow,
         }
@@ -408,7 +408,8 @@ class NordpoolSensor(Entity):
 
     @property
     def tomorrow_valid(self):
-        return self._api.tomorrow_valid()
+        # this should be checked a better way
+        return len(self.tomorrow) >= 23
 
     async def _update_current_price(self) -> None:
         """update the current price (price this hour)"""
@@ -428,19 +429,19 @@ class NordpoolSensor(Entity):
 
     async def check_stuff(self) -> None:
         """Cb to do some house keeping, called every hour to get the current hours price"""
-        _LOGGER.debug("called check_stuff")
+        # _LOGGER.debug("called check_stuff")
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
 
         if self._data_today is None:
-            _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it.")
+            _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it. %s", self.name)
             today = await self._api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
 
         if self._data_tomorrow is None:
-            _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it.")
+            _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it. %s", self.name)
             tomorrow = await self._api.tomorrow(self._area, self._currency)
             if tomorrow:
                 self._data_tomorrow = tomorrow
@@ -478,7 +479,3 @@ class NordpoolSensor(Entity):
 
         await self.check_stuff()
 
-    # async def async_will_remove_from_hass(self):
-    #     """This needs some testing.."""
-    #     for cb in self._cbs:
-    #         self._api._hass.bus._async_remove_listener(EVENT_TIME_CHANGED, cb)

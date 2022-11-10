@@ -95,7 +95,7 @@ def join_result_for_correct_time(results, dt):
     """
     # utc = datetime.utcnow()
     fin = defaultdict(dict)
-    _LOGGER.debug("join_result_for_correct_time %s", dt)
+    # _LOGGER.debug("join_result_for_correct_time %s", dt)
     utc = dt
 
     for day_ in results:
@@ -134,7 +134,7 @@ def join_result_for_correct_time(results, dt):
                 if start_of_day <= local and local <= end_of_day:
                     fin["areas"][key]["values"].append(val)
 
-    _LOGGER.debug("Combines result: %s", fin)
+    # _LOGGER.debug("Combines result: %s", fin)
 
     return fin
 

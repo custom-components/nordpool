@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.7"
+VERSION = "0.0.8"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
@@ -96,10 +96,11 @@ class NordpoolData:
             await self.update_today(None)
             await self.update_tomorrow(None)
 
-        return self._data.get(currency, {}).get(day, {}).get(area)
+            # Send a new data request after new data is updated for this first run
+            # This way if the user has multiple sensors they will all update
+            async_dispatcher_send(self._hass, EVENT_NEW_DATA)
 
-    def tomorrow_valid(self) -> bool:
-        return self._tomorrow_valid
+        return self._data.get(currency, {}).get(day, {}).get(area)
 
     async def today(self, area: str, currency: str) -> dict:
         """Returns todays prices in a area in the requested currency"""
@@ -114,10 +115,10 @@ class NordpoolData:
 
 async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up using yaml config file."""
-
     if DOMAIN not in hass.data:
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
+        _LOGGER.debug("Added %s to hass.data", DOMAIN)
 
         async def new_day_cb(n):
             """Cb to handle some house keeping when it a new day."""
@@ -142,7 +143,7 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data
             """
-            _LOGGER.debug("Called new_data_cb")
+            # _LOGGER.debug("Called new_data_cb")
             await api.update_tomorrow(n)
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
@@ -165,7 +166,7 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
         api.listeners.append(cb_update_tomorrow)
         api.listeners.append(cb_new_hr)
         api.listeners.append(cb_new_day)
-
+    
     return True
 
 
@@ -181,7 +182,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
 
-    # entry.add_update_listener(async_reload_entry)
+    entry.add_update_listener(async_reload_entry)
     return res
 
 
@@ -190,8 +191,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "sensor")
 
     if unload_ok:
-        for unsub in hass.data[DOMAIN].listeners:
-            unsub()
+        # This is a issue if you have mulitple sensors as everything related to DOMAIN
+        # is removed, regardless if you have mulitple sensors or not. Don't seem to 
+        # create a big issue for now #TODO
+        if DOMAIN in hass.data:
+            for unsub in hass.data[DOMAIN].listeners:
+                unsub()
         hass.data.pop(DOMAIN)
 
         return True
