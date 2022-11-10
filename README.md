@@ -86,7 +86,7 @@ The idea behind a addition_costs is to allow the users to add costs related to t
 
 There are two special special arguments in that can be used in the template [(in addition to all default from Homeassistant](https://www.home-assistant.io/docs/configuration/templating/)):
 - ```now()```- this always refer to the current hour of the price
-- ```current_price``` Price for the current hour. This can be used for example be used to calculate your own VAT. Example add 10 % VAT of the current hour's price ```{{current_price * 0.1}}```
+- ```current_price``` Price for the current hour. This can be used for example be used to calculate your own VAT. Example add 10 % VAT of the current hour's price ```{{current_price * 1.1}}```
 
 ##### Tariff example
 ```
