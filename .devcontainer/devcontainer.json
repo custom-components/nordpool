@@ -26,5 +26,6 @@
 		"editor.formatOnSave": true,
 		"editor.formatOnType": true,
 		"files.trimTrailingWhitespace": true
-	}
+	},
+	"workspaceFolder": "/nordpool"
 }
