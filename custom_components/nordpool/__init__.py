@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.8"
+VERSION = "0.0.9"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
@@ -166,7 +166,7 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
         api.listeners.append(cb_update_tomorrow)
         api.listeners.append(cb_new_hr)
         api.listeners.append(cb_new_day)
-    
+
     return True
 
 

@@ -4,7 +4,7 @@ import re
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.helpers.template import is_template_string, Template
+from homeassistant.helpers.template import Template
 
 from . import DOMAIN
 from .sensor import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE
@@ -77,11 +77,10 @@ class NordpoolFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             #
             ut = Template(user_template, self.hass).async_render(
-                current_price=0
+                current_price=0,
             )  # Add current price as 0 as we dont know it yet..
             _LOGGER.debug("user_template %s value %s", user_template, ut)
 
-            return True
             if isinstance(ut, float):
                 return True
             else:
