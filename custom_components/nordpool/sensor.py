@@ -168,6 +168,7 @@ class NordpoolSensor(Entity):
         self._off_peak_1 = None
         self._off_peak_2 = None
         self._peak = None
+        self._additional_costs_value = None
 
         _LOGGER.debug("Template %s", str(ad_template))
         # Check incase the sensor was setup using config flow.
@@ -239,6 +240,10 @@ class NordpoolSensor(Entity):
         return self.current_price
 
     @property
+    def additional_costs(self):
+        return self._additional_costs_value
+
+    @property
     def low_price(self) -> bool:
         """Check if the price is lower then avg depending on settings"""
         return (
@@ -267,7 +272,7 @@ class NordpoolSensor(Entity):
 
         def faker():
             def inner(*args, **kwargs):
-                return fake_dt
+                return fake_dt or dt_utils.now()
 
             return pass_context(inner)
 
@@ -277,7 +282,7 @@ class NordpoolSensor(Entity):
             template_value = self._ad_template.async_render(
                 now=faker(), current_price=price
             )
-            # _LOGGER.debug("Template value are %s", template_value)
+            self._additional_costs_value = template_value
 
             price += template_value
         else:
@@ -285,7 +290,7 @@ class NordpoolSensor(Entity):
             template_value = self._ad_template.async_render(
                 now=faker(), current_price=price
             )
-            # _LOGGER.debug("Template value are %s", template_value)
+            self._additional_costs_value = template_value
             price += template_value
 
         # Convert price to cents if specified by the user.
@@ -310,7 +315,6 @@ class NordpoolSensor(Entity):
         self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
         self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
         self._peak = self._calc_price(data.get("Peak"))
-
 
     @property
     def current_price(self) -> float:
@@ -385,6 +389,7 @@ class NordpoolSensor(Entity):
             "tomorrow_valid": self.tomorrow_valid,
             "raw_today": self.raw_today,
             "raw_tomorrow": self.raw_tomorrow,
+            "additional_costs_current_hour": self.additional_costs,
         }
 
     def _add_raw(self, data):
@@ -408,8 +413,9 @@ class NordpoolSensor(Entity):
 
     @property
     def tomorrow_valid(self):
+        """Verify that we have the values for tomorrow."""
         # this should be checked a better way
-        return len(self.tomorrow) >= 23
+        return len([i for i in self.tomorrow if i not in (None, float("inf"))]) >= 23
 
     async def _update_current_price(self) -> None:
         """update the current price (price this hour)"""
@@ -434,14 +440,19 @@ class NordpoolSensor(Entity):
             self._last_tick = dt_utils.now()
 
         if self._data_today is None:
-            _LOGGER.debug("NordpoolSensor _data_today is none, trying to fetch it. %s", self.name)
+            _LOGGER.debug(
+                "NordpoolSensor _data_today is none, trying to fetch it. %s", self.name
+            )
             today = await self._api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
 
         if self._data_tomorrow is None:
-            _LOGGER.debug("NordpoolSensor _data_tomorrow is none, trying to fetch it. %s", self.name)
+            _LOGGER.debug(
+                "NordpoolSensor _data_tomorrow is none, trying to fetch it. %s",
+                self.name,
+            )
             tomorrow = await self._api.tomorrow(self._area, self._currency)
             if tomorrow:
                 self._data_tomorrow = tomorrow
@@ -476,6 +487,4 @@ class NordpoolSensor(Entity):
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass %s", self.name)
         async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
-
         await self.check_stuff()
-
