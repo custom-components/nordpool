@@ -79,6 +79,7 @@ class Data():
         ad_template,
         percent_difference,
         hass,
+        config
     ) -> None:
         # friendly_name is ignored as it never worked.
         # rename the sensor in the ui if you dont like the name.
@@ -93,7 +94,8 @@ class Data():
         self._ad_template = ad_template
         self._hass = hass
         self.percent_difference = percent_difference or 20
-        
+        self._config = config
+
         if vat is True:
             self._vat = _REGIONS[area][2]
         else:
@@ -353,6 +355,14 @@ class Data():
 
         diff = self._diff_tomorrow if is_tomorrow else self._diff
         percent_difference = (self.percent_difference + 100) /100
+
+        max_price = self._max_tomorrow if is_tomorrow else self._max
+        threshold = self._config.get('pa_price_before_active', "") or 0
+        below_threshold = float(threshold) > max_price
+        if below_threshold == True:
+            if reason:
+                return 'Max-price below threshold'
+            return 0
 
         #TODO this calculation is not considering additional costs.
         if(diff < percent_difference):

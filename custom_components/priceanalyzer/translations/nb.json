@@ -14,7 +14,8 @@
                     "price_type": "Pris i format",
                     "additional_costs": "Mal for tilleggskostnader",
                     "hot_water_config" : "Instilling for å sette egne temperaturer for VVB-sensoren",
-                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv"
+                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
+                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv"
 
                 }
             }
@@ -39,7 +40,8 @@
                     "price_type": "Pris i format",
                     "additional_costs": "Mal for tilleggskostnader",
                     "hot_water_config" : "Instilling for å sette egne temperaturer for VVB-sensoren",
-                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv"
+                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
+                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv"
                 }
             }
         },

@@ -124,6 +124,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
+        vol.Optional("pa_price_before_active", default=0.20): float,
         vol.Optional("percent_difference", default=20): int,
         vol.Optional("price_before_active", default=0.20): float,
         vol.Optional(HOT_WATER_CONFIG, default=HOT_WATER_DEFAULT_CONFIG_JSON): cv.string,

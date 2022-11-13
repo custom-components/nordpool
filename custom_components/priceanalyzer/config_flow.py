@@ -50,7 +50,7 @@ def get_schema(existing_config = None) -> dict:
             price_types
         ),
         vol.Optional("additional_costs", default=ec.get("additional_costs", DEFAULT_TEMPLATE)): str,
-        
+        vol.Optional("pa_price_before_active", default=ec.get('pa_price_before_active',0.2)): float,        
         vol.Optional("percent_difference", default=ec.get("percent_difference",20)): int,
         vol.Optional("price_before_active", default=ec.get('price_before_active',0.2)): float,
         vol.Optional(HOT_WATER_CONFIG, default=ec.get(HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON)): str,

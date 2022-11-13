@@ -75,7 +75,10 @@ class VVBSensor(Entity):
         self._unique_id = unique_id + '_VVBSensor'
 
     def getTemp(self, current_hour, is_tomorrow = False, reason = False):
-        temp = self.getConfigKey(TEMP_DEFAULT) or 75
+        temp = self.getConfigKey(TEMP_DEFAULT)
+        if not isinstance(temp, (int, float)):
+            temp = 75
+            
         reasonText = 'Default temp'
         if current_hour:
             small_price_difference = self._data.small_price_difference_today is True if is_tomorrow is False else self._data.small_price_difference_tomorrow

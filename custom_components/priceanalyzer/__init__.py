@@ -220,6 +220,7 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         ad_template,
         percent_difference,
         hass,
+        pa_config
     )
     
     hass.data[DATA][region] = data

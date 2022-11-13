@@ -15,7 +15,8 @@
                     "price_type": "Hinnan yksikkö",
                     "additional_costs": "Sivukulujen laskenta Template",
                     "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
-                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active"
+                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
+                    "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active"
                 }
             }
         },
@@ -40,7 +41,8 @@
                     "price_type": "Hinnan yksikkö",
                     "additional_costs": "Sivukulujen laskenta Template",
                     "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
-                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active"
+                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
+                    "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active"
                 }
             }
         },
