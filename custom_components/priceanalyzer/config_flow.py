@@ -64,7 +64,10 @@ class Base:
     async def _valid_template(self, user_template):
         try:
             _LOGGER.debug(user_template)
-            ut = Template(user_template, self.hass).async_render()
+            ut = Template(user_template, self.hass).async_render(
+                current_price=0,
+            )  # Add current price as 0 as we dont know it yet..
+            _LOGGER.debug("user_template %s value %s", user_template, ut)            
             if isinstance(ut, float):
                 return True
             else:

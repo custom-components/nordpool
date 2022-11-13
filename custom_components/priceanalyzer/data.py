@@ -261,7 +261,7 @@ class Data():
 
     @property
     def tomorrow_valid(self):
-        return self.api.tomorrow_valid()
+        return len([i for i in self.tomorrow if i not in (None, float("inf"))]) >= 23
 
 
     @property
@@ -326,17 +326,38 @@ class Data():
         price_next_hour3 = max([price_next_hour3,0.00001])
         return ((price_now / price_next_hour) > percent_threshold) or ((price_now / price_next_hour2) > percent_threshold) or ((price_now / price_next_hour3) > percent_threshold)
 
+    def price_percent_to_average(self, item, is_tomorrow) -> float:
+        """Price in percent to average price"""
+        average = self._average if is_tomorrow else self._average_tomorrow
+        if average is None:
+            return None
+
+        return round(item['value'] / average,3)
 
     def _is_falling_alot_next_hour(self, item) -> bool:
         return item['price_next_hour'] is not None and ((item['price_next_hour'] / max([item['value'],0.00001])) < 0.60)
 
+    def _is_falling_alot_next_hours(self, item) -> bool:
+        falling_alot_next_hour =  item['price_next_hour'] is not None and ((item['price_next_hour'] / max([item['value'],0.00001])) < 0.80)
+        falling_alot_next_next_hour =  item['price_in_2_hours'] is not None and ((item['price_in_2_hours'] / max([item['value'],0.00001])) < 0.80)
+        return falling_alot_next_hour or falling_alot_next_next_hour #todo hour after that as well.
 
-    def _get_temperature_correction(self, item, is_gaining, is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive) -> float:
+    def _get_temperature_correction(self, item, is_tomorrow, reason = False):
+        is_gaining = item['is_gaining']
+        is_falling = item['is_falling']
+        is_max = item['is_max']
+        is_low_price = item['is_low_price']
+        is_over_average = item['is_over_average']
+        is_five_most_expensive = item['is_five_most_expensive']
+
+
         diff = self._diff_tomorrow if is_tomorrow else self._diff
         percent_difference = (self.percent_difference + 100) /100
 
         #TODO this calculation is not considering additional costs.
         if(diff < percent_difference):
+            if reason:
+                return 'Small difference'
             return 0
 
         price_now = max([item["value"],0.00001])
@@ -346,23 +367,37 @@ class Data():
 
         is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
 
-        isprettycheap = price_now < 0.05
+        isprettycheap = price_now < 0.05        
 
         #TODO Check currency
         #special handling for high price at end of day:
         if not is_tomorrow and item['start'].hour == 23 and item['price_next_hour'] is not None and (price_next_hour / price_now) < 0.80 and isprettycheap == False:
+            if reason:
+                return 'Price dropping tomorrow'
             return -1
         if is_max:
+            if reason:
+                return 'Is max'
             return -1
         elif self._is_falling_alot_next_hour(item) and isprettycheap == False:
+            if reason:
+                return 'Is falling alot next hour'
             return -1
         elif is_gaining and (price_now < price_next_hour) and (not is_five_most_expensive):
+        #TODO, When price was 128 øre at 2300, the analyzer was at +1. Why?
+            
         #elif (is_over_peak == False and is_gaining == True):
         #elif (is_low_price == True and is_gaining == True):
+            if reason:
+                return 'Is gaining, and not in five most expensive hours'
             return 1
-        elif is_falling and is_over_average == True:
+        elif is_falling and is_over_average == True: #TODO, check low_price_cutoff /is low price instead.
+            if reason:
+                return 'Is falling and is over average'
             return -1
         elif is_low_price and (not is_gaining or is_falling):
+            if reason:
+                return 'No need to correct.'            
             return 0
         #TODO is_over_off_peak_1 is not considering additionatla costs i think, so this is wrong.
         # Nope, the case is that it's just set hours, and not considering
@@ -371,6 +406,8 @@ class Data():
         # elif (is_over_peak and is_falling) or is_over_off_peak_1:
         #     return -1
         else:
+            if reason:
+                return 'No need to correct..'            
             return 0
 
 
@@ -558,24 +595,19 @@ class Data():
         if is_tomorrow and self.tomorrow_valid == False:
             return []
 
-        data = self.api.tomorrow(self._area, self._currency) if is_tomorrow else self.api.today(self._area, self._currency)
+        data = self._data_tomorrow if is_tomorrow else self._data_today
         if data is None:
             self.check_stuff()
             return
-
-
+        data = sorted(data.get("values"), key=itemgetter("start"))
         _LOGGER.debug('PriceAnalyzer Adding raw calculated for %s with , %s ', self.device_name)
-
         result = []
         hour = 0
         percent_difference = (self.percent_difference + 100) /100
-
-
-        
-        
         if is_tomorrow == False:
             difference = ((self._min / self._max) - 1)
-            self._percent_threshold = ((difference / 4) * -1)
+            self._percent_threshold = ((difference / 4) * -1) 
+            #TODO, consider lowering thershold. for more micro-calculations.
             self._diff = self._max / max([self._min,0.00001])
             self._set_cheapest_hours_today()
             
@@ -583,7 +615,7 @@ class Data():
             self.small_price_difference_today = (self._diff < percent_difference)
 
 
-        if self.api.tomorrow_valid() == True and is_tomorrow == True:
+        if self.tomorrow_valid == True and is_tomorrow == True:
             max_tomorrow = self._max_tomorrow
             min_tomorrow = max([self._min_tomorrow,0.00001])
             difference = ((min_tomorrow / max_tomorrow) - 1)
@@ -592,13 +624,13 @@ class Data():
             self._set_cheapest_hours_tomorrow()
             self.small_price_difference_tomorrow = (self._diff_tomorrow < percent_difference)  
 
+        data = self._format_time(data)
         peak = self._peak_tomorrow if is_tomorrow else self._peak
         max_price = self._max_tomorrow if is_tomorrow else self._max
         min_price = self._min_tomorrow if is_tomorrow else self._min
         average = self._average_tomorrow if is_tomorrow else self._average
         local_now = dt_utils.now()
-
-        for res in self._someday(data):
+        for res in data:
 
             price_now = float(self._calc_price(res["value"], fake_dt=res["start"]))
             is_max = price_now == max_price
@@ -612,7 +644,9 @@ class Data():
             next_hour3 = self.get_hour(hour+3, is_tomorrow)
 
             if next_hour != None and next_hour2 != None and next_hour3 != None:
-
+                #TODO this will always be true when next day is not valid, so from 21.00 and onwards will not have price_next_hour.
+                # should be better written.
+                # this is fixed when next days prices are present though.
                 price_next_hour3 = self._calc_price(next_hour3["value"], fake_dt=next_hour3["start"]) or price_now
                 price_next_hour2 = self._calc_price(next_hour2["value"], fake_dt=next_hour2["start"]) or price_now
                 price_next_hour = self._calc_price(next_hour["value"], fake_dt=next_hour["start"]) or price_now
@@ -629,23 +663,27 @@ class Data():
                 "end": res["end"],
                 "value": price_now,
                 "price_next_hour": price_next_hour,
+                "price_in_2_hours": price_next_hour2,
                 "is_gaining": is_gaining,
                 "is_falling": is_falling,
                 'is_max': is_max,
                 'is_min': is_min,
                 'is_low_price': is_low_price,
                 'is_over_peak' : is_over_peak,
-                'is_over_average': is_over_average
+                'is_over_average': is_over_average,
             }
 
             is_five_most_expensive = self._is_five_most_expensive(item, is_tomorrow)
+            item['price_percent_to_average'] = self.price_percent_to_average(item, is_tomorrow),
             item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
             item['is_five_cheapest'] = self._is_five_cheapest(item,is_tomorrow)
             item['is_five_most_expensive'] = is_five_most_expensive
             item['is_falling_a_lot_next_hour'] = self._is_falling_alot_next_hour(item)
             #Todo, add this when complete.
             #item['is_low_compared_to_tomorrow'] = self._is_low_compared_to_tomorrow(item)
-            item["temperature_correction"] = self._get_temperature_correction(item, is_gaining,is_falling, is_max, is_low_price, is_over_peak, is_tomorrow, is_over_average, is_five_most_expensive)
+
+            item["temperature_correction"] = self._get_temperature_correction(item, is_tomorrow)
+            item["reason"] = self._get_temperature_correction(item, is_tomorrow,True)
             
             #todo is a top?
             

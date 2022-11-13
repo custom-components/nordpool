@@ -203,10 +203,7 @@ class VVBSensor(Entity):
 
     @property
     def unit(self) -> str:
-        if isinstance(self.state, float):
-            return '°C'
-        else:
-            return ''
+        return '°C'
         
 
 
