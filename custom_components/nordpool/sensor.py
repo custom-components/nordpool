@@ -24,7 +24,8 @@ _PRICE_IN = {"kWh": 1000, "MWh": 0, "Wh": 1000 * 1000}
 _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
     "DK2": ["DKK", "Denmark", 0.25],
-    "FI": ["EUR", "Finland", 0.24],
+    "FI": ["EUR", "Finland", 0.10], # The VAT in Finland will be 10% starting 2022-12-01 00:00 (Helsinki time)
+    # "FI": ["EUR", "Finland", 0.24], # The VAT will go up to 24% again 2023-05-01 00:00 (Helsinki time)
     "EE": ["EUR", "Estonia", 0.20],
     "LT": ["EUR", "Lithuania", 0.21],
     "LV": ["EUR", "Latvia", 0.21],
