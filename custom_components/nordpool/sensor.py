@@ -148,6 +148,7 @@ class NordpoolSensor(Entity):
         self._api = api
         self._ad_template = ad_template
         self._hass = hass
+        self._attr_force_update = True
 
         if vat is True:
             self._vat = _REGIONS[area][2]
