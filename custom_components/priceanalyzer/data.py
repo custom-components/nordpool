@@ -401,9 +401,9 @@ class Data():
             if reason:
                 return 'Is gaining, and not in five most expensive hours'
             return 1
-        elif is_falling and is_over_average == True: #TODO, check low_price_cutoff /is low price instead.
+        elif is_falling and is_low_price == False:
             if reason:
-                return 'Is falling and is over average'
+                return 'Is falling and not low price'
             return -1
         elif is_low_price and (not is_gaining or is_falling):
             if reason:
