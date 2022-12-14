@@ -9,13 +9,19 @@ import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
 from jinja2 import pass_context
 
 from . import DOMAIN, EVENT_NEW_DATA
 from .misc import extract_attrs, has_junk, is_new, start_of
+
+# Import sensor entity and classes.
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -122,7 +128,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     return True
 
 
-class NordpoolSensor(Entity):
+class NordpoolSensor(SensorEntity):
+    # Set classes for sensor statistics.
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    
     def __init__(
         self,
         friendly_name,
