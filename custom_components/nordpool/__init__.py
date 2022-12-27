@@ -192,7 +192,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if unload_ok:
         # This is a issue if you have mulitple sensors as everything related to DOMAIN
-        # is removed, regardless if you have mulitple sensors or not. Don't seem to 
+        # is removed, regardless if you have mulitple sensors or not. Don't seem to
         # create a big issue for now #TODO
         if DOMAIN in hass.data:
             for unsub in hass.data[DOMAIN].listeners:
