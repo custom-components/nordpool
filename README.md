@@ -8,7 +8,10 @@ If you like being in control of your electricity usage, sign up for Tibber using
 
 PriceAnalyzer keeps your energy bill down, by analyzing the prices from Nordpool, and provides you sensors to automatically control your climate entities and hot water heater.
 
-See the 
+![image](https://user-images.githubusercontent.com/18458417/197388506-d623cb01-141d-4e44-b384-5a3aa21975a0.png)
+
+See the Wiki for more examples and usage instructions. 
+
 
 ## PriceAnalyzerSensor
 Price Analyzer creates sensor a with the recommended temperature correction for your thermostats, based on todays and tomorrows prices, between 1 and -1 degrees celcius.
