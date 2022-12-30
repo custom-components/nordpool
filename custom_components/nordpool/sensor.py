@@ -207,6 +207,7 @@ class NordpoolSensor(Entity):
 
     @property
     def unit(self) -> str:
+        """Unit"""
         return self._price_type
 
     @property
@@ -284,33 +285,43 @@ class NordpoolSensor(Entity):
         template_value = self._ad_template.async_render(
             now=faker(), current_price=price
         )
+
+        # Seems like the template is rendered as a string if the number is complex
+        # Just force it to be a float.
+        if not isinstance(template_value, (int, float)):
+            try:
+                template_value = float(template_value)
+            except (TypeError, ValueError):
+                _LOGGER.exception(
+                    "Failed to convert %s %s to float",
+                    template_value,
+                    type(template_value),
+                )
+                raise
+
         self._additional_costs_value = template_value
-        price += template_value
+        try:
+            # If the price is negative, subtract the additional costs from the price
+            template_value = abs(template_value) if price < 0 else template_value
+            price += template_value
+        except Exception:
+            _LOGGER.debug(
+                "price %s template value %s type %s dt %s current_price %s ",
+                price,
+                template_value,
+                type(template_value),
+                fake_dt,
+                self._current_price,
+            )
+            raise
 
         # Convert price to cents if specified by the user.
         if self._use_cents:
             price = price * _CENT_MULTIPLIER
 
-        return round(price, self._precision)
+        return price
 
-    def _update(self, data) -> None:
-        """Set attrs."""
-        _LOGGER.debug("Called _update setting attrs for the day")
-
-        if data is None:
-            return
-
-        d = extract_attrs(data.get("values"))
-        data.update(d)
-
-        self._average = self._calc_price(data.get("Average"))
-        self._min = self._calc_price(data.get("Min"))
-        self._max = self._calc_price(data.get("Max"))
-        self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
-        self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
-        self._peak = self._calc_price(data.get("Peak"))
-
-    def _update2(self):
+    def _update(self):
         """Set attrs"""
         td = self.today
 
@@ -458,8 +469,7 @@ class NordpoolSensor(Entity):
             today = await self._api.today(self._area, self._currency)
             if today:
                 self._data_today = today
-                # self._update(today)
-                self._update2()
+                self._update()
 
         if self._data_tomorrow is None:
             _LOGGER.debug(
@@ -477,10 +487,9 @@ class NordpoolSensor(Entity):
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
-                # self._update(self._data_today)
                 # Just to stop the hourly update if its a new day
                 if dt_utils.now().hour != 0:
-                    self._update2()
+                    self._update()
                 self._data_tomorrow = None
             else:
                 today = await self._api.today(self._area, self._currency)
@@ -488,7 +497,7 @@ class NordpoolSensor(Entity):
                     self._data_today = today
                     # self._update(today)
                     if dt_utils.now().hour != 0:
-                        self._update2()
+                        self._update()
                     self._data_tomorrow = None
 
         # Updates the current for this hour.

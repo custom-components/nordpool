@@ -43,6 +43,8 @@ If you have any issues with this you need to open an issue here:
 
 
 class NordpoolData:
+    """Holds the data"""
+
     def __init__(self, hass: HomeAssistant):
         self._hass = hass
         self._last_tick = None
