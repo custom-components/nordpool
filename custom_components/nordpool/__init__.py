@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.9"
+VERSION = "0.0.10b"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
@@ -43,6 +43,8 @@ If you have any issues with this you need to open an issue here:
 
 
 class NordpoolData:
+    """Holds the data"""
+
     def __init__(self, hass: HomeAssistant):
         self._hass = hass
         self._last_tick = None
@@ -192,7 +194,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if unload_ok:
         # This is a issue if you have mulitple sensors as everything related to DOMAIN
-        # is removed, regardless if you have mulitple sensors or not. Don't seem to 
+        # is removed, regardless if you have mulitple sensors or not. Don't seem to
         # create a big issue for now #TODO
         if DOMAIN in hass.data:
             for unsub in hass.data[DOMAIN].listeners:
