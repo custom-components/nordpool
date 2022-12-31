@@ -333,8 +333,8 @@ class NordpoolSensor(Entity):
         self._min = min(td)
         self._max = max(td)
         self._off_peak_1 = mean(td[0:8])
-        self._peak = mean(td[20:])
-        self._off_peak_2 = mean(td[8:20])
+        self._off_peak_2 = mean(td[20:])
+        self._peak = mean(td[8:20])
         self._mean = median(td)
 
     @property
