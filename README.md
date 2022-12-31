@@ -1,13 +1,35 @@
-## nordpool custom component for home assistant
+# Nordpool integration for Home Assistant
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=MAXZPYVPD8XS6)
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/2ys3cdCZk)
+
+Nord Pool is a service provider that operates an electricity market and power system services, including the exchange of electricity on a spot market Nordics and Baltic countries. 
+
+This integration provides the spot market (hourly) electricity prices for the Nordic, Baltic and part of Western Europe. 
+
+The Nordpool sensor provides the current price with today's and tomorrow's prices as attributes. prices become available around 13:00.
+
+[EpaxCharts](https://github.com/RomRider/apexcharts-card) frontend is recommended for visualization of the data.<br>
+<img src="https://user-images.githubusercontent.com/5879533/210006998-d8ebd401-5a92-471d-9072-4e6b1c69b779.png" width="500"/>
+
+### Table of Contents
+**[Installation](#installation)**<br>
+**[Usage](#usage)**<br>
+**[Other](#other)**<br>
+**[Troubleshooting](#troubleshooting)**<br>
+
+### Getting started
+
+- Tutorial: [Nordpool and ExaxChart](https://www.creatingsmarthome.com/index.php/2022/09/17/home-assistant-nord-pool-spot-prices-and-how-to-automate-devices-for-cheapest-hours/) by Creating Smart Home
+- Community: [Nordpool Energy Prices](https://community.home-assistant.io/t/any-good-ideas-are-welcome-nordpool-energy-price-per-hour/) on Home Assistant Community
 
 ## Installation
 
 ### Option 1: HACS
 
-Under HACS -> Integrations, select "+", search for `nordpool` and install it.
-
+- Go to `HACS` -> `Integrations`, 
+- select `+`, 
+- search for `nordpool` and install it,
+- Restart Home Assistant
 
 ### Option 2: Manual
 
@@ -21,8 +43,29 @@ unzip nordpool-X.Y.Z.zip
 mv nordpool-X.Y.Z/custom_components/nordpool/* .  
 ```
 
+## Usage
 
-### Usage
+### Configuration Variables
+
+| Configuration | Required | Description | 
+|---| --- | --- |
+| Region | yes| Country/region to get the energy prices for. See Country/region codes below for details.| 
+| Currency | no | *Default: local currency* <br> Currency used to fetch the prices from the API.|
+| Include VAT | no | *Default: true* <br> Add Value Added Taxes (VAT) or not.|
+| Precision | no | *Default: 3* Rounding number of digits. |
+| Low Price Cutoff | no | *Default: 1* <br> Percentage of average price to set the low price attribute. <br> IF hour_price < average * low_price_cutoff <br> THEN low_price = True <br> ELSE low_price = False|
+| Price in cents | no | *Default: false* <br> Display price in sents in stead of, for example Euros.|
+| Price type | no | *Default: kWh* <br> Price displayed for MWh, kWh or Wh.|
+| Additional Cost | no |  *default `{{0.0\|float}}`* <br> Template to specify additional cost to be added.See [Additional Costs](#additional-costs) for more details.|
+
+### Option 1: UI
+
+- Go to `Settings` -> `Devices & Services`
+- Select `+ Add Integration`
+- search for `nordpool` and select it
+- Fill in the required values and press `Submit`
+
+### Option 2: YAML
 
 Set up the sensor using the webui or use a yaml.
 
@@ -33,8 +76,6 @@ sensor:
   - platform: nordpool
     region: "Kr.sand" # This can be skipped if you want Kr.sand
 ```
-
-
 
 in configuration.yaml
 
@@ -79,16 +120,32 @@ sensor:
 
 ```
 
-### Addition costs
+
+### Additional costs
 The idea behind a addition_costs is to allow the users to add costs related to the official price from Nordpool. 
 - Add simple or complex tariffs
 - Calculate VAT
 
 There are two special special arguments in that can be used in the template [(in addition to all default from Homeassistant](https://www.home-assistant.io/docs/configuration/templating/)):
 - ```now()```- this always refer to the current hour of the price
-- ```current_price``` Price for the current hour. This can be used for example be used to calculate your own VAT. Example add 10 % VAT of the current hour's price ```{{current_price * 0.1}}```
+- ```current_price``` Price for the current hour. This can be used for example be used to calculate your own VAT or add overhead cost. 
+
+Note: When configuring nordpool using the UI, things like VAT and additional costs cannot be changes. If your energy supplier or region changes the cost or rules on a semi-regular basis, the YAML configuration might be better for you.
+
+##### Example 1: Percentage (VAT)
+
+Add 19 % VAT of the current hour's price 
+
+```{{current_price * 0.19}}```
+
+##### Example 1: Overhead per kWh
+
+Add 1,3 cents per kWh overhead cost to the current hour's price 
+
+```{{current_price + 0.013}}```
 
 ##### Tariff example
+
 ```
 {% set s = {
     "hourly_fixed_cost": 0.5352,
@@ -114,8 +171,17 @@ There are two special special arguments in that can be used in the template [(in
 {% endif %}
 ```
 
+## Other
 
-run the create_template script if you want one sensors for each hour. See the help options with ```python create_template --help``` you can run the script anyhere python is installed. (install the required packages pyyaml and click using `pip install packagename`)
+### A sensor per hour
+
+By default, one sensor is created with the current energy price. The prices for other hours are stored in the attriutes of this sensor. Most example code you will find use the default one sensor option, but you can create a sensor for every hour if you want.
+
+run the create_template script if you want one sensors for each hour. 
+
+See the help options with ```python create_template --help``` you can run the script anyhere python is installed. (install the required packages pyyaml and click using `pip install packagename`)
+
+## Troubleshooting
 
 ### Debug logging
 Add this to your configuration.yaml to debug the component.
