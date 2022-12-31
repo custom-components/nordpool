@@ -262,7 +262,8 @@ class NordpoolSensor(SensorEntity):
         """Check if the price is lower then avg depending on settings"""
         return (
             self.current_price < self._average * self._low_price_cutoff
-            if self.current_price and self._average
+            if isinstance(self.current_price, (int, float))
+            and isinstance(self._average, (float, int))
             else None
         )
 
