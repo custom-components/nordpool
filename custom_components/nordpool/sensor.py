@@ -9,13 +9,20 @@ import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
+
+# Import sensor entity and classes.
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from jinja2 import pass_context
 
 from . import DOMAIN, EVENT_NEW_DATA
 from .misc import extract_attrs, has_junk, is_new, start_of
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -122,8 +129,10 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     return True
 
 
-class NordpoolSensor(Entity):
-    """Sensor"""
+class NordpoolSensor(SensorEntity):
+    "Sensors data"
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(
         self,
@@ -333,8 +342,8 @@ class NordpoolSensor(Entity):
         self._min = min(td)
         self._max = max(td)
         self._off_peak_1 = mean(td[0:8])
-        self._peak = mean(td[20:])
-        self._off_peak_2 = mean(td[8:20])
+        self._off_peak_2 = mean(td[20:])
+        self._peak = mean(td[8:20])
         self._mean = median(td)
 
     @property
