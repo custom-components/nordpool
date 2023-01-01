@@ -7,12 +7,12 @@
                 "description": "Setup a Nordpool sensor",
                 "data": {
                     "region": "Region",
-                    "currency": "NOK",
+                    "currency": "Currency",
                     "VAT": "Include VAT",
-                    "precision": "How many decimals to show",
-                    "low_price_cutoff": "low price cut off",
-                    "price_in_cents": "Price in Cents",
-                    "price_type": "Price in format",
+                    "precision": "Decimal rounding precision",
+                    "low_price_cutoff": "Low price percentage",
+                    "price_in_cents": "Price in cents",
+                    "price_type": "Energy scale",
                     "additional_costs": "Template for additional costs"
                 }
             }
