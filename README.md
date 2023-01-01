@@ -18,21 +18,18 @@ The Nordpool sensor provides the current price with today's and tomorrow's price
 **[Troubleshooting](#troubleshooting)**<br>
 
 ### Getting started
-
 - Tutorial: [Nordpool and ExaxChart](https://www.creatingsmarthome.com/index.php/2022/09/17/home-assistant-nord-pool-spot-prices-and-how-to-automate-devices-for-cheapest-hours/) by Creating Smart Home
 - Community: [Nordpool Energy Prices](https://community.home-assistant.io/t/any-good-ideas-are-welcome-nordpool-energy-price-per-hour/) on Home Assistant Community
 
 ## Installation
 
 ### Option 1: HACS
-
 - Go to `HACS` -> `Integrations`, 
 - select `+`, 
 - search for `nordpool` and install it,
 - Restart Home Assistant
 
 ### Option 2: Manual
-
 From the [latest release](https://github.com/custom-components/nordpool/releases)
 
 ```bash
@@ -46,80 +43,86 @@ mv nordpool-X.Y.Z/custom_components/nordpool/* .
 ## Usage
 
 ### Configuration Variables
-
-| Configuration | Required | Description | 
-|---| --- | --- |
-| Region | yes| Country/region to get the energy prices for. See Country/region codes below for details.| 
-| Currency | no | *Default: local currency* <br> Currency used to fetch the prices from the API.|
-| Include VAT | no | *Default: true* <br> Add Value Added Taxes (VAT) or not.|
-| Precision | no | *Default: 3* Rounding number of digits. |
-| Low Price Cutoff | no | *Default: 1* <br> Percentage of average price to set the low price attribute. <br> IF hour_price < average * low_price_cutoff <br> THEN low_price = True <br> ELSE low_price = False|
-| Price in cents | no | *Default: false* <br> Display price in sents in stead of, for example Euros.|
-| Price type | no | *Default: kWh* <br> Price displayed for MWh, kWh or Wh.|
-| Additional Cost | no |  *default `{{0.0\|float}}`* <br> Template to specify additional cost to be added.See [Additional Costs](#additional-costs) for more details.|
+| Configuration        | Required | Description                   | 
+|----------------------| -------- | ----------------------------- |
+| Region               | yes      | Country/region to get the energy prices for. See Country/region codes below for details.| 
+| Currency             | no       | *Default: local currency* <br> Currency used to fetch the prices from the API.|
+| Include VAT          | no       | *Default: true* <br> Add Value Added Taxes (VAT) or not.|
+| Decimal precision    | no       | *Default: 3* <br> Energy price rounding precision. |
+| Low price percentage | no       | *Default: 1* <br> Percentage of average price to set the low price attribute. <br> IF hour_price < average * low_price_cutoff <br> THEN low_price = True <br> ELSE low_price = False|
+| Price in cents       | no       | *Default: false* <br> Display price in cents in stead of (for example) Euros.|
+| Energy scale         | no       | *Default: kWh* <br> Price displayed for MWh, kWh or Wh.|
+| Additional Cost      | no       |  *default `{{0.0\|float}}`* <br> Template to specify additional cost to be added. See [Additional Costs](#additional-costs) for more details.|
 
 ### Option 1: UI
-
 - Go to `Settings` -> `Devices & Services`
 - Select `+ Add Integration`
 - search for `nordpool` and select it
 - Fill in the required values and press `Submit`
 
+Tip: By default, the integration will create a device with the name `nordpool_<energy_scale>_<region>_<currency>_<some-numbers>`. It is recommended to rename the device and all its entities to `nordpool`. If you need to recreate your sensor (for example, to change the additional cost), all automations and dashboards keep working.
+
 ### Option 2: YAML
+Set up the sensor using in `configuration.yaml`.
 
-Set up the sensor using the webui or use a yaml.
-
-The sensors tries to set some sane default so a minimal setup can be
-
+#### Minimal configuration:
 ```
 sensor:
   - platform: nordpool
-    region: "Kr.sand" # This can be skipped if you want Kr.sand
+    region: "Kr.sand" 
 ```
 
-in configuration.yaml
-
+#### Example configuration:
 ```
-nordpool:
-
 sensor:
   - platform: nordpool
-
-    # Should the prices include vat? Default True
-    VAT: True
-
-    # What currency the api fetches the prices in
-    # this is only need if you want a sensor in a non local currency
+    # Country/region to get the energy prices for. 
+    region: "Kr.sand"
+    
+    # Override HA local currency used to fetch the prices from the API.
     currency: "EUR"
     
-    # Option to show prices in cents (or the equivalent in local currency)
-    price_in_cents: false
-
-    # Helper so you can set your "low" price
+    # Add Value Added Taxes (VAT)?
+    VAT: True
+    
+    # Energy price rounding precision.
+    precision: 3
+    
+    # Percentage of average price to set the low price attribute
     # low_price = hour_price < average * low_price_cutoff
     low_price_cutoff: 0.95
 
-    # What power regions your are interested in.
-    # Possible values: "DK1", "DK2", "FI", "LT", "LV", "Oslo", "Kr.sand", "Bergen", "Molde", "Tr.heim", "Tromsø", "SE1", "SE2", "SE3","SE4", "SYS", "EE"
-    region: "Kr.sand"
+    # Display price in cents in stead of (for example) Euros.
+    price_in_cents: false
 
-    # How many decimals to use in the display of the price
-    precision: 3
-
-    # What the price should be displayed in default
-    # Possible values: MWh, kWh and Wh
-    # default: kWh
+    # Price displayed for MWh, kWh or Wh
     price_type: kWh
 
-    # This option allows the usage of a template to add a tariff.
-    # now() always refers start of the hour of that price.
-    # this way we can calculate the correct costs add that to graphs etc.
-    # The price result of the additional_costs template expects this additional cost to be in kWh and not cents as a float
-    # default {{0.0|float}}
+    # Template to specify additional cost to be added to the tariff.
+    # The template price is in EUR, DKK, NOK or SEK (not in cents).
+    # For example: "{{ current_price * 0.19 + 0.023 | float}}" 
     additional_costs: "{{0.0|float}}"
-
 ```
+### Regions
+See the [Nord Pool region map](https://www.nordpoolgroup.com/en/maps/) for details
 
+| Country   | Region code | 
+| --------- | ----------- |
+| Austria   | AT |
+| Belgium   | BE |
+| Denmark   | DK1, <br> DK2|
+| Estinia   | EE |
+| Finland   | FI |
+| France    | FR |
+| Germany   | DE-LU |
+| Great-Britain | Not yet available in this version |
+| Latvia    | LV |
+| Lithuania | LT |
+| Luxenburg | DE-LU |
+| Netherlands | NL |
+| Norway    | Oslo (NO1) <br> Kr.sand (NO2) <br> Tr.heim / Molde (NO3) <br> Tromso (NO4) <br> Bergen (NO5)  |
+| Poland    | Not yet available in this version |
+| Sweden    | SE1, <br> SE2, <br> SE3, <br> SE4 |
 
 ### Additional costs
 The idea behind a addition_costs is to allow the users to add costs related to the official price from Nordpool. 
@@ -132,19 +135,18 @@ There are two special special arguments in that can be used in the template [(in
 
 Note: When configuring nordpool using the UI, things like VAT and additional costs cannot be changes. If your energy supplier or region changes the cost or rules on a semi-regular basis, the YAML configuration might be better for you.
 
-##### Example 1: Percentage (VAT)
-
+#### Example 1: Percentage (VAT)
 Add 19 % VAT of the current hour's price 
 
 ```{{current_price * 0.19}}```
 
-##### Example 1: Overhead per kWh
+#### Example 2: Overhead per kWh
 
 Add 1,3 cents per kWh overhead cost to the current hour's price 
 
 ```{{current_price + 0.013}}```
 
-##### Tariff example
+#### Example 3: Seasonal peek and off-peek overhead
 
 ```
 {% set s = {
@@ -156,17 +158,17 @@ Add 1,3 cents per kWh overhead cost to the current hour's price
     "cert": 0.01
 }
 %}
-{% if now().month >= 5 and now().month <11 %}
-    {% if now().hour >=6 and now().hour <23 %}
-        {{s.summer_day+s.hourly_fixed_cost+s.cert|float}}
+{% if now().month >= 5 and now().month < 11 %}
+    {% if now().hour >= 6 and now().hour < 23 %}
+        {{ s.summer_day + s.hourly_fixed_cost + s.cert | float }}
     {% else %}
-        {{s.summer_night+s.hourly_fixed_cost+s.cert|float}}
+        {{ s.summer_night + s.hourly_fixed_cost + s.cert|float }}
     {% endif %}
 {% else %}
-    {% if now().hour >=6 and now().hour <23 %}
-        {{s.winter_day+s.hourly_fixed_cost+s.cert|float}}
-    {%else%}
-        {{s.winter_night+s.hourly_fixed_cost+s.cert|float}}
+    {% if now().hour >= 6 and now().hour < 23 %}
+        {{ s.winter_day + s.hourly_fixed_cost + s.cert | float }}
+    {% else %}
+        {{ s.winter_night + s.hourly_fixed_cost + s.cert | float }}
     {% endif %}
 {% endif %}
 ```
