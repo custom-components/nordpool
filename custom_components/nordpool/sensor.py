@@ -48,7 +48,7 @@ _REGIONS = {
     # What zone is this?
     "SYS": ["EUR", "System zone", 0.25],
     "FR": ["EUR", "France", 0.055],
-    "NL": ["EUR", "Netherlands", 0.09],
+    "NL": ["EUR", "Netherlands", 0.21],
     "BE": ["EUR", "Belgium", 0.21],
     "AT": ["EUR", "Austria", 0.20],
     # Tax is disabled for now, i need to split the areas
