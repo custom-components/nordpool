@@ -7,12 +7,12 @@
                 "description": "Configureer een Nordpool sensor",
                 "data": {
                     "region": "Regio",
-                    "currency": "EUR",
+                    "currency": "Munteenheid",
                     "VAT": "Inclusief BTW",
-                    "precision": "Hoeveel decimalen worden getoond",
-                    "low_price_cutoff": "Ondergrens prijs",
+                    "precision": "Decimalen afronden",
+                    "low_price_cutoff": "Precentage lage prijs",
                     "price_in_cents": "Prijs in centen",
-                    "price_type": "Prijs formaat",
+                    "price_type": "Energie schaal",
                     "additional_costs": "Template voor extra kosten"
                 }
             }
