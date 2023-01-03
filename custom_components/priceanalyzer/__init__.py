@@ -122,10 +122,22 @@ class NordpoolData:
 
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrows prices in a area in the requested currency"""
+        
+        dt = dt_utils.now()
+        if(dt.hour < 11):
+            return []
+        #TODO Handle when API returns todays prices for tomorrow.
         res = await self._someday(area, currency, "tomorrow")
         if res and len(res) > 0:
+            # start = dt_utils.as_local(res.values[0].start)
+            # _LOGGER.debug("Fetching tomorrow. Start: %s", start)
+            
+            # if start > dt:
             self._tomorrow_valid = True
-        return res
+            _LOGGER.debug("Setting Tomrrow Valid to True. Res: %s", res)
+            return res
+
+        return []
 
 
 async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:

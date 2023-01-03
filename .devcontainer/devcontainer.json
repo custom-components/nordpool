@@ -1,7 +1,7 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
-	"image": "ludeeus/container:integration-debian",
-	"name": "Nordpool integration development",
+	"image": "ghcr.io/ludeeus/devcontainer/integration:stable",
+	"name": "PriceAnalyzer integration development",
 	"context": "..",
 	"appPort": [
 		"9123:8123"

@@ -326,6 +326,7 @@ class Data():
         price_next_hour = max([price_next_hour,0.00001])
         price_next_hour2 = max([price_next_hour2,0.00001])
         price_next_hour3 = max([price_next_hour3,0.00001])
+        # TODO, lower percent threshold when comparing next hour.
         return ((price_now / price_next_hour) > percent_threshold) or ((price_now / price_next_hour2) > percent_threshold) or ((price_now / price_next_hour3) > percent_threshold)
 
     def price_percent_to_average(self, item, is_tomorrow) -> float:
@@ -614,10 +615,19 @@ class Data():
         result = []
         hour = 0
         percent_difference = (self.percent_difference + 100) /100
+# 2022-12-22 00:00:00.463 ERROR (MainThread) [homeassistant.util.logging] Exception in check_stuff when dispatching 'priceanalyzer_update': ()
+# Traceback (most recent call last):
+#   File "/config/custom_components/priceanalyzer/data.py", line 879, in check_stuff
+#     self._update(self._data_today)
+#   File "/config/custom_components/priceanalyzer/data.py", line 490, in _update
+#     self._add_raw_calculated(False)
+#   File "/config/custom_components/priceanalyzer/data.py", line 619, in _add_raw_calculated
+#     difference = ((self._min / self._max) - 1)
+# TypeError: unsupported operand type(s) for /: 'NoneType' and 'NoneType'        
         if is_tomorrow == False:
             difference = ((self._min / self._max) - 1)
             self._percent_threshold = ((difference / 4) * -1) 
-            #TODO, consider lowering thershold. for more micro-calculations.
+            #TODO, consider lowering thershold. for more micro-calculations. also other place?
             self._diff = self._max / max([self._min,0.00001])
             self._set_cheapest_hours_today()
             
@@ -819,7 +829,16 @@ class Data():
     def update_sensors(self):
         async_dispatcher_send(self._hass, EVENT_CHECKED_STUFF)
 
-        
+
+    async def new_day(self) -> None:
+        self.check_stuff()
+        # New day, empty tomorrow if not yet done.
+        if self._tomorrow_calculated != None:
+            self._tomorrow_calculated = None
+            
+        # tomorrow_calculated is righly None here.
+        _LOGGER.debug("New day!, Tomorrow calculated is: %s", self._tomorrow_calculated)
+            
 
     async def check_stuff(self) -> None:
         """Cb to do some house keeping, called every hour to get the current hours price"""
@@ -838,6 +857,7 @@ class Data():
             else:
                 _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow could not be fetched!, %s", tomorrow)
                 self._data_tomorrow = None
+                self._tomorrow_calculated = None
 
 
 
@@ -890,7 +910,7 @@ class Data():
         tomorrow = await self.api.tomorrow(self._area, self._currency)
         if tomorrow:
             #often inf..
-            #_LOGGER.debug("PriceAnalyzerSensor force FETCHED _data_tomorrow!, %s", tomorrow)
+            _LOGGER.debug("PriceAnalyzerSensor force FETCHED _data_tomorrow!, %s", tomorrow)
             self._data_tomorrow = tomorrow
             self._update_tomorrow(tomorrow)
 
@@ -900,3 +920,4 @@ class Data():
             self.check_stuff()
         if self.tomorrow_valid and self._data_tomorrow == None:
             self.check_stuff()
+        _LOGGER.debug("Check stuff finished, self._tomorrow_calculated is:, %s", self._tomorrow_calculated)

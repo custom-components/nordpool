@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity, DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo
 import json
 from .data import Data
 from .const import (
@@ -33,6 +33,15 @@ from .const import (
 
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
+
+
+# Import sensor entity and classes.
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
+
 from jinja2 import pass_context
 
 from .misc import extract_attrs, has_junk, is_new, start_of
@@ -44,10 +53,11 @@ def _dry_setup(hass, config, add_devices, discovery_info=None, unique_id=None):
     data = hass.data[DATA][region]
     pricecorrection = PriceAnalyzerSensor(data, unique_id)
     vvbsensor = VVBSensor(data, config, unique_id)
-    
+    pricesensor = PriceSensor(data, unique_id)
     sensors = [
         pricecorrection,
-        vvbsensor
+        vvbsensor,
+        pricesensor
     ]
     #data.set_sensors(sensors)
     add_devices(sensors, True)
@@ -66,13 +76,17 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     _dry_setup(hass, config, async_add_devices, unique_id=config_entry.entry_id)
     return True
 
-class VVBSensor(Entity):
+class VVBSensor(SensorEntity):
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    
     def __init__(self,data, config, unique_id) -> None:
         self._data = data
         self._hass = self._data.api._hass
         self._config = config
         self._attr_unique_id = unique_id + '_VVBSensor'
         self._unique_id = unique_id + '_VVBSensor'
+        self._attr_force_update = True
 
     def getTemp(self, current_hour, is_tomorrow = False, reason = False):
         temp = self.getConfigKey(TEMP_DEFAULT)
@@ -107,15 +121,15 @@ class VVBSensor(Entity):
             elif is_five_most_expensive:
                 temp = self.getConfigKey(TEMP_FIVE_MOST_EXPENSIVE)
                 reasonText = 'Is five most expensive'
-            elif temp_correction_down:
-                temp = self.getConfigKey(TEMP_IS_FALLING)
-                reasonText = 'Is falling'
             elif is_min_price:
                 temp = self.getConfigKey(TEMP_MINIMUM)
                 reasonText = 'Is minimum price'
             elif is_five_cheapest:
                 temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
                 reasonText = 'Is five cheapest'
+            elif temp_correction_down:
+                temp = self.getConfigKey(TEMP_IS_FALLING)
+                reasonText = 'Is falling'
             elif is_ten_cheapest:
                 temp = self.getConfigKey(TEMP_TEN_CHEAPEST)
                 reasonText = 'Is ten cheapest'
@@ -234,7 +248,10 @@ class VVBSensor(Entity):
         async_dispatcher_connect(self._data.api._hass, EVENT_CHECKED_STUFF, self.update_sensor)
         await self._data.check_stuff()
 
-class PriceAnalyzerSensor(Entity):
+class PriceAnalyzerSensor(SensorEntity):
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+        
     def __init__(
         self,
         data,
@@ -244,6 +261,7 @@ class PriceAnalyzerSensor(Entity):
         self._hass = self._data.api._hass
         self._attr_unique_id = unique_id + '_priceanalyzer'
         self._unique_id = unique_id + '_priceanalyzer'
+        self._attr_force_update = True
 
     @property
     def name(self) -> str:
@@ -278,8 +296,6 @@ class PriceAnalyzerSensor(Entity):
             "display_name" : self._data._attr_name,
             "low price": self._data.low_price,
             "tomorrow_valid": self._data.tomorrow_valid,
-            "precision": self._data._precision,
-            "unique_id": self.unique_id,
             'max': self._data._max,
             'min': self._data._min,
             'price_difference_is_small': self._data.small_price_difference_today,
@@ -288,6 +304,7 @@ class PriceAnalyzerSensor(Entity):
             'off_peak_1': self._data._off_peak_1,
             'off_peak_2': self._data._off_peak_2,
             'average': self._data._average,
+            'average_tomorrow': self._data._average_tomorrow,
             "current_hour": self._data.current_hour,
             "raw_today": self._data.today_calculated,
             "raw_tomorrow": self._data.tomorrow_calculated,
@@ -315,7 +332,78 @@ class PriceAnalyzerSensor(Entity):
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass %s", self.name)
-        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_DATA, self._data.check_stuff)
+        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_DATA, self._data.new_day)
+        async_dispatcher_connect(self._data.api._hass, API_DATA_LOADED, self._data.check_stuff)
+        async_dispatcher_connect(self._data.api._hass, EVENT_CHECKED_STUFF, self.update_sensor)
+        await self._data.check_stuff()
+
+
+class PriceSensor(SensorEntity):
+    _attr_device_class = SensorDeviceClass.MONETARY
+    _attr_state_class = SensorStateClass.MEASUREMENT
+        
+    def __init__(
+        self,
+        data,
+        unique_id
+    ) -> None:
+        self._data = data
+        self._hass = self._data.api._hass
+        self._attr_unique_id = unique_id + '_priceanalyzer_price'
+        self._unique_id = unique_id + '_priceanalyzer_price'
+        self._attr_force_update = True
+
+    @property
+    def name(self) -> str:
+        return 'Priceanalyzer_Price_' + self._data._area
+
+    @property
+    def should_poll(self):
+        """No need to poll. Coordinator notifies entity of updates."""
+        return False
+
+    @property
+    def icon(self) -> str:
+        return "mdi:cash"
+
+    @property
+    def unit(self) -> str:
+        return self._data._price_type
+
+    @property
+    def unit_of_measurement(self) -> str:
+        return self._data._currency
+
+
+    @property
+    def device_info(self):
+        return self._data.device_info
+
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            
+        }
+
+    @property
+    def state(self) -> float:
+        if self._data.current_hour:
+            return self._data.current_hour['value']
+        else:
+            return None
+
+    def _update(self, data) -> None:
+        self._data.update(data)
+        
+    def update_sensor(self):
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self):
+        """Connect to dispatcher listening for entity data notifications."""
+        await super().async_added_to_hass()
+        _LOGGER.debug("Price Sensors called async_added_to_hass %s", self.name)
+        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_DATA, self._data.new_day)
         async_dispatcher_connect(self._data.api._hass, API_DATA_LOADED, self._data.check_stuff)
         async_dispatcher_connect(self._data.api._hass, EVENT_CHECKED_STUFF, self.update_sensor)
         await self._data.check_stuff()
