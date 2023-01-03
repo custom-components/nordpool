@@ -15,12 +15,13 @@
                     "price_in_cents": "Hind sentides",
                     "price_type": "Hinna vorming",
                     "additional_costs": "Lisanduvate hindade mall"
-                     }
+                }
             }
         },
         "error": {
-            "name_exists": "See nimi on juba kasutusel"
+            "name_exists": "See nimi on juba kasutusel",
             "invalid_template": "See mall on vigane, vaata https://github.com/custom-components/nordpool"
+
         }
     }
 }
