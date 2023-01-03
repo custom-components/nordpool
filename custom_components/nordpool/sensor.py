@@ -21,7 +21,7 @@ from homeassistant.components.sensor import (
 from jinja2 import pass_context
 
 from . import DOMAIN, EVENT_NEW_DATA
-from .misc import extract_attrs, has_junk, is_new, start_of
+from .misc import is_new, start_of
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -148,8 +148,6 @@ class NordpoolSensor(SensorEntity):
         ad_template,
         hass,
     ) -> None:
-        # friendly_name is ignored as it never worked.
-        # rename the sensor in the ui if you dont like the name.
         self._area = area
         self._currency = currency or _REGIONS[area][0]
         self._price_type = price_type
@@ -199,7 +197,6 @@ class NordpoolSensor(SensorEntity):
 
         # To control the updates.
         self._last_tick = None
-        self._cbs = []
 
     @property
     def name(self) -> str:
@@ -220,7 +217,7 @@ class NordpoolSensor(SensorEntity):
         return self._price_type
 
     @property
-    def unit_of_measurement(self) -> str:
+    def unit_of_measurement(self) -> str:  # FIXME
         """Return the unit of measurement this sensor expresses itself in."""
         _currency = self._currency
         if self._use_cents is True:
@@ -250,11 +247,8 @@ class NordpoolSensor(SensorEntity):
         }
 
     @property
-    def state(self) -> float:
-        return self.current_price
-
-    @property
     def additional_costs(self):
+        """Additional costs."""
         return self._additional_costs_value
 
     @property
@@ -272,7 +266,8 @@ class NordpoolSensor(SensorEntity):
         """Price in percent to average price"""
         return (
             self.current_price / self._average
-            if self.current_price and self._average
+            if isinstance(self.current_price, (int, float))
+            and isinstance(self._average, (float, int))
             else None
         )
 
@@ -286,7 +281,7 @@ class NordpoolSensor(SensorEntity):
             return None
 
         def faker():
-            def inner(*args, **kwargs):
+            def inner(*_, **__):
                 return fake_dt or dt_utils.now()
 
             return pass_context(inner)
@@ -333,19 +328,19 @@ class NordpoolSensor(SensorEntity):
 
     def _update(self):
         """Set attrs"""
-        td = self.today
+        today = self.today
 
-        if not td:
+        if not today:
             _LOGGER.debug("No data for today, unable to set attrs")
             return
 
-        self._average = mean(td)
-        self._min = min(td)
-        self._max = max(td)
-        self._off_peak_1 = mean(td[0:8])
-        self._off_peak_2 = mean(td[20:])
-        self._peak = mean(td[8:20])
-        self._mean = median(td)
+        self._average = mean(today)
+        self._min = min(today)
+        self._max = max(today)
+        self._off_peak_1 = mean(today[0:8])
+        self._off_peak_2 = mean(today[20:])
+        self._peak = mean(today[8:20])
+        self._mean = median(today)
 
     @property
     def current_price(self) -> float:
@@ -403,7 +398,6 @@ class NordpoolSensor(SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         return {
-            "current_price": self.current_price,
             "average": self._average,
             "off_peak_1": self._off_peak_1,
             "off_peak_2": self._off_peak_2,
@@ -422,10 +416,12 @@ class NordpoolSensor(SensorEntity):
             "tomorrow_valid": self.tomorrow_valid,
             "raw_today": self.raw_today,
             "raw_tomorrow": self.raw_tomorrow,
+            "current_price": self.current_price,
             "additional_costs_current_hour": self.additional_costs,
         }
 
     def _add_raw(self, data) -> list:
+        """Helper"""
         result = []
         for res in self._someday(data):
             item = {
@@ -438,10 +434,12 @@ class NordpoolSensor(SensorEntity):
 
     @property
     def raw_today(self) -> list:
+        """Raw today"""
         return self._add_raw(self._data_today)
 
     @property
     def raw_tomorrow(self) -> list:
+        """Raw tomorrow"""
         return self._add_raw(self._data_tomorrow)
 
     @property
@@ -458,7 +456,6 @@ class NordpoolSensor(SensorEntity):
         if data:
             for item in self._someday(data):
                 if item["start"] == start_of(local_now, "hour"):
-                    # _LOGGER.info("start %s local_now %s", item["start"], start_of(local_now, "hour"))
                     self._current_price = item["value"]
                     _LOGGER.debug(
                         "Updated %s _current_price %s", self.name, item["value"]
@@ -500,22 +497,24 @@ class NordpoolSensor(SensorEntity):
                 # Just to stop the hourly update if its a new day
                 if dt_utils.now().hour != 0:
                     self._update()
-                self._data_tomorrow = None
             else:
                 today = await self._api.today(self._area, self._currency)
                 if today:
                     self._data_today = today
-                    # self._update(today)
                     if dt_utils.now().hour != 0:
                         self._update()
-                    self._data_tomorrow = None
 
-        # Updates the current for this hour.
-        await self._update_current_price()
+            self._data_tomorrow = None
+            _LOGGER.debug("Cleared self._data_tomorrow = %s", self._data_tomorrow)
 
         tomorrow = await self._api.tomorrow(self._area, self._currency)
         if tomorrow:
             self._data_tomorrow = tomorrow
+
+        # Updates the current for this hour.
+        await self._update_current_price()
+        # This is not to make sure the correct template costs are set. Issue 258
+        self._attr_native_value = self.current_price
 
         self._last_tick = dt_utils.now()
         self.async_write_ha_state()

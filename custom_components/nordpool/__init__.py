@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 
 NAME = DOMAIN
-VERSION = "0.0.10b0"
+VERSION = "0.0.11"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
@@ -74,11 +74,13 @@ class NordpoolData:
                 _LOGGER.info("Some crap happend, retrying request later.")
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
-    async def update_today(self, n: datetime):
+    async def update_today(self, _: datetime):
+        """Update todays prices"""
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update("today")
 
-    async def update_tomorrow(self, n: datetime):
+    async def update_tomorrow(self, _: datetime):
+        """Update tomorrows prices."""
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
         self._tomorrow_valid = True
@@ -115,14 +117,14 @@ class NordpoolData:
         return res
 
 
-async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
+async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
     """Set up using yaml config file."""
     if DOMAIN not in hass.data:
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
         _LOGGER.debug("Added %s to hass.data", DOMAIN)
 
-        async def new_day_cb(n):
+        async def new_day_cb(_):
             """Cb to handle some house keeping when it a new day."""
             _LOGGER.debug("Called new_day_cb callback")
             api._tomorrow_valid = False
@@ -136,17 +138,17 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
 
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
-        async def new_hr(n):
+        async def new_hr(_):
             """Callback to tell the sensors to update on a new hour."""
             _LOGGER.debug("Called new_hr callback")
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
-        async def new_data_cb(n):
+        async def new_data_cb(tdo):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data
             """
             # _LOGGER.debug("Called new_data_cb")
-            await api.update_tomorrow(n)
+            await api.update_tomorrow(tdo)
             async_dispatcher_send(hass, EVENT_NEW_DATA)
 
         # Handles futures updates
