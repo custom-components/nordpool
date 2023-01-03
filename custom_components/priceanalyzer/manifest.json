@@ -1,6 +1,6 @@
 {
   "domain": "priceanalyzer",
-  "name": "priceanalyzer",
+  "name": "PriceAnalyzer",
   "documentation": "https://github.com/erlendsellie/priceanalyzer/",
   "issue_tracker": "https://github.com/erlendsellie/priceanalyzer/issues",
   "dependencies": [],
