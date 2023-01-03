@@ -20,6 +20,8 @@
         },
         "error": {
             "name_exists": "See nimi on juba kasutusel",
+            "invalid_template": "See mall on vigane, vaata https://github.com/custom-components/nordpool"
+
         }
     }
 }
