@@ -494,18 +494,21 @@ class NordpoolSensor(SensorEntity):
             # No need to update if we got the info we need
             if self._data_tomorrow is not None:
                 self._data_today = self._data_tomorrow
-                # Just to stop the hourly update if its a new day
-                if dt_utils.now().hour != 0:
-                    self._update()
             else:
                 today = await self._api.today(self._area, self._currency)
                 if today:
                     self._data_today = today
-                    if dt_utils.now().hour != 0:
-                        self._update()
 
             self._data_tomorrow = None
             _LOGGER.debug("Cleared self._data_tomorrow = %s", self._data_tomorrow)
+            should_be_none = await self._api.tomorrow(self._area, self._currency)
+            if should_be_none is None:
+                _LOGGER.debug(
+                    "Tomorrow should have been none, but was %s", should_be_none
+                )
+
+        # Update attrs for the day.
+        self._update()
 
         tomorrow = await self._api.tomorrow(self._area, self._currency)
         if tomorrow:
