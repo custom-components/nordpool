@@ -142,10 +142,10 @@ def join_result_for_correct_time(results, dt):
 class AioPrices(Prices):
     """Interface"""
 
-    def __init__(self, currency, client, tz=None):
+    def __init__(self, currency, client, timeezone=None):
         super().__init__(currency)
         self.client = client
-        self.tz = tz
+        self.timeezone = timeezone
         self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
 
     async def _io(self, url, **kwargs):
@@ -194,12 +194,14 @@ class AioPrices(Prices):
         if areas is None:
             areas = []
 
-        # Check how to handle all time zone in this,
-        # dunno how to do this yet.
+        # now = datetime.utcnow()
+        # timezone_for_data = now.astimezone(tz.gettz(ts))
         # stock = datetime.utcnow().astimezone(tz.gettz("Europe/Stockholm"))
-        # stock_offset = stock.utcoffset().total_seconds()
+        # if stock.utcoffset(now) == timezone_for_data.utcoffset(now):
+        #    pass
+
         # compare utc offset
-        if self.tz == tz.gettz("Europe/Stockholm"):
+        if self.timeezone == tz.gettz("Europe/Stockholm"):
             data = await self._fetch_json(data_type, end_date, areas)
             return self._parse_json(data, areas)
         else:

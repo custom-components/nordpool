@@ -1,6 +1,5 @@
 import logging
 import math
-from datetime import datetime
 from operator import itemgetter
 from statistics import mean, median
 

@@ -49,7 +49,6 @@ class NordpoolData:
         self._hass = hass
         self._last_tick = None
         self._data = defaultdict(dict)
-        self._tomorrow_valid = False
         self.currency = []
         self.listeners = []
 
@@ -83,7 +82,6 @@ class NordpoolData:
         """Update tomorrows prices."""
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
-        self._tomorrow_valid = True
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns todays or tomorrows prices in a area in the currency"""
@@ -127,7 +125,6 @@ async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
         async def new_day_cb(_):
             """Cb to handle some house keeping when it a new day."""
             _LOGGER.debug("Called new_day_cb callback")
-            api._tomorrow_valid = False
 
             for curr in api.currency:
                 if not len(api._data[curr]["tomorrow"]):
