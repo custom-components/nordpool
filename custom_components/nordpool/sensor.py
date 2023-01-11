@@ -323,7 +323,7 @@ class NordpoolSensor(SensorEntity):
         if self._use_cents:
             price = price * _CENT_MULTIPLIER
 
-        return price
+        return round(price, self._precision)
 
     def _update(self):
         """Set attrs"""
