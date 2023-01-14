@@ -78,8 +78,8 @@ class NordpoolData:
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, _: datetime):
-        """Update todays prices"""
-        _LOGGER.debug("Updating tomorrows prices.")
+        """Update today's prices"""
+        _LOGGER.debug("Updating today's prices.")
         await self._update("today")
 
     async def update_tomorrow(self, _: datetime):
