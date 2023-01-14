@@ -19,8 +19,16 @@ from homeassistant.components.sensor import (
 )
 from jinja2 import pass_context
 
-from . import DOMAIN, EVENT_NEW_DATA
-from .misc import is_new, start_of
+from . import (
+    DOMAIN,
+    EVENT_NEW_DAY,
+    EVENT_NEW_PRICE,
+    EVENT_NEW_HOUR,
+    SENTINEL,
+    RANDOM_MINUTE,
+    RANDOM_SECOND,
+)
+from .misc import start_of, stock, round_decimal
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -167,8 +175,8 @@ class NordpoolSensor(SensorEntity):
         self._current_price = None
 
         # Holds the data for today and morrow.
-        self._data_today = None
-        self._data_tomorrow = None
+        self._data_today = SENTINEL
+        self._data_tomorrow = SENTINEL
 
         # Values for the day
         self._average = None
@@ -323,7 +331,7 @@ class NordpoolSensor(SensorEntity):
         if self._use_cents:
             price = price * _CENT_MULTIPLIER
 
-        return price
+        return round_decimal(price, self._precision)
 
     def _update(self):
         """Set attrs"""
@@ -351,7 +359,7 @@ class NordpoolSensor(SensorEntity):
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
         but i dont trust that to continue forever. Thats why we sort it ourselfs."""
-        if data is None:
+        if data is None or data is SENTINEL:
             return []
 
         local_times = []
@@ -462,68 +470,52 @@ class NordpoolSensor(SensorEntity):
         else:
             _LOGGER.debug("Cant update _update_current_price because it was no data")
 
-    async def check_stuff(self) -> None:
-        """Cb to do some house keeping, called every hour to get the current hours price"""
-        # _LOGGER.debug("called check_stuff")
-        if self._last_tick is None:
-            self._last_tick = dt_utils.now()
+    async def handle_new_day(self):
+        """Update attrs for the new day"""
+        _LOGGER.debug("handel_new_day")
+        self._data_tomorrow = None
+        # update attrs for the new day
+        await self.handle_new_hr()
 
-        if self._data_today is None:
-            _LOGGER.debug(
-                "NordpoolSensor _data_today is none, trying to fetch it. %s", self.name
-            )
-            today = await self._api.today(self._area, self._currency)
-            if today:
-                self._data_today = today
-                self._update()
+    async def handle_new_hr(self):
+        """Update attrs for the new hour"""
+        _LOGGER.debug("handle_new_hr")
+        today = await self._api.today(self._area, self._currency)
+        if today:
+            self._data_today = today
 
-        if self._data_tomorrow is None:
-            _LOGGER.debug(
-                "NordpoolSensor _data_tomorrow is none, trying to fetch it. %s",
-                self.name,
-            )
+        now = dt_utils.now()
+        if self._data_tomorrow is SENTINEL and stock(now) >= stock(now).replace(
+            hour=13, minute=RANDOM_MINUTE, second=RANDOM_SECOND
+        ):
             tomorrow = await self._api.tomorrow(self._area, self._currency)
             if tomorrow:
                 self._data_tomorrow = tomorrow
 
-        # We can just check if this is the first hour.
-
-        if is_new(self._last_tick, typ="day"):
-            # if now.hour == 0:
-            # No need to update if we got the info we need
-            if self._data_tomorrow is not None:
-                self._data_today = self._data_tomorrow
-            else:
-                today = await self._api.today(self._area, self._currency)
-                if today:
-                    self._data_today = today
-
-            self._data_tomorrow = None
-            _LOGGER.debug("Cleared self._data_tomorrow = %s", self._data_tomorrow)
-            should_be_none = await self._api.tomorrow(self._area, self._currency)
-            if should_be_none is None:
-                _LOGGER.debug(
-                    "Tomorrow should have been none, but was %s", should_be_none
-                )
-
-        # Update attrs for the day.
         self._update()
-
-        tomorrow = await self._api.tomorrow(self._area, self._currency)
-        if tomorrow:
-            self._data_tomorrow = tomorrow
-
         # Updates the current for this hour.
         await self._update_current_price()
         # This is not to make sure the correct template costs are set. Issue 258
         self._attr_native_value = self.current_price
-
-        self._last_tick = dt_utils.now()
         self.async_write_ha_state()
+
+    async def handle_new_price(self):
+        """Update atts because of the new prices"""
+        _LOGGER.debug("handle_new_price")
+        tomorrow = await self._api.tomorrow(self._area, self._currency)
+        if tomorrow:
+            self._data_tomorrow = tomorrow
+
+        await self.handle_new_hr()
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass %s", self.name)
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_DATA, self.check_stuff)
-        await self.check_stuff()
+
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_DAY, self.handle_new_day)
+        async_dispatcher_connect(
+            self._api._hass, EVENT_NEW_PRICE, self.handle_new_price
+        )
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_HOUR, self.handle_new_hr)
+        await self.handle_new_hr()

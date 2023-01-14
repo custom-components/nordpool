@@ -155,7 +155,7 @@ class AioPrices(Prices):
 
         return await resp.json()
 
-    async def _fetch_json(self, data_type, end_date=None, areas=None):
+    async def _fetch_json(self, data_type, end_date=None):
         """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
         if end_date is None:
