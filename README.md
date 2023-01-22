@@ -133,20 +133,32 @@ There are two special special arguments in that can be used in the template ([in
 - ```now()```: this always refer to the current hour of the price
 - ```current_price```: price for the current hour. This can be used for example be used to calculate your own VAT or add overhead cost. 
 
-Note: When configuring Nordpool using the UI, things like VAT and additional costs cannot be changed. If your energy supplier or region changes the additional costs or taxes on a semi-regular basis, the YAML configuration might be better for you.
+Note: When configuring Nordpool using the UI, things like VAT and additional costs cannot be changed. If your energy supplier or region changes the additional costs or taxes on a semi-regular basis, the YAML configuration or a helper (example 4) work best.
 
-#### Example 1: Percentage (VAT)
-Add 19 % VAT of the current hour's price 
-
-```{{current_price * 0.19}}```
-
-#### Example 2: Overhead per kWh
+#### Example 1: Overhead per kWh
 
 Add 1,3 cents per kWh overhead cost to the current hour's price 
 
-```{{current_price + 0.013}}```
+```{{ 0.013 | float }}```
 
-#### Example 3: Seasonal peek and off-peek overhead
+#### Example 2: Percentage (VAT)
+Add 19 % VAT of the current hour's price 
+
+```{{ (current_price * 0.19) | float }}```
+
+#### Example 3: Overhead and VAT
+
+Add 1,3 cents per kWh overhead cost, 0.002 flat tax and 19% VAT to the current hour's price 
+
+```{{ (0.013 + 0.002 + (current_price * 0.19)) | float }}```
+
+#### Example 4: Helper
+
+Add 21% tax and overhead cost stored in a helper
+
+'''{{ (current_price * 0.21) + states('input_number.additionele_kosten') | float(0) }}'''
+
+#### Example 5: Seasonal peek and off-peek overhead
 
 ```jinja
 {% set s = {
