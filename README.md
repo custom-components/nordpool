@@ -135,18 +135,24 @@ There are two special special arguments in that can be used in the template ([in
 
 Note: When configuring Nordpool using the UI, things like VAT and additional costs cannot be changed. If your energy supplier or region changes the additional costs or taxes on a semi-regular basis, the YAML configuration might be better for you.
 
-#### Example 1: Percentage (VAT)
-Add 19 % VAT of the current hour's price 
-
-```{{current_price * 0.19}}```
-
-#### Example 2: Overhead per kWh
+#### Example 1: Overhead per kWh
 
 Add 1,3 cents per kWh overhead cost to the current hour's price 
 
-```{{current_price + 0.013}}```
+```{{ 0.013 | float }}```
 
-#### Example 3: Seasonal peek and off-peek overhead
+#### Example 2: Percentage (VAT)
+Add 19 % VAT of the current hour's price 
+
+```{{ (current_price * 0.19) | float }}```
+
+#### Example 3: Overhead and VAT
+
+Add 1,3 cents per kWh overhead cost, 0.002 flat tax and 19% VAT to the current hour's price 
+
+```{{ (0.013 + 0.002 + (current_price * 0.19)) | float }}```
+
+#### Example 4: Seasonal peek and off-peek overhead
 
 ```jinja
 {% set s = {
