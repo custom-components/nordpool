@@ -187,6 +187,14 @@ class NordpoolSensor(SensorEntity):
         self._off_peak_2 = None
         self._peak = None
         self._additional_costs_value = None
+        # Values for next day
+        self._tomorrow_average = None
+        self._tomorrow_min = None
+        self._tomorrow_max = None
+        self._tomorrow_off_peak_1 = None
+        self._tomorrow_off_peak_2 = None
+        self._tomorrow_peak = None
+        self._tomorrow_mean = None
 
         _LOGGER.debug("Template %s", str(ad_template))
         # Check incase the sensor was setup using config flow.
@@ -349,6 +357,24 @@ class NordpoolSensor(SensorEntity):
         self._peak = mean(today[8:20])
         self._mean = median(today)
 
+        if self.tomorrow_valid:
+            tomorrow = self.tomorrow
+            self._tomorrow_average = mean(tomorrow)
+            self._tomorrow_min = min(tomorrow)
+            self._tomorrow_max = max(tomorrow)
+            self._tomorrow_off_peak_1 = mean(tomorrow[0:8])
+            self._tomorrow_off_peak_2 = mean(tomorrow[20:])
+            self._tomorrow_peak = mean(tomorrow[8:20])
+            self._tomorrow_mean = median(tomorrow)
+        else:
+            self._tomorrow_average = None
+            self._tomorrow_min = None
+            self._tomorrow_max = None
+            self._tomorrow_off_peak_1 = None
+            self._tomorrow_off_peak_2 = None
+            self._tomorrow_peak = None
+            self._tomorrow_mean = None
+
     @property
     def current_price(self) -> float:
         """This the current price for the hour we are in at any given time."""
@@ -425,6 +451,13 @@ class NordpoolSensor(SensorEntity):
             "raw_tomorrow": self.raw_tomorrow,
             "current_price": self.current_price,
             "additional_costs_current_hour": self.additional_costs,
+            "tomorrow_average": self._tomorrow_average,
+            "tomorrow_off_peak_1": self._tomorrow_off_peak_1,
+            "tomorrow_off_peak_2": self._tomorrow_off_peak_2,
+            "tomorrow_peak": self._tomorrow_peak,
+            "tomorrow_min": self._tomorrow_min,
+            "tomorrow_max": self._tomorrow_max,
+            "tomorrow_mean": self._tomorrow_mean,
         }
 
     def _add_raw(self, data) -> list:
