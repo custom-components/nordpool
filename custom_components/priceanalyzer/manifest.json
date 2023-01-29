@@ -6,8 +6,8 @@
   "dependencies": [],
   "after_dependencies": ["http"],
   "config_flow": true,
-  "codeowners": ["@hellowlol", "@erlendsellie"],
+  "codeowners": ["@erlendsellie"],
   "iot_class": "cloud_polling",
   "requirements": ["nordpool>=0.2"],
-  "version": "1.1"
+  "version": "1.2"
 }
