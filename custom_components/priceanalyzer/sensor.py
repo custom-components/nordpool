@@ -95,8 +95,8 @@ class VVBSensor(SensorEntity):
                 temp = temp
             else:
                 temp = 75
+            
         reasonText = 'Default temp'
-        
         if current_hour:
             small_price_difference = self._data.small_price_difference_today is True if is_tomorrow is False else self._data.small_price_difference_tomorrow
             is_low_price = current_hour['is_low_price']
@@ -130,12 +130,12 @@ class VVBSensor(SensorEntity):
             elif is_five_cheapest:
                 temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
                 reasonText = 'Is five cheapest'
-            elif temp_correction_down:
-                temp = self.getConfigKey(TEMP_IS_FALLING)
-                reasonText = 'Is falling'
             elif is_ten_cheapest:
                 temp = self.getConfigKey(TEMP_TEN_CHEAPEST)
                 reasonText = 'Is ten cheapest'
+            elif temp_correction_down:
+                temp = self.getConfigKey(TEMP_IS_FALLING)
+                reasonText = 'Is falling'
             elif is_low_price:
                 temp = self.getConfigKey(TEMP_LOW_PRICE)
                 reasonText = 'Is low price'
