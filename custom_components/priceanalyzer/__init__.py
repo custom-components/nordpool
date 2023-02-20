@@ -20,6 +20,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_call_later, async_track_time_change
 from homeassistant.util import dt as dt_utils
+
 from pytz import timezone
 
 from .aio_price import AioPrices
@@ -128,15 +129,15 @@ class NordpoolData:
             return []
         #TODO Handle when API returns todays prices for tomorrow.
         res = await self._someday(area, currency, "tomorrow")
-        if res and len(res) > 0:
-            # start = dt_utils.as_local(res.values[0].start)
-            # _LOGGER.debug("Fetching tomorrow. Start: %s", start)
+        if res and len(res) > 0 and len(res['values']) > 0:
+            starttime = res['values'][0].get('start', None)
+            if starttime:
+                start = dt_utils.as_local(starttime)
+                _LOGGER.debug("Fetching tomorrow. Start: %s", starttime)
+                self._tomorrow_valid = True
+                _LOGGER.debug("Setting Tomrrow Valid to True. Res: %s", res)
+                return res
             
-            # if start > dt:
-            self._tomorrow_valid = True
-            _LOGGER.debug("Setting Tomrrow Valid to True. Res: %s", res)
-            return res
-
         return []
 
 
@@ -251,7 +252,7 @@ async def async_migrate_entry(title, domain) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
     res = await _dry_setup(hass, entry)
-    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.add_update_listener(async_reload_entry)
     return res
 

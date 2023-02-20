@@ -473,41 +473,33 @@ class Data():
 
     def _update(self, data) -> None:
         """Set attrs."""
-        _LOGGER.debug("Called _update setting attrs for the day for %s", self._area)
+        _LOGGER.debug(
+            "Called _update setting attrs for the day for %s", self._area)
 
         # if has_junk(data):
         #    # _LOGGER.debug("It was junk infinity in api response, fixed it.")
         d = extract_attrs(data.get("values"))
         data.update(d)
 
-        if self._ad_template.template == DEFAULT_TEMPLATE:
-            self._average = self._calc_price(data.get("Average"))
-            self._min = self._calc_price(data.get("Min"))
-            self._max = self._calc_price(data.get("Max"))
-            self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
-            self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
-            self._peak = self._calc_price(data.get("Peak"))
-            self._add_raw_calculated(False)
 
-        else:
-            data = sorted(data.get("values"), key=itemgetter("start"))
-            formatted_prices = [
-                self._calc_price(
-                    i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
-                )
-                for i in data
-            ]
-            offpeak1 = formatted_prices[0:8]
-            peak = formatted_prices[9:17]
-            offpeak2 = formatted_prices[20:]
+        data = sorted(data.get("values"), key=itemgetter("start"))
+        formatted_prices = [
+            self._calc_price(
+                i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
+            )
+            for i in data
+        ]
+        offpeak1 = formatted_prices[0:8]
+        peak = formatted_prices[9:17]
+        offpeak2 = formatted_prices[20:]
 
-            self._peak = mean(peak)
-            self._off_peak_1 = mean(offpeak1)
-            self._off_peak_2 = mean(offpeak2)
-            self._average = mean(formatted_prices)
-            self._min = min(formatted_prices)
-            self._max = max(formatted_prices)
-            self._add_raw_calculated(False)
+        self._peak = mean(peak)
+        self._off_peak_1 = mean(offpeak1)
+        self._off_peak_2 = mean(offpeak2)
+        self._average = mean(formatted_prices)
+        self._min = min(formatted_prices)
+        self._max = max(formatted_prices)
+        self._add_raw_calculated(False)
 
 
 
@@ -615,15 +607,6 @@ class Data():
         result = []
         hour = 0
         percent_difference = (self.percent_difference + 100) /100
-# 2022-12-22 00:00:00.463 ERROR (MainThread) [homeassistant.util.logging] Exception in check_stuff when dispatching 'priceanalyzer_update': ()
-# Traceback (most recent call last):
-#   File "/config/custom_components/priceanalyzer/data.py", line 879, in check_stuff
-#     self._update(self._data_today)
-#   File "/config/custom_components/priceanalyzer/data.py", line 490, in _update
-#     self._add_raw_calculated(False)
-#   File "/config/custom_components/priceanalyzer/data.py", line 619, in _add_raw_calculated
-#     difference = ((self._min / self._max) - 1)
-# TypeError: unsupported operand type(s) for /: 'NoneType' and 'NoneType'        
         if is_tomorrow == False:
             difference = ((self._min / self._max) - 1)
             self._percent_threshold = ((difference / 4) * -1) 

@@ -1,13 +1,13 @@
 {
   "domain": "priceanalyzer",
-  "name": "PriceAnalyzer",
+  "name": "priceanalyzer",
   "documentation": "https://github.com/erlendsellie/priceanalyzer/",
   "issue_tracker": "https://github.com/erlendsellie/priceanalyzer/issues",
   "dependencies": [],
   "after_dependencies": ["http"],
   "config_flow": true,
-  "codeowners": ["@erlendsellie"],
+  "codeowners": ["@hellowlol", "@erlendsellie"],
   "iot_class": "cloud_polling",
   "requirements": ["nordpool>=0.2"],
-  "version": "1.2"
+  "version": "1.3"
 }
