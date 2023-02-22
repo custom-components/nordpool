@@ -70,17 +70,11 @@ class NordpoolData:
         # Keeping this for now, but this should be changed.
         for currency in self.currency:
             spot = AioPrices(currency, client)
-
-            success = False
-
             data = await spot.hourly(end_date=dt)
             if data:
                 self._data[currency][type_] = data["areas"]
-                success = True
             else:
                 _LOGGER.info("Some crap happend, retrying request later.")
-
-            if not success:
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, _: datetime):
