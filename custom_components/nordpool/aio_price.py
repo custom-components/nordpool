@@ -170,6 +170,13 @@ class AioPrices(Prices):
             endDate=end_date.strftime("%d-%m-%Y"),
         )
 
+    @staticmethod
+    def _json_data_dict_is_valid(data) -> bool:
+        if isinstance(data, dict) and "currency" in data:
+            return True
+        else:
+            return False
+
     async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.
@@ -203,7 +210,10 @@ class AioPrices(Prices):
         # compare utc offset
         if self.timeezone == tz.gettz("Europe/Stockholm"):
             data = await self._fetch_json(data_type, end_date, areas)
-            return self._parse_json(data, areas)
+            if self._json_data_dict_is_valid(data):
+                return self._parse_json(data, areas)
+            else:
+                return None
         else:
             yesterday = datetime.now() - timedelta(days=1)
             today = datetime.now()
@@ -253,7 +263,10 @@ class AioPrices(Prices):
 
             res = await asyncio.gather(*jobs)
 
-            raw = [self._parse_json(i, areas) for i in res]
+            raw = []
+            for i in res:
+                if self._json_data_dict_is_valid(i):
+                    raw.append(self._parse_json(i, areas))
             return join_result_for_correct_time(raw, end_date)
 
     async def hourly(self, end_date=None, areas=None):
