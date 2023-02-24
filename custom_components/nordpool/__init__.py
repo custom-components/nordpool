@@ -74,7 +74,7 @@ class NordpoolData:
             if data:
                 self._data[currency][type_] = data["areas"]
             else:
-                _LOGGER.info("Some crap happend, retrying request later.")
+                _LOGGER.info("Some crap happened, retrying request later.")
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, _: datetime):
@@ -88,10 +88,10 @@ class NordpoolData:
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
 
     async def _someday(self, area: str, currency: str, day: str):
-        """Returns todays or tomorrows prices in a area in the currency"""
+        """Returns today's or tomorrow's prices in an area in the currency"""
         if currency not in _CURRENCY_LIST:
             raise ValueError(
-                "%s is a invalid currency possible values are %s"
+                "%s is an invalid currency, possible values are %s"
                 % (currency, ", ".join(_CURRENCY_LIST))
             )
 
@@ -109,12 +109,12 @@ class NordpoolData:
         return self._data.get(currency, {}).get(day, {}).get(area)
 
     async def today(self, area: str, currency: str) -> dict:
-        """Returns todays prices in a area in the requested currency"""
+        """Returns today's prices in an area in the requested currency"""
         res = await self._someday(area, currency, "today")
         return res
 
     async def tomorrow(self, area: str, currency: str):
-        """Returns tomorrows prices in a area in the requested currency"""
+        """Returns tomorrow's prices in an area in the requested currency"""
         res = await self._someday(area, currency, "tomorrow")
         return res
 
@@ -196,8 +196,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "sensor")
 
     if unload_ok:
-        # This is a issue if you have mulitple sensors as everything related to DOMAIN
-        # is removed, regardless if you have mulitple sensors or not. Don't seem to
+        # This is an issue if you have multiple sensors as everything related to DOMAIN
+        # is removed, regardless if you have multiple sensors or not. Doesn't seem to
         # create a big issue for now #TODO
         if DOMAIN in hass.data:
             for unsub in hass.data[DOMAIN].listeners:

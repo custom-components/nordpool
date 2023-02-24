@@ -40,9 +40,9 @@ tzs = {
 
 
 # List of page index for hourly data
-# Some is disable as the don't contain the other currencies NOK etc
-# or there are som issues with data paring for some one the, DataStartdate
-# Lets comeback and fix that later, just need to adjust the self._parser.
+# Some are disabled as they don't contain the other currencies, NOK etc,
+# or there are some issues with data parsing for some ones' DataStartdate.
+# Lets come back and fix that later, just need to adjust the self._parser.
 # DataEnddate: "2021-02-11T00:00:00"
 # DataStartdate: "0001-01-01T00:00:00"
 COUNTRY_BASE_PAGE = {
@@ -215,7 +215,7 @@ class AioPrices(Prices):
             # if self.currency != "EUR":
             #    # Only need to check for today price
             #    # as this is only available for dk, nor, se
-            #    # and all of them is in the corrent timezone.
+            #    # and all of them are in the correct timezone.
             #    days = [today, tomorrow]
             #    idx_list = COUNTRY_BASE_PAGE.values()
             #    stuff = []

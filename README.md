@@ -190,7 +190,7 @@ Add 21% tax and overhead cost stored in a helper
 
 ### One sensor per hour
 
-By default, one sensor is created with the current energy price. The prices for other hours are stored in the attriutes of this sensor. Most example code you will find use the default one sensor option, but you run the `create_template` script to create seperate sensors for every hour. See the help options with ```python create_template --help```. You can run the script on any system where Python is installed (install the required packages `pyyaml` and `click` using `pip install pyyaml click`)
+By default, one sensor is created with the current energy price. The prices for other hours are stored in the attributes of this sensor. Most example code you will find uses the default one sensor option, but you can run the `create_template` script to create separate sensors for every hour. See the help options with ```python create_template --help```. You can run the script on any system where Python is installed (install the required packages `pyyaml` and `click` using `pip install pyyaml click`)
 
 ## Troubleshooting
 
