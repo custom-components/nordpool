@@ -358,7 +358,7 @@ class NordpoolSensor(SensorEntity):
 
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
-        but i dont trust that to continue forever. Thats why we sort it ourselfs."""
+        but I don't trust that to continue forever. That's why we sort it ourselves."""
         if data is None or data is SENTINEL:
             return []
 
@@ -472,7 +472,7 @@ class NordpoolSensor(SensorEntity):
 
     async def handle_new_day(self):
         """Update attrs for the new day"""
-        _LOGGER.debug("handel_new_day")
+        _LOGGER.debug("handle_new_day")
         self._data_tomorrow = None
         # update attrs for the new day
         await self.handle_new_hr()
