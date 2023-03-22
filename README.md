@@ -112,7 +112,7 @@ See the [Nord Pool region map](https://www.nordpoolgroup.com/en/maps/) for detai
 | Austria   | AT |
 | Belgium   | BE |
 | Denmark   | DK1, <br> DK2|
-| Estinia   | EE |
+| Estonia   | EE |
 | Finland   | FI |
 | France    | FR |
 | Germany   | DE-LU |
