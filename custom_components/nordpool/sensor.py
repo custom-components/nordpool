@@ -425,6 +425,7 @@ class NordpoolSensor(SensorEntity):
             "raw_tomorrow": self.raw_tomorrow,
             "current_price": self.current_price,
             "additional_costs_current_hour": self.additional_costs,
+            "price_in_cents": self._use_cents
         }
 
     def _add_raw(self, data) -> list:
