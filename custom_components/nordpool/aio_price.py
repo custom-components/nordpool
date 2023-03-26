@@ -5,6 +5,8 @@ from datetime import date, datetime, timedelta
 
 from dateutil import tz
 from dateutil.parser import parse as parse_dt
+import backoff
+import aiohttp
 from nordpool.elspot import Prices
 
 from .misc import add_junk
@@ -177,6 +179,7 @@ class AioPrices(Prices):
             endDate=end_date.strftime("%d-%m-%Y"),
         )
 
+    @backoff.on_exception(backoff.expo, (aiohttp.ClientError, KeyError), logger=_LOGGER)
     async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.
@@ -200,6 +203,8 @@ class AioPrices(Prices):
         """
         if areas is None:
             areas = []
+
+        raise KeyError
 
         # now = datetime.utcnow()
         # timezone_for_data = now.astimezone(tz.gettz(ts))
