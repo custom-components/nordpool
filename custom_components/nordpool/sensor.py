@@ -341,13 +341,13 @@ class NordpoolSensor(SensorEntity):
             _LOGGER.debug("No data for today, unable to set attrs")
             return
 
-        self._average = mean(today)
-        self._min = min(today)
-        self._max = max(today)
-        self._off_peak_1 = mean(today[0:8])
-        self._off_peak_2 = mean(today[20:])
-        self._peak = mean(today[8:20])
-        self._mean = median(today)
+        self._average = mean(filter(None, today))
+        self._min = min(filter(None, today))
+        self._max = max(filter(None, today))
+        self._off_peak_1 = mean(filter(None, today[0:8]))
+        self._off_peak_2 = mean(filter(None, today[20:]))
+        self._peak = mean(filter(None, today[8:20]))
+        self._mean = median(filter(None, today))
 
     @property
     def current_price(self) -> float:
