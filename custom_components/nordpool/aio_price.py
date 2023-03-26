@@ -131,8 +131,15 @@ def join_result_for_correct_time(results, dt):
 
             for val in values:
                 local = val["start"].astimezone(zone)
+                local_end = val["end"].astimezone(zone)
                 if start_of_day <= local and local <= end_of_day:
-                    fin["areas"][key]["values"].append(val)
+                    if local == local_end:
+                        _LOGGER.info(
+                            "Hour has the same start and end, most likly due to dst change %s exluded this hour",
+                            val,
+                        )
+                    else:
+                        fin["areas"][key]["values"].append(val)
 
     # _LOGGER.debug("Combines result: %s", fin)
 
@@ -202,7 +209,7 @@ class AioPrices(Prices):
 
         # compare utc offset
         if self.timeezone == tz.gettz("Europe/Stockholm"):
-            data = await self._fetch_json(data_type, end_date, areas)
+            data = await self._fetch_json(data_type, end_date)
             return self._parse_json(data, areas)
         else:
             yesterday = datetime.now() - timedelta(days=1)
