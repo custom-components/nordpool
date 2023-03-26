@@ -134,7 +134,9 @@ def join_result_for_correct_time(results):
 
             for val in values:
                 local = val["start"].astimezone(zone)
+                local_end = val["end"].astimezone(zone)
                 if start_of_day <= local and local <= end_of_day:
+
                     #
                     if n == 1:
                         # this is yesterday
@@ -169,13 +171,14 @@ if __name__ == "__main__":
         today = spot.hourly(end_date=dt_today)
         tomorrow = spot.hourly(end_date=dt_today + timedelta(days=1))
         #print(today)
-        print(pprint(today.get("areas")))
-        return
+        #print(pprint(today.get("areas")))
+        #return
 
         results = [yesterday, today, tomorrow]
 
         data = join_result_for_correct_time(results)
         values = []
+        return
         for key, value in data["areas"].items():
             values = []
             if key == region or region is None:
