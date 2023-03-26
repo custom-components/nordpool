@@ -9,7 +9,7 @@ import backoff
 import aiohttp
 from nordpool.elspot import Prices
 
-from .misc import add_junk
+from .misc import add_junk, exceptions_raiser
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -143,8 +143,6 @@ def join_result_for_correct_time(results, dt):
                     else:
                         fin["areas"][key]["values"].append(val)
 
-    # _LOGGER.debug("Combines result: %s", fin)
-
     return fin
 
 
@@ -179,6 +177,8 @@ class AioPrices(Prices):
             endDate=end_date.strftime("%d-%m-%Y"),
         )
 
+    # Add more exceptions as we find them. KeyError is raised when the api return
+    # junk due to currency not being available in the data.
     @backoff.on_exception(backoff.expo, (aiohttp.ClientError, KeyError), logger=_LOGGER)
     async def fetch(self, data_type, end_date=None, areas=None):
         """
@@ -204,69 +204,22 @@ class AioPrices(Prices):
         if areas is None:
             areas = []
 
-        raise KeyError
+        yesterday = datetime.now() - timedelta(days=1)
+        today = datetime.now()
+        tomorrow = datetime.now() + timedelta(days=1)
 
-        # now = datetime.utcnow()
-        # timezone_for_data = now.astimezone(tz.gettz(ts))
-        # stock = datetime.utcnow().astimezone(tz.gettz("Europe/Stockholm"))
-        # if stock.utcoffset(now) == timezone_for_data.utcoffset(now):
-        #    pass
+        jobs = [
+            self._fetch_json(data_type, yesterday),
+            self._fetch_json(data_type, today),
+            self._fetch_json(data_type, tomorrow),
+        ]
 
-        # compare utc offset
-        if self.timeezone == tz.gettz("Europe/Stockholm"):
-            data = await self._fetch_json(data_type, end_date)
-            return self._parse_json(data, areas)
-        else:
-            yesterday = datetime.now() - timedelta(days=1)
-            today = datetime.now()
-            tomorrow = datetime.now() + timedelta(days=1)
+        res = await asyncio.gather(*jobs)
 
-            # days = [yesterday, today, tomorrow]
-            # Workaround for api changes.
-            # Disabled for now as nordpool have fixed the api endpoint that we used.
-            # if self.currency != "EUR":
-            #    # Only need to check for today price
-            #    # as this is only available for dk, nor, se
-            #    # and all of them are in the correct timezone.
-            #    days = [today, tomorrow]
-            #    idx_list = COUNTRY_BASE_PAGE.values()
-            #    stuff = []
-            #    for d in days:
-            #        dat = {"areas": {}}
-            #        for pageidx in idx_list:
-            #            task = self._io(
-            #                self.API_URL_CURRENCY % pageidx,
-            #                currency=self.currency,
-            #                endDate=d.strftime("%d-%m-%Y"),
-            #            )
-            #            data = await task
-            #
-            #            try:
-            #                jd = self._parse_json(data, areas)
-            #
-            #               for key, value in jd.get("areas").items():
-            #                    dat["areas"][key] = value
-            #
-            #            except Exception as e:
-            #                _LOGGER.debug("Error with %s %s", d, pageidx)
-            #                raise
-            #
-            #        stuff.append(dat)
-            #
-            #    return join_result_for_correct_time(stuff, end_date)
-
-            # else:
-
-            jobs = [
-                self._fetch_json(data_type, yesterday),
-                self._fetch_json(data_type, today),
-                self._fetch_json(data_type, tomorrow),
-            ]
-
-            res = await asyncio.gather(*jobs)
-
-            raw = [self._parse_json(i, areas) for i in res]
-            return join_result_for_correct_time(raw, end_date)
+        raw = [self._parse_json(i, areas) for i in res]
+        # Just to test should be removed
+        # exceptions_raiser()
+        return join_result_for_correct_time(raw, end_date)
 
     async def hourly(self, end_date=None, areas=None):
         """Helper to fetch hourly data, see Prices.fetch()"""

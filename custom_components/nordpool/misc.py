@@ -23,6 +23,19 @@ __all__ = [
 _LOGGER = logging.getLogger(__name__)
 
 
+def exceptions_raiser():
+    """Utility to check that all exceptions are raised."""
+    import aiohttp
+    import random
+
+    exs = [KeyError, aiohttp.ClientError, None, None, None]
+    got = random.choice(exs)
+    if got is None:
+        pass
+    else:
+        raise got
+
+
 def round_decimal(number, decimal_places=3):
     decimal_value = Decimal(number)
     return decimal_value.quantize(Decimal(10) ** -decimal_places)
