@@ -441,7 +441,7 @@ class Data():
 
         if value is None or math.isinf(value):
             #_LOGGER.debug("api returned junk infinty %s", value)
-            return None
+            return 0
 
         # Used to inject the current hour.
         # so template can be simplified using now
