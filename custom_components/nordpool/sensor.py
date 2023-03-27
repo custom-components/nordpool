@@ -12,7 +12,7 @@ from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
 
 # Import sensor entity and classes.
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass, SensorEntity
 from jinja2 import pass_context
 
 from . import (
@@ -136,7 +136,7 @@ class NordpoolSensor(SensorEntity):
     "Sensors data"
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_suggested_display_precision = None
-
+    _attr_state_class = SensorStateClass.TOTAL
     def __init__(
         self,
         friendly_name,
