@@ -311,8 +311,6 @@ class NordpoolSensor(SensorEntity):
 
         self._additional_costs_value = template_value
         try:
-            # If the price is negative, subtract the additional costs from the price
-            template_value = abs(template_value) if price < 0 else template_value
             price += template_value
         except Exception:
             _LOGGER.debug(
