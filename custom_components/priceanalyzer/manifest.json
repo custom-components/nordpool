@@ -1,15 +1,19 @@
-
 {
   "domain": "priceanalyzer",
   "name": "PriceAnalyzer",
-  "after_dependencies": ["http"],
-  "codeowners": ["@erlendsellie"],
+  "after_dependencies": [
+    "http"
+  ],
+  "codeowners": [
+    "@erlendsellie"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/erlendsellie/priceanalyzer/",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/erlendsellie/priceanalyzer/issues",
-  "requirements": ["nordpool>=0.2"],
-  "version": "1.4"
+  "requirements": [
+    "nordpool>=0.2"
+  ],
+  "version": "1.5"
 }
-
