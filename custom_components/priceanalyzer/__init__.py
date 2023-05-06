@@ -32,6 +32,7 @@ from .const import (
     RANDOM_SECOND,
     PLATFORM_SCHEMA,
     EVENT_NEW_DATA,
+    EVENT_NEW_HOUR,
     API_DATA_LOADED,
     _CURRENCY_LIST,
     PLATFORMS,
@@ -127,6 +128,7 @@ class NordpoolData:
         dt = dt_utils.now()
         if(dt.hour < 11):
             return []
+        
         #TODO Handle when API returns todays prices for tomorrow.
         res = await self._someday(area, currency, "tomorrow")
         if res and len(res) > 0 and len(res['values']) > 0:
@@ -137,7 +139,18 @@ class NordpoolData:
                 self._tomorrow_valid = True
                 _LOGGER.debug("Setting Tomrrow Valid to True. Res: %s", res)
                 return res
-            
+                # TODO fix this logic.
+                # first_key = next(iter(res.values))
+                # tomorrow_date = datetime.fromisoformat(res.values[first_key].start)
+                # # Check if the input date is in the future
+                # if start > dt:
+                #     _LOGGER.debug('The input date is in the future')
+                #     self._tomorrow_valid = True
+                #     _LOGGER.debug("Setting Tomrrow Valid to True. Res: %s", res)
+                #     return res
+                # else:
+                #     _LOGGER.debug('The input date is in the past')
+                #     return []
         return []
 
 
@@ -174,7 +187,7 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         async def new_hr(n):
             """Callback to tell the sensors to update on a new hour."""
             _LOGGER.debug("Called new_hr callback")
-            async_dispatcher_send(hass, EVENT_NEW_DATA)
+            async_dispatcher_send(hass, EVENT_NEW_HOUR)
 
         async def new_data_cb(n):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
@@ -198,39 +211,42 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
             hass, new_day_cb, hour=0, minute=0, second=0
         )
 
-        cb_new_hr = async_track_time_change(hass, new_hr, minute=0, second=0)
+        cb_new_hr = async_track_time_change(
+            hass, new_hr, minute=0, second=0
+            )
 
         api.listeners.append(cb_update_tomorrow)
         api.listeners.append(cb_new_hr)
         api.listeners.append(cb_new_day)
 
-
-
     pa_config = config
     api = NordpoolData(hass) if hass.data[DOMAIN] is None else hass.data[DOMAIN]
-    _LOGGER.debug("Dumping config %r", pa_config)
-    _LOGGER.debug("timezone set in ha %r", hass.config.time_zone)
     region = pa_config.get(CONF_REGION)
     friendly_name = pa_config.get("friendly_name", "")
     price_type = pa_config.get("price_type")
-    precision = pa_config.get("precision")
+    
     low_price_cutoff = pa_config.get("low_price_cutoff")
     currency = pa_config.get("currency")
-    vat = pa_config.get("VAT")
+    vat = pa_config.get("VAT")    
     use_cents = pa_config.get("price_in_cents")
     ad_template = pa_config.get("additional_costs")
+    multiply_template = pa_config.get("multiply_template")
+    num_hours_to_boost = pa_config.get("hours_to_boost")
+    num_hours_to_save = pa_config.get("hours_to_save")
     percent_difference = pa_config.get("percent_difference")
     data = Data(
         friendly_name,
         region,
         price_type,
-        precision,
         low_price_cutoff,
         currency,
         vat,
         use_cents,
         api,
         ad_template,
+        multiply_template,
+        num_hours_to_boost,
+        num_hours_to_save,
         percent_difference,
         hass,
         pa_config
@@ -252,6 +268,7 @@ async def async_migrate_entry(title, domain) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
     res = await _dry_setup(hass, entry)
+    #hass.config_entries.async_setup_platforms(entry, PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.add_update_listener(async_reload_entry)
     return res

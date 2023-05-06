@@ -3,6 +3,7 @@ import math
 from datetime import datetime
 from operator import itemgetter
 from statistics import mean
+#from custom_components.nordpool import EVENT_NEW_HOUR
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -25,9 +26,11 @@ from .const import (
     TEMP_MINIMUM,
     EVENT_CHECKED_STUFF,
     EVENT_NEW_DATA,
+    EVENT_NEW_HOUR,
     API_DATA_LOADED,
     DOMAIN,
-    DATA
+    DATA,
+    _PRICE_IN
 )
 
 
@@ -110,23 +113,38 @@ class VVBSensor(SensorEntity):
             threshold = self._config.get('price_before_active', "") or 0
             below_threshold = float(threshold) > max
             
-            is_low_compared_to_tomorrow = False #current_hour['is_low_compared_to_tomorrow']
+            is_low_compared_to_tomorrow = current_hour['is_low_compared_to_tomorrow']
+
+
+            is_cheap_compared_to_future = current_hour['is_cheap_compared_to_future']
+            #TODO Must tomorrow valid be true before this is true? Was ON from 0000:1300 at 21 feb
+            # when price was gaining and gaining, and then false.
+            # which is kinda right, and kinda false.
+            # right in the case that we keep the water heated until the most expensive periods
+            # wrong in the case that we keep it on more than necessary maybe,
+            # as it may very well get cheaper overnight.
+            
             #todo is gaining the next day, set extra temp.
             #todo if tomorrow is available, 
             #and is the cheapest 5 hours for the forseeable future, set temp
-            #
+            
+            #TODO Setting if price is only going down from now as well. Then set minimum temp?
+            
             if small_price_difference or below_threshold:
                 temp = temp
                 reasonText = 'Small price difference or below threshold for settings'
-            elif is_low_compared_to_tomorrow:
-                temp = self.getConfigKey(TEMP_MINIMUM)
-                reasonText = 'The price is only gaining for today and tomorrow, using config for minumum price'
-            elif is_five_most_expensive:
-                temp = self.getConfigKey(TEMP_FIVE_MOST_EXPENSIVE)
-                reasonText = 'Is five most expensive'
             elif is_min_price:
                 temp = self.getConfigKey(TEMP_MINIMUM)
                 reasonText = 'Is minimum price'
+            elif is_low_compared_to_tomorrow:
+                temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
+                reasonText = 'The price is only gaining for today and tomorrow, using config for five cheapest'
+            elif is_cheap_compared_to_future:
+                temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
+                reasonText = 'The price is in the five cheapest hours for the known future, using config for five_cheapest'                
+            elif is_five_most_expensive:
+                temp = self.getConfigKey(TEMP_FIVE_MOST_EXPENSIVE)
+                reasonText = 'Is five most expensive'
             elif is_five_cheapest:
                 temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
                 reasonText = 'Is five cheapest'
@@ -247,7 +265,9 @@ class VVBSensor(SensorEntity):
         """Connect to dispatcher listening for entity data notifications."""
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass %s", self.name)
-        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_DATA, self._data.check_stuff)
+        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_DATA, self._data.new_day)
+        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_HOUR, self._data.new_hr)
+        async_dispatcher_connect(self._data.api._hass, API_DATA_LOADED, self._data.check_stuff)
         async_dispatcher_connect(self._data.api._hass, EVENT_CHECKED_STUFF, self.update_sensor)
         await self._data.check_stuff()
 
@@ -336,6 +356,7 @@ class PriceAnalyzerSensor(SensorEntity):
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass %s", self.name)
         async_dispatcher_connect(self._data.api._hass, EVENT_NEW_DATA, self._data.new_day)
+        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_HOUR, self._data.new_hr)
         async_dispatcher_connect(self._data.api._hass, API_DATA_LOADED, self._data.check_stuff)
         async_dispatcher_connect(self._data.api._hass, EVENT_CHECKED_STUFF, self.update_sensor)
         await self._data.check_stuff()
@@ -375,7 +396,7 @@ class PriceSensor(SensorEntity):
 
     @property
     def unit_of_measurement(self) -> str:
-        return self._data._currency
+        return self._data._currency + '/' + self._data._price_type
 
 
     @property
@@ -407,6 +428,7 @@ class PriceSensor(SensorEntity):
         await super().async_added_to_hass()
         _LOGGER.debug("Price Sensors called async_added_to_hass %s", self.name)
         async_dispatcher_connect(self._data.api._hass, EVENT_NEW_DATA, self._data.new_day)
+        async_dispatcher_connect(self._data.api._hass, EVENT_NEW_HOUR, self._data.new_hr)
         async_dispatcher_connect(self._data.api._hass, API_DATA_LOADED, self._data.check_stuff)
         async_dispatcher_connect(self._data.api._hass, EVENT_CHECKED_STUFF, self.update_sensor)
         await self._data.check_stuff()

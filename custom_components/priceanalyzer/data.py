@@ -63,43 +63,52 @@ DEFAULT_NAME = "Elspot"
 DEFAULT_TEMPLATE = "{{0.01|float}}"
 
 
-
 class Data():
     def __init__(
         self,
         friendly_name,
         area,
         price_type,
-        precision,
         low_price_cutoff,
         currency,
         vat,
         use_cents,
         api,
         ad_template,
+        multiply_template,
+        num_hours_to_boost,
+        num_hours_to_save,
         percent_difference,
         hass,
         config
     ) -> None:
-        # friendly_name is ignored as it never worked.
-        # rename the sensor in the ui if you dont like the name.
+
+
+
         self._attr_name = friendly_name
         self._area = area
         self._currency = currency or _REGIONS[area][0]
         self._price_type = price_type
-        self._precision = precision
+
         self._low_price_cutoff = low_price_cutoff
         self._use_cents = use_cents
         self.api = api
         self._ad_template = ad_template
+        self._multiply_template = multiply_template
+        self._num_hours_to_boost = num_hours_to_boost
+        self._num_hours_to_save = num_hours_to_save
         self._hass = hass
         self.percent_difference = percent_difference or 20
         self._config = config
 
+        self._precision = 3
+    
         if vat is True:
             self._vat = _REGIONS[area][2]
         else:
             self._vat = 0
+
+        self._vat = _REGIONS[area][2]
 
         # Price by current hour.
         self._current_price = None
@@ -108,16 +117,13 @@ class Data():
         self._today_calculated = None
         self._tomorrow_calculated = None
 
-
         # Holds the data for today and morrow.
         self._data_today = None
         self._data_tomorrow = None
-        
-        
-        
+
         # list with sensors that utilises data from this class.
         self._sensors = []
-        
+
         # Values for the day
         self._average = None
         self._max = None
@@ -145,8 +151,6 @@ class Data():
         self._ten_cheapest_tomorrow = None
         self._five_cheapest_tomorrow = None
 
-
-
         # Check incase the sensor was setup using config flow.
         # This blow up if the template isnt valid.
         if not isinstance(self._ad_template, Template):
@@ -159,6 +163,22 @@ class Data():
                 self._ad_template = cv.template(DEFAULT_TEMPLATE)
 
         attach(self._hass, self._ad_template)
+
+        if not isinstance(self._multiply_template, Template):
+            if self._multiply_template in (None, ""):
+                self._multiply_template = 1
+            self._multiply_template = cv.template(self._multiply_template)
+        # check for yaml setup.
+        else:
+            if self._multiply_template.template in ("", None):
+                self._multiply_template = cv.template(1)
+
+        attach(self._hass, self._multiply_template)
+
+        self.multiply_template = multiply_template
+        
+        #Q how to setup a Home assistant devlopment environment for custom components?
+        
 
         # To control the updates.
         self._last_tick = None
@@ -265,7 +285,6 @@ class Data():
     def tomorrow_valid(self):
         return len([i for i in self.tomorrow if i not in (None, float("inf"))]) >= 23
 
-
     @property
     def tomorrow_loaded(self):
         return isinstance(self._data_tomorrow, list) and len(self._data_tomorrow)
@@ -279,10 +298,6 @@ class Data():
             for item in self._someday(data):
                 if item["start"] == start_of(local_now, "hour"):
                     self._current_price = item["value"]
-                    # _LOGGER.debug(
-                    #     "Updated %s _current_price %s", self.device_name, item["value"]
-                    # )
-
 
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
@@ -312,40 +327,116 @@ class Data():
             else None
         )
 
-    def _is_gaining(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow) -> bool:
-        threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
-        price_next_hour = max([price_next_hour,0.00001])
-        price_next_hour2 = max([price_next_hour2,0.00001])
-        price_next_hour3 = max([price_next_hour3,0.00001])
-        percent_threshold = (1 - float(threshold))
-        return ((price_now / price_next_hour) < percent_threshold) or ((price_now / price_next_hour2) < percent_threshold)# or ((price_now / price_next_hour3) < percent_threshold)
+    def get_price_for_hour(self, hour: int, is_tomorrow: bool) -> int:
+        """Gets the price for a given hour
 
-    def _is_falling(self, hour,  now, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow) -> bool:
+        Args:
+            hour (int): The hour to get the price for
+            is_tomorrow (bool): Whether the hour is tomorrow
+
+        Returns:
+            int: The price for the hour
+        """
+        if hour > 24 and is_tomorrow is False:
+            hour = hour - 24
+            is_tomorrow = False
+        hour = self.get_hour(hour,is_tomorrow)
+        if hour is not None:
+            return self._calc_price(hour["value"], fake_dt=hour["start"])
+        else:
+            return None
+
+
+
+    def get_hour(self, hour: int, is_tomorrow: bool) -> int:# This code compares the hours in the tomorrow_hours list to the hour variable. If there is a match, it returns the dictionary in the list that matches the hour variable.
+        if is_tomorrow is True:
+            if hour > 24:
+                hour = hour - 24
+            for h in self.tomorrow_hours:
+                if h["start"].hour == hour:
+                    return h
+        else:
+            for h in self.today_hours:
+                if h["start"].hour == hour:
+                    return h
+
+    def get_price_for_hour(self, hour: int, is_tomorrow: bool) -> int:
+            if hour > 24 and is_tomorrow is False:
+                hour = hour - 24
+                is_tomorrow = True
+            hour = self.get_hour(hour,is_tomorrow)
+            if hour is not None:
+                return self._calc_price(hour["value"], fake_dt=hour["start"])
+            else:
+                return None
+
+    def _is_gaining(self, hour, is_tomorrow) -> bool:
+        threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
+        percent_threshold = (1 - float(threshold))
+        
+        #TODO, The logic is not quite right yet, but is the same as before.
+        # the more hours set, the less threshold will matter, as it will compare more hours with the same threshold
+        # as we compare now price with the price in X hours.
+        # the more hours, the more difference the price will be, probably.
+        # can we still compare the price to the hour or two before, but save X hours before?
+        
+        price_now = self.get_price_for_hour(hour, is_tomorrow)
+        if price_now is None:
+            return False
+        for i in reversed(range(self._num_hours_to_boost or 2)):
+            y = i + 1
+            next_hour = self.get_price_for_hour(hour + y,is_tomorrow)
+            if next_hour is None:
+                continue
+            price_next = max([next_hour, 0.00001])
+            if (price_now / price_next) < percent_threshold:
+                return True
+        return False        
+
+    def _is_falling(self, hour, is_tomorrow) -> bool:
+
+        # Get the threshold value from the settings
         threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
         percent_threshold = (1 + float(threshold))
-        price_next_hour = max([price_next_hour,0.00001])
-        price_next_hour2 = max([price_next_hour2,0.00001])
-        price_next_hour3 = max([price_next_hour3,0.00001])
-        # TODO, lower percent threshold when comparing next hour.
-        return ((price_now / price_next_hour) > percent_threshold) or ((price_now / price_next_hour2) > percent_threshold) or ((price_now / price_next_hour3) > percent_threshold)
-
+        
+        # Get the current price
+        price_now = self.get_price_for_hour(hour, is_tomorrow)
+        price_next_hour = self.get_price_for_hour(hour + 1 , is_tomorrow)
+        if price_now is None:
+            return False
+        
+        # Loop through the saved prices to see if any are greater than the threshold
+        for i in reversed(range(self._num_hours_to_save or 2)):
+            y = i + 1
+            next_hour = self.get_price_for_hour(hour + y,is_tomorrow)
+            if next_hour is None:
+                continue
+            price_next = max([next_hour, 0.00001])
+            if (price_now / price_next) > percent_threshold: # and price_now > price_next_hour:
+                return True
+        return False
+        
+        
     def price_percent_to_average(self, item, is_tomorrow) -> float:
         """Price in percent to average price"""
         average = self._average if is_tomorrow else self._average_tomorrow
         if average is None:
             return None
 
-        return round(item['value'] / average,3)
+        return round(item['value'] / average, 3)
 
     def _is_falling_alot_next_hour(self, item) -> bool:
-        return item['price_next_hour'] is not None and ((item['price_next_hour'] / max([item['value'],0.00001])) < 0.60)
+        return item['price_next_hour'] is not None and ((item['price_next_hour'] / max([item['value'], 0.00001])) < 0.60)
 
     def _is_falling_alot_next_hours(self, item) -> bool:
-        falling_alot_next_hour =  item['price_next_hour'] is not None and ((item['price_next_hour'] / max([item['value'],0.00001])) < 0.80)
-        falling_alot_next_next_hour =  item['price_in_2_hours'] is not None and ((item['price_in_2_hours'] / max([item['value'],0.00001])) < 0.80)
-        return falling_alot_next_hour or falling_alot_next_next_hour #todo hour after that as well.
+        falling_alot_next_hour = item['price_next_hour'] is not None and (
+            (item['price_next_hour'] / max([item['value'], 0.00001])) < 0.80)
+        falling_alot_next_next_hour = item['price_in_2_hours'] is not None and (
+            (item['price_in_2_hours'] / max([item['value'], 0.00001])) < 0.80)
+        # todo hour after that as well.
+        return falling_alot_next_hour or falling_alot_next_next_hour
 
-    def _get_temperature_correction(self, item, is_tomorrow, reason = False):
+    def _get_temperature_correction(self, item, is_tomorrow, reason=False):
         is_gaining = item['is_gaining']
         is_falling = item['is_falling']
         is_max = item['is_max']
@@ -353,9 +444,8 @@ class Data():
         is_over_average = item['is_over_average']
         is_five_most_expensive = item['is_five_most_expensive']
 
-
         diff = self._diff_tomorrow if is_tomorrow else self._diff
-        percent_difference = (self.percent_difference + 100) /100
+        percent_difference = (self.percent_difference + 100) / 100
 
         max_price = self._max_tomorrow if is_tomorrow else self._max
         threshold = self._config.get('pa_price_before_active', "") or 0
@@ -365,23 +455,22 @@ class Data():
                 return 'Max-price below threshold'
             return 0
 
-        #TODO this calculation is not considering additional costs.
-        if(diff < percent_difference):
+        # TODO this calculation is not considering additional costs.
+        if (diff < percent_difference):
             if reason:
                 return 'Small difference'
             return 0
 
-        price_now = max([item["value"],0.00001])
+        price_now = max([item["value"], 0.00001])
 
-        price_next_hour = float(item["price_next_hour"]) if item["price_next_hour"] is not None else price_now
-        price_next_hour = max([price_next_hour,0.00001])
+        price_next_hour = float(
+            item["price_next_hour"]) if item["price_next_hour"] is not None else price_now
+        price_next_hour = max([price_next_hour, 0.00001])
 
-        is_over_off_peak_1 = price_now > (self._off_peak_1_tomorrow if is_tomorrow else self._off_peak_1)
+        # TODO Check currency
+        isprettycheap = price_now < 0.05
 
-        isprettycheap = price_now < 0.05        
-
-        #TODO Check currency
-        #special handling for high price at end of day:
+        # special handling for high price at end of day:
         if not is_tomorrow and item['start'].hour == 23 and item['price_next_hour'] is not None and (price_next_hour / price_now) < 0.80 and isprettycheap == False:
             if reason:
                 return 'Price dropping tomorrow'
@@ -395,10 +484,6 @@ class Data():
                 return 'Is falling alot next hour'
             return -1
         elif is_gaining and (price_now < price_next_hour) and (not is_five_most_expensive):
-        #TODO, When price was 128 øre at 2300, the analyzer was at +1. Why?
-            
-        #elif (is_over_peak == False and is_gaining == True):
-        #elif (is_low_price == True and is_gaining == True):
             if reason:
                 return 'Is gaining, and not in five most expensive hours'
             return 1
@@ -408,9 +493,9 @@ class Data():
             return -1
         elif is_low_price and (not is_gaining or is_falling):
             if reason:
-                return 'No need to correct.'            
+                return 'No need to correct.'
             return 0
-        #TODO is_over_off_peak_1 is not considering additionatla costs i think, so this is wrong.
+        # TODO is_over_off_peak_1 is not considering additional costs i think, so this is wrong.
         # Nope, the case is that it's just set hours, and not considering
         # the actual price, so useless as is. Must still get the price, and just
         # add the additional costs to get it 'more right'?
@@ -418,10 +503,27 @@ class Data():
         #     return -1
         else:
             if reason:
-                return 'No need to correct..'            
+                return 'No need to correct..'
             return 0
 
+    def _adjust_price_correction(self, price_correction, item):
 
+        value = self._multiply_template.async_render(
+            correction=price_correction, current_hour=item
+        )
+        # Seems like the template is rendered as a string if the number is complex
+        # Just force it to be a float.
+        if not isinstance(value, (int, float)):
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                _LOGGER.exception(
+                    "Failed to convert %s %s to float",
+                    value,
+                    type(value),
+                )
+                raise
+        return value
 
     def get_hour(self, hour, is_tomorrow):
         if is_tomorrow == False and (hour < len(self._someday(self._data_today))):
@@ -433,37 +535,57 @@ class Data():
         else:
             return None
 
-
     def _calc_price(self, value=None, fake_dt=None) -> float:
+        
+        
         """Calculate price based on the users settings."""
         if value is None:
             value = self._current_price
 
         if value is None or math.isinf(value):
-            #_LOGGER.debug("api returned junk infinty %s", value)
-            return None
+            return 0
+        
 
-        # Used to inject the current hour.
-        # so template can be simplified using now
-        if fake_dt is not None:
+        def faker():
+            def inner(*_, **__):
+                return fake_dt or dt_utils.now()
 
-            def faker():
-                def inner(*args, **kwargs):
-                    return fake_dt
+            return pass_context(inner)
 
-                return pass_context(inner)
+        price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+        template_value = self._ad_template.async_render(
+            now=faker(), current_price=price
+        )
 
-            template_value = self._ad_template.async_render(now=faker())
-        else:
-            template_value = self._ad_template.async_render()
+        # Seems like the template is rendered as a string if the number is complex
+        # Just force it to be a float.
+        if not isinstance(template_value, (int, float)):
+            try:
+                template_value = float(template_value)
+            except (TypeError, ValueError):
+                _LOGGER.exception(
+                    "Failed to convert %s %s to float",
+                    template_value,
+                    type(template_value),
+                )
+                raise
 
-        # The api returns prices in MWh
-        if self._price_type in ("MWh", "mWh"):
-            price = template_value / 1000 + value * float(1 + self._vat)
-        else:
-            price = template_value + value / _PRICE_IN[self._price_type] * (
-                float(1 + self._vat)
+        self._additional_costs_value = template_value
+        try:
+            # If the price is negative, subtract the additional costs from the price
+            template_value = abs(
+                template_value) if price < 0 else template_value
+            price += template_value
+        except Exception:
+            _LOGGER.debug(
+                "price %s template value %s type %s dt %s current_price %s ",
+                price,
+                template_value,
+                type(template_value),
+                fake_dt,
+                self._current_price,
             )
+            raise
 
         # Convert price to cents if specified by the user.
         if self._use_cents:
@@ -481,7 +603,21 @@ class Data():
         d = extract_attrs(data.get("values"))
         data.update(d)
 
+        # if self._ad_template.template == DEFAULT_TEMPLATE:
+        #TODO, cant use it like this, since  we don't know the time, and therefore not the template value.
+        # self._average = self._calc_price(data.get("Average"))
+        # self._min = self._calc_price(data.get("Min"))
+        # self._max = self._calc_price(data.get("Max"))
+        # _LOGGER.error(
+        #         "self min and max are %s %s",
+        #         self._min, self._max
+        # )
+        # self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
+        # self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
+        # self._peak = self._calc_price(data.get("Peak"))
+        # self._add_raw_calculated(False)
 
+        # else:
         data = sorted(data.get("values"), key=itemgetter("start"))
         formatted_prices = [
             self._calc_price(
@@ -489,6 +625,7 @@ class Data():
             )
             for i in data
         ]
+
         offpeak1 = formatted_prices[0:8]
         peak = formatted_prices[9:17]
         offpeak2 = formatted_prices[20:]
@@ -501,17 +638,13 @@ class Data():
         self._max = max(formatted_prices)
         self._add_raw_calculated(False)
 
-
-
     def _update_tomorrow(self, data) -> None:
 
         if not self.api.tomorrow_valid():
             return
         """Set attrs."""
-        _LOGGER.debug("Called _update setting attrs for the day")
+        _LOGGER.debug("Called _update setting attrs for tomorrow")
 
-        # if has_junk(data):
-        #    # _LOGGER.debug("It was junk infinity in api response, fixed it.")
         d = extract_attrs(data.get("values"))
         data.update(d)
 
@@ -519,13 +652,14 @@ class Data():
             self._average_tomorrow = self._calc_price(data.get("Average"))
             self._min_tomorrow = self._calc_price(data.get("Min"))
             self._max_tomorrow = self._calc_price(data.get("Max"))
-            self._off_peak_1_tomorrow = self._calc_price(data.get("Off-peak 1"))
-            self._off_peak_2_tomorrow = self._calc_price(data.get("Off-peak 2"))
+            self._off_peak_1_tomorrow = self._calc_price(
+                data.get("Off-peak 1"))
+            self._off_peak_2_tomorrow = self._calc_price(
+                data.get("Off-peak 2"))
             self._peak_tomorrow = self._calc_price(data.get("Peak"))
             self._add_raw_calculated(True)
             # Reevaluate Today, when tomorrows prices are available
             self._add_raw_calculated(False)
-
 
         else:
             data = sorted(data.get("values"), key=itemgetter("start"))
@@ -550,8 +684,6 @@ class Data():
                 # Reevaluate Today, when tomorrows prices are available
                 self._add_raw_calculated(False)
 
-
-
     def _format_time(self, data):
         local_times = []
         for item in data:
@@ -565,7 +697,6 @@ class Data():
 
         return local_times
 
-
     def _add_raw(self, data):
         result = []
         for res in self._someday(data):
@@ -576,7 +707,6 @@ class Data():
             }
             result.append(item)
         return result
-
 
     def _set_cheapest_hours_today(self):
         if self._data_today != None and len(self._data_today.get("values")):
@@ -591,8 +721,6 @@ class Data():
 
             self._ten_cheapest_tomorrow = sorted[:10] if sorted else []
             self._five_cheapest_tomorrow = sorted[:5] if sorted else []
-            
-
 
     def _add_raw_calculated(self, is_tomorrow):
         if is_tomorrow and self.tomorrow_valid == False:
@@ -603,29 +731,29 @@ class Data():
             self.check_stuff()
             return
         data = sorted(data.get("values"), key=itemgetter("start"))
-        _LOGGER.debug('PriceAnalyzer Adding raw calculated for %s with , %s ', self.device_name)
+
         result = []
         hour = 0
-        percent_difference = (self.percent_difference + 100) /100
+        percent_difference = (self.percent_difference + 100) / 100
         if is_tomorrow == False:
             difference = ((self._min / self._max) - 1)
-            self._percent_threshold = ((difference / 4) * -1) 
-            #TODO, consider lowering thershold. for more micro-calculations. also other place?
-            self._diff = self._max / max([self._min,0.00001])
+            self._percent_threshold = ((difference / 4) * -1)
+            # TODO, consider lowering thershold. for more micro-calculations. also other place?
+            self._diff = self._max / max([self._min, 0.00001])
             self._set_cheapest_hours_today()
-            
-            
-            self.small_price_difference_today = (self._diff < percent_difference)
 
+            self.small_price_difference_today = (
+                self._diff < percent_difference)
 
         if self.tomorrow_valid == True and is_tomorrow == True:
-            max_tomorrow = self._max_tomorrow
-            min_tomorrow = max([self._min_tomorrow,0.00001])
+            max_tomorrow = max([self._max_tomorrow, 0.00001])
+            min_tomorrow = max([self._min_tomorrow, 0.00001])
             difference = ((min_tomorrow / max_tomorrow) - 1)
             self._percent_threshold_tomorrow = ((difference / 4) * -1)
             self._diff_tomorrow = max_tomorrow / min_tomorrow
             self._set_cheapest_hours_tomorrow()
-            self.small_price_difference_tomorrow = (self._diff_tomorrow < percent_difference)  
+            self.small_price_difference_tomorrow = (
+                self._diff_tomorrow < percent_difference)
 
         data = self._format_time(data)
         peak = self._peak_tomorrow if is_tomorrow else self._peak
@@ -635,7 +763,8 @@ class Data():
         local_now = dt_utils.now()
         for res in data:
 
-            price_now = float(self._calc_price(res["value"], fake_dt=res["start"]))
+            price_now = float(self._calc_price(
+                res["value"], fake_dt=res["start"]))
             is_max = price_now == max_price
             is_min = price_now == min_price
             is_low_price = price_now < average * self._low_price_cutoff
@@ -647,19 +776,21 @@ class Data():
             next_hour3 = self.get_hour(hour+3, is_tomorrow)
 
             if next_hour != None and next_hour2 != None and next_hour3 != None:
-                #TODO this will always be true when next day is not valid, so from 21.00 and onwards will not have price_next_hour.
+                # TODO this will always be true when next day is not valid, so from 21.00 and onwards will not have price_next_hour.
                 # should be better written.
                 # this is fixed when next days prices are present though.
-                price_next_hour3 = self._calc_price(next_hour3["value"], fake_dt=next_hour3["start"]) or price_now
-                price_next_hour2 = self._calc_price(next_hour2["value"], fake_dt=next_hour2["start"]) or price_now
-                price_next_hour = self._calc_price(next_hour["value"], fake_dt=next_hour["start"]) or price_now
-                is_gaining = self._is_gaining(hour, res, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow)
-                is_falling = self._is_falling(hour, res, price_now, price_next_hour, price_next_hour2, price_next_hour3, is_tomorrow)
+                price_next_hour3 = self._calc_price(
+                    next_hour3["value"], fake_dt=next_hour3["start"]) or price_now
+                price_next_hour2 = self._calc_price(
+                    next_hour2["value"], fake_dt=next_hour2["start"]) or price_now
+                price_next_hour = self._calc_price(
+                    next_hour["value"], fake_dt=next_hour["start"]) or price_now
+                is_gaining = self._is_gaining(hour, is_tomorrow)
+                is_falling = self._is_falling(hour,is_tomorrow)
             else:
                 is_gaining = None
                 is_falling = None
                 price_next_hour = None
-
 
             item = {
                 "start": res["start"],
@@ -672,24 +803,36 @@ class Data():
                 'is_max': is_max,
                 'is_min': is_min,
                 'is_low_price': is_low_price,
-                'is_over_peak' : is_over_peak,
+                'is_over_peak': is_over_peak,
                 'is_over_average': is_over_average,
             }
 
-            is_five_most_expensive = self._is_five_most_expensive(item, is_tomorrow)
-            item['price_percent_to_average'] = self.price_percent_to_average(item, is_tomorrow),
-            item['is_ten_cheapest'] = self._is_ten_cheapest(item,is_tomorrow)
-            item['is_five_cheapest'] = self._is_five_cheapest(item,is_tomorrow)
+            is_five_most_expensive = self._is_five_most_expensive(
+                item, is_tomorrow)
+            item['price_percent_to_average'] = self.price_percent_to_average(
+                item, is_tomorrow),
+            item['is_ten_cheapest'] = self._is_ten_cheapest(item, is_tomorrow)
+            item['is_five_cheapest'] = self._is_five_cheapest(
+                item, is_tomorrow)
             item['is_five_most_expensive'] = is_five_most_expensive
-            item['is_falling_a_lot_next_hour'] = self._is_falling_alot_next_hour(item)
-            #Todo, add this when complete.
-            #item['is_low_compared_to_tomorrow'] = self._is_low_compared_to_tomorrow(item)
+            item['is_falling_a_lot_next_hour'] = self._is_falling_alot_next_hour(
+                item)
 
-            item["temperature_correction"] = self._get_temperature_correction(item, is_tomorrow)
-            item["reason"] = self._get_temperature_correction(item, is_tomorrow,True)
-            
-            #todo is a top?
-            
+            item['is_cheap_compared_to_future'] = self._is_in_five_cheapest_hours_in_the_future(item)    
+            # Todo, add this when complete.
+            item['is_low_compared_to_tomorrow'] = self._is_low_compared_to_tomorrow(item)
+
+            price_correction = self._get_temperature_correction(
+                item, is_tomorrow)
+            adjusted_price_correction = self._adjust_price_correction(
+                price_correction, item)
+            item["orginal_temperature_correction"] = price_correction
+            item["temperature_correction"] = adjusted_price_correction
+            item["reason"] = self._get_temperature_correction(
+                item, is_tomorrow, True)
+
+            # todo is a top?
+
             hour += 1
             if item["start"] == start_of(local_now, "hour"):
                 self._current_hour = item
@@ -702,8 +845,6 @@ class Data():
             self._tomorrow_calculated = result
 
 
-        #_LOGGER.debug('PriceAnalyzer list done rendering, %s %s', self.device_name, result)
-
         self.update_sensors()
 
         return result
@@ -713,7 +854,7 @@ class Data():
         if ten_cheapest == None:
             return False
 
-        if any(obj['start'] == item['start'] for obj in ten_cheapest ):
+        if any(obj['start'] == item['start'] for obj in ten_cheapest):
             return True
         return False
 
@@ -722,23 +863,31 @@ class Data():
         if five_cheapest == None:
             return False
 
-        if any(obj['start'] == item['start'] for obj in five_cheapest ):
+        if any(obj['start'] == item['start'] for obj in five_cheapest):
             return True
         return False
 
+    def _is_in_five_cheapest_hours_in_the_future(self, item):
+        future_five_cheapest = self._cheapest_hours_in_future_sorted[:5]
+        now_in_five_future_cheapest = any(obj['start'] == item['start'] for obj in future_five_cheapest)
+        today_date = dt_utils.now().date().strftime("%d")
+        item_date = dt_utils.as_local(item['start']).strftime("%d")
+        hour_is_today = today_date == item_date
+        #todo add hour_is_today?
+        return now_in_five_future_cheapest and self.tomorrow_valid
 
     def _is_low_compared_to_tomorrow(self, item):
-        #get the 2 cheapest hours in the future.
-        future_five = self._cheapest_hours_in_future_sorted[2:]
-        # if self.tomorrow_loaded:
-        if any(obj['start'] == item['start'] for obj in future_five ):
-            today_date = dt_utils.now().date().strftime("%d")
-            item_date = dt_utils.as_local(item['start']).strftime("%d")
-            _LOGGER.debug("today_date: %s, item_date: ", today_date, item_date)
-            if today_date == item_date:
-                return True
+        future_five = self._cheapest_hours_in_future_sorted[:5]
+        if self.tomorrow_valid:
+            #TODO NOT right. Price was lower for several hours later that day.
+            item_in_five_future_cheapest = any(obj['start'] == item['start'] for obj in future_five)
+            if item_in_five_future_cheapest:
+                today_date = dt_utils.now().date().strftime("%d")
+                item_date = dt_utils.as_local(item['start']).strftime("%d")
+                hour_is_today = today_date == item_date
+                if hour_is_today:
+                    return True
         return False
-
 
     def _is_five_most_expensive(self, item, is_tomorrow):
         five_most_expensive = self._get_five_most_expensive_hours(is_tomorrow)
@@ -746,82 +895,83 @@ class Data():
             return True
         return False
 
-
-    def get_prices_in_future_sorted(self, reverse=True):
-        return []
-        #todo, fix logic here.
-        
+    def get_prices_in_future_sorted(self, expensive_first=False):
+        # todo, fix logic here.
 
         hours_today = self._data_today
         #    hours_tomorrow = self._data_tomorrow if len(self._data_tomorrow) else []
-        #TypeError: object of type 'NoneType' has no len()
+        # TypeError: object of type 'NoneType' has no len()
 
         hours_tomorrow = self._data_tomorrow
         today = hours_today.get("values")
-        
-        
-        #todo: this check does not seem to work.
+
+        # todo: this check does not seem to work.
         if hours_tomorrow:
             tomorrow = hours_tomorrow.get("values")
             both = tomorrow + today
         else:
             both = today
 
-
         formatted_prices = [
-            {       
-                    'start' : i.get('start'),
-                    'end' : i.get('end'),
-                    'value' : self._calc_price(
-                        i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
-                        )
+            {
+                'start': i.get('start'),
+                'end': i.get('end'),
+                'value': self._calc_price(
+                    i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
+                )
             }
             for i in both
         ]
-        
+
         future_prices = []
         for hour in formatted_prices:
             if dt_utils.as_local(hour.get('start')) > (dt_utils.now() - timedelta(hours=1)):
-                future_prices.append(hour)
-        return sorted(future_prices, key=itemgetter("value"), reverse=reverse)
+                if not hour.get('value') == None :
+                    future_prices.append(hour)
+        if future_prices:
+            return sorted(future_prices, key=itemgetter("value"), reverse=expensive_first)
+        else:
+            return []
 
     def get_sorted_prices_for_day(self, is_tomorrow, reverse=False):
         hours = self._data_tomorrow if is_tomorrow else self._data_today
         data = hours.get("values")
+        formatted_prices = []
         if len(hours.get("values")):
             formatted_prices = [
                 {
-                    'start' : i.get('start'),
-                    'end' : i.get('end'),
-                    'value' : self._calc_price(
+                    'start': i.get('start'),
+                    'end': i.get('end'),
+                    'value': self._calc_price(
                         i.get("value"), fake_dt=dt_utils.as_local(i.get("start"))
-                        )
+                    )
                 }
                 for i in data
             ]
-        formatted_prices = sorted(formatted_prices, key=itemgetter("value"), reverse=reverse)
+        formatted_prices = sorted(
+            formatted_prices, key=itemgetter("value"), reverse=reverse)
         return formatted_prices
-    
+
     def _get_five_most_expensive_hours(self, is_tomorrow):
         sorted = self.get_sorted_prices_for_day(is_tomorrow, True)
         return sorted[:5] if sorted else []
 
-
-
-        
     def update_sensors(self):
         async_dispatcher_send(self._hass, EVENT_CHECKED_STUFF)
 
+    async def new_hr(self) -> None:
+        _LOGGER.debug("New hour!, Tomorrow calculated is: %s",self._tomorrow_calculated)
+        await self.check_stuff()
+    
 
     async def new_day(self) -> None:
-        self.check_stuff()
+        await self.check_stuff()
         # New day, empty tomorrow if not yet done.
         if self._tomorrow_calculated != None:
             self._tomorrow_calculated = None
-            
         # tomorrow_calculated is righly None here.
-        _LOGGER.debug("New day!, Tomorrow calculated is: %s", self._tomorrow_calculated)
-            
+        _LOGGER.debug("New day!, Tomorrow calculated is: %s",self._tomorrow_calculated)
+
 
     async def check_stuff(self) -> None:
         """Cb to do some house keeping, called every hour to get the current hours price"""
@@ -829,30 +979,30 @@ class Data():
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
 
-
         if self._data_tomorrow is None or len(self._data_tomorrow.get("values")) < 1:
-            _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow is none, trying to fetch it")
+            _LOGGER.debug(
+                "PriceAnalyzerSensor _data_tomorrow is none, trying to fetch it")
             tomorrow = await self.api.tomorrow(self._area, self._currency)
             if tomorrow:
-                #_LOGGER.debug("PriceAnalyzerSensor FETCHED _data_tomorrow!, %s", tomorrow)
+                # _LOGGER.debug("PriceAnalyzerSensor FETCHED _data_tomorrow!, %s", tomorrow)
                 self._data_tomorrow = tomorrow
                 self._update_tomorrow(tomorrow)
             else:
-                _LOGGER.debug("PriceAnalyzerSensor _data_tomorrow could not be fetched!, %s", tomorrow)
+                _LOGGER.debug(
+                    "PriceAnalyzerSensor _data_tomorrow could not be fetched!, %s", tomorrow)
                 self._data_tomorrow = None
                 self._tomorrow_calculated = None
 
-
-
         if self._data_today is None:
-            _LOGGER.debug("PriceAnalyzerSensor _data_today is none, trying to fetch it")
+            _LOGGER.debug(
+                "PriceAnalyzerSensor _data_today is none, trying to fetch it")
             today = await self.api.today(self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
             else:
-                _LOGGER.debug("PriceAnalyzerSensor _data_today could not be fetched for %s!, %s", self._area, today)
-
+                _LOGGER.debug(
+                    "PriceAnalyzerSensor _data_today could not be fetched for %s!, %s", self._area, today)
 
         # We can just check if this is the first hour.
         if is_new(self._last_tick, typ="day"):
@@ -881,19 +1031,21 @@ class Data():
                     self._data_today = today
                     self._update(today)
 
-        self._cheapest_hours_in_future_sorted = self.get_prices_in_future_sorted()
-        
+
+        if self._data_today:
+            self._cheapest_hours_in_future_sorted = self.get_prices_in_future_sorted()
+
         # Updates the current for this hour.
         await self._update_current_price()
-        
-        #TODO update current_hour here?
 
+        # TODO update current_hour here?
 
-        #try to force tomorrow.
+        # try to force tomorrow.
         tomorrow = await self.api.tomorrow(self._area, self._currency)
         if tomorrow:
-            #often inf..
-            _LOGGER.debug("PriceAnalyzerSensor force FETCHED _data_tomorrow!, %s", tomorrow)
+            # often inf..
+            _LOGGER.debug(
+                "PriceAnalyzerSensor force FETCHED _data_tomorrow!")
             self._data_tomorrow = tomorrow
             self._update_tomorrow(tomorrow)
 
@@ -903,4 +1055,3 @@ class Data():
             self.check_stuff()
         if self.tomorrow_valid and self._data_tomorrow == None:
             self.check_stuff()
-        _LOGGER.debug("Check stuff finished, self._tomorrow_calculated is:, %s", self._tomorrow_calculated)

@@ -16,7 +16,10 @@
                     "additional_costs": "Mall för ytterligare kostnader",
                     "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
                     "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
-                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv"
+                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
+                    "multiply_template": "Priskorreksjons Template",
+                    "hours_to_boost": "Timer å booste",
+                    "hours_to_save": "Timer å spare"
                 }
             }
         },
@@ -42,7 +45,10 @@
                     "additional_costs": "Mall för ytterligare kostnader",
                     "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
                     "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
-                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv"
+                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
+                    "multiply_template": "Priskorreksjons Template",
+                    "hours_to_boost": "Timer å booste",
+                    "hours_to_save": "Timer å spare"
                 }
             }
         }

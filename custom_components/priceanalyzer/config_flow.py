@@ -11,6 +11,8 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.template import is_template_string, Template
+from jinja2 import pass_context
+from homeassistant.util import dt as dt_utils
 
 from . import DOMAIN
 from .const import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE, HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON
@@ -41,15 +43,13 @@ def get_schema(existing_config = None) -> dict:
         vol.Required("region", default=ec.get("region", None)): vol.In(regions),
         vol.Optional("currency", default=ec.get("currency", "")): vol.In(currencys),
         vol.Optional("VAT", default=ec.get("VAT", True)): bool,
-        vol.Optional("precision", default=ec.get("precision", 3)): vol.Coerce(int),
-        vol.Optional(
-            "low_price_cutoff", default=ec.get("low_price_cutoff", 1.0)
-        ): vol.Coerce(float),
+        vol.Optional("low_price_cutoff", default=ec.get("low_price_cutoff", 1.0)): vol.Coerce(float),
         vol.Optional("price_in_cents", default=ec.get("price_in_cents", False)): bool,
-        vol.Optional("price_type", default=ec.get("price_type", "kWh")): vol.In(
-            price_types
-        ),
+        vol.Optional("price_type", default=ec.get("price_type", "kWh")): vol.In(price_types),
         vol.Optional("additional_costs", default=ec.get("additional_costs", DEFAULT_TEMPLATE)): str,
+        vol.Optional("multiply_template", default=ec.get("multiply_template", '{{correction * 1}}')): str,
+        vol.Optional("hours_to_boost", default=ec.get("hours_to_boost", 2)): int,
+        vol.Optional("hours_to_save", default=ec.get("hours_to_save", 2)): int,
         vol.Optional("pa_price_before_active", default=ec.get('pa_price_before_active',0.2)): float,        
         vol.Optional("percent_difference", default=ec.get("percent_difference",20)): int,
         vol.Optional("price_before_active", default=ec.get('price_before_active',0.2)): float,
@@ -63,9 +63,13 @@ class Base:
 
     async def _valid_template(self, user_template):
         try:
+            def faker():
+                def inner(*_, **__):
+                    return dt_utils.now()
+                return pass_context(inner)            
             _LOGGER.debug(user_template)
             ut = Template(user_template, self.hass).async_render(
-                current_price=0,
+                current_price=200
             )  # Add current price as 0 as we dont know it yet..
             _LOGGER.debug("user_template %s value %s", user_template, ut)            
             if isinstance(ut, float):

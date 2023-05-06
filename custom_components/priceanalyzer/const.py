@@ -16,7 +16,8 @@ API_DATA_LOADED = 'priceanalyzer_api_data_loaded'
 RANDOM_MINUTE = randint(0, 5)
 RANDOM_SECOND = randint(0, 59)
 
-EVENT_NEW_DATA = "priceanalyzer_update"
+EVENT_NEW_DATA = "priceanalyzer_new_day"
+EVENT_NEW_HOUR = "priceanalyzer_new_hour"
 EVENT_CHECKED_STUFF = 'pricanalyzer_checked_stuff'
 _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 
@@ -116,14 +117,15 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
             list(_REGIONS.keys())
         ),
         vol.Optional("friendly_name", default=""): cv.string,
-        # This is only needed if you want the some area but want the prices in a non local currency
         vol.Optional("currency", default=""): cv.string,
         vol.Optional("VAT", default=True): cv.boolean,
-        vol.Optional("precision", default=3): cv.positive_int,
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
+        vol.Optional("multiply_template", default='{{correction * 1}}'): cv.template,
+        vol.Optional("hours_to_boost", default=2): int,
+        vol.Optional("hours_to_save", default=2): int,
         vol.Optional("pa_price_before_active", default=0.20): float,
         vol.Optional("percent_difference", default=20): int,
         vol.Optional("price_before_active", default=0.20): float,
