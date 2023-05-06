@@ -49,10 +49,11 @@ from .const import (
     DEFAULT_REGION,
     DEFAULT_NAME,
     DEFAULT_TEMPLATE,
-    PLATFORM_SCHEMA
-    )   
+    PLATFORM_SCHEMA,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class NordpoolData:
     def __init__(self, hass: HomeAssistant) -> None:
@@ -92,7 +93,7 @@ class NordpoolData:
     async def update_tomorrow(self, n: datetime):
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
-        #self._tomorrow_valid = True
+        # self._tomorrow_valid = True
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns todays or tomorrows prices in a area in the currency"""
@@ -109,8 +110,8 @@ class NordpoolData:
             await self.update_today(None)
             await self.update_tomorrow(None)
 
-        #if(day == 'tomorrow'):
-            #self._tomorrow_valid = True
+        # if(day == 'tomorrow'):
+        # self._tomorrow_valid = True
 
         return self._data.get(currency, {}).get(day, {}).get(area)
 
@@ -124,15 +125,15 @@ class NordpoolData:
 
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrows prices in a area in the requested currency"""
-        
+
         dt = dt_utils.now()
-        if(dt.hour < 11):
+        if dt.hour < 11:
             return []
-        
-        #TODO Handle when API returns todays prices for tomorrow.
+
+        # TODO Handle when API returns todays prices for tomorrow.
         res = await self._someday(area, currency, "tomorrow")
-        if res and len(res) > 0 and len(res['values']) > 0:
-            starttime = res['values'][0].get('start', None)
+        if res and len(res) > 0 and len(res["values"]) > 0:
+            starttime = res["values"][0].get("start", None)
             if starttime:
                 start = dt_utils.as_local(starttime)
                 _LOGGER.debug("Fetching tomorrow. Start: %s", starttime)
@@ -155,20 +156,19 @@ class NordpoolData:
 
 
 async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
-    """Set up using yaml config file."""    
+    """Set up using yaml config file."""
     config = configEntry.data
 
     if DATA not in hass.data:
         hass.data[DATA] = {}
 
-    if DOMAIN not in hass.data and True: 
+    if DOMAIN not in hass.data and True:
         # TODO This is the reason why only one sensor sets up correctly at startup.
         # When the first sensor sets up, the rest does not because domain is in hass.data.
         # If we remove it like this, i think every sensor will use the same api instance?
-        #nope, data is called with config from Oslo, for Trondheim.
+        # nope, data is called with config from Oslo, for Trondheim.
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
-        
 
         async def new_day_cb(n):
             """Cb to handle some house keeping when it a new day."""
@@ -211,9 +211,7 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
             hass, new_day_cb, hour=0, minute=0, second=0
         )
 
-        cb_new_hr = async_track_time_change(
-            hass, new_hr, minute=0, second=0
-            )
+        cb_new_hr = async_track_time_change(hass, new_hr, minute=0, second=0)
 
         api.listeners.append(cb_update_tomorrow)
         api.listeners.append(cb_new_hr)
@@ -224,10 +222,10 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
     region = pa_config.get(CONF_REGION)
     friendly_name = pa_config.get("friendly_name", "")
     price_type = pa_config.get("price_type")
-    
+
     low_price_cutoff = pa_config.get("low_price_cutoff")
     currency = pa_config.get("currency")
-    vat = pa_config.get("VAT")    
+    vat = pa_config.get("VAT")
     use_cents = pa_config.get("price_in_cents")
     ad_template = pa_config.get("additional_costs")
     multiply_template = pa_config.get("multiply_template")
@@ -249,9 +247,9 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         num_hours_to_save,
         percent_difference,
         hass,
-        pa_config
+        pa_config,
     )
-    
+
     hass.data[DATA][region] = data
     return True
 
@@ -261,17 +259,20 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     return True
     return await _dry_setup(hass, config)
 
+
 async def async_migrate_entry(title, domain) -> bool:
-    #sorry, we dont support migrate
+    # sorry, we dont support migrate
     return True
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
     res = await _dry_setup(hass, entry)
-    #hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    # hass.config_entries.async_setup_platforms(entry, PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.add_update_listener(async_reload_entry)
     return res
+
 
 # async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry, options):
 #     res = await hass.config_entries.async_update_entry(entry,options)
@@ -292,10 +293,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return False
 
+
 async def async_remove_config_entry_device(
     hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
 ) -> bool:
-    res = await device_entry.async_unload_entry(hass,config_entry)
+    res = await device_entry.async_unload_entry(hass, config_entry)
     return res
 
 

@@ -102,7 +102,7 @@ class Data():
         self._config = config
 
         self._precision = 3
-    
+
         if vat is True:
             self._vat = _REGIONS[area][2]
         else:
@@ -164,6 +164,7 @@ class Data():
 
         attach(self._hass, self._ad_template)
 
+
         if not isinstance(self._multiply_template, Template):
             if self._multiply_template in (None, ""):
                 self._multiply_template = 1
@@ -176,9 +177,7 @@ class Data():
         attach(self._hass, self._multiply_template)
 
         self.multiply_template = multiply_template
-        
-        #Q how to setup a Home assistant devlopment environment for custom components?
-        
+
 
         # To control the updates.
         self._last_tick = None
@@ -373,13 +372,13 @@ class Data():
     def _is_gaining(self, hour, is_tomorrow) -> bool:
         threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
         percent_threshold = (1 - float(threshold))
-        
+
         #TODO, The logic is not quite right yet, but is the same as before.
         # the more hours set, the less threshold will matter, as it will compare more hours with the same threshold
         # as we compare now price with the price in X hours.
         # the more hours, the more difference the price will be, probably.
         # can we still compare the price to the hour or two before, but save X hours before?
-        
+
         price_now = self.get_price_for_hour(hour, is_tomorrow)
         if price_now is None:
             return False
@@ -391,20 +390,20 @@ class Data():
             price_next = max([next_hour, 0.00001])
             if (price_now / price_next) < percent_threshold:
                 return True
-        return False        
+        return False
 
     def _is_falling(self, hour, is_tomorrow) -> bool:
 
         # Get the threshold value from the settings
         threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
         percent_threshold = (1 + float(threshold))
-        
+
         # Get the current price
         price_now = self.get_price_for_hour(hour, is_tomorrow)
         price_next_hour = self.get_price_for_hour(hour + 1 , is_tomorrow)
         if price_now is None:
             return False
-        
+
         # Loop through the saved prices to see if any are greater than the threshold
         for i in reversed(range(self._num_hours_to_save or 2)):
             y = i + 1
@@ -415,8 +414,8 @@ class Data():
             if (price_now / price_next) > percent_threshold: # and price_now > price_next_hour:
                 return True
         return False
-        
-        
+
+
     def price_percent_to_average(self, item, is_tomorrow) -> float:
         """Price in percent to average price"""
         average = self._average if is_tomorrow else self._average_tomorrow
@@ -536,15 +535,15 @@ class Data():
             return None
 
     def _calc_price(self, value=None, fake_dt=None) -> float:
-        
-        
+
+
         """Calculate price based on the users settings."""
         if value is None:
             value = self._current_price
 
         if value is None or math.isinf(value):
             return 0
-        
+
 
         def faker():
             def inner(*_, **__):
@@ -818,7 +817,7 @@ class Data():
             item['is_falling_a_lot_next_hour'] = self._is_falling_alot_next_hour(
                 item)
 
-            item['is_cheap_compared_to_future'] = self._is_in_five_cheapest_hours_in_the_future(item)    
+            item['is_cheap_compared_to_future'] = self._is_in_five_cheapest_hours_in_the_future(item)
             # Todo, add this when complete.
             item['is_low_compared_to_tomorrow'] = self._is_low_compared_to_tomorrow(item)
 
@@ -962,7 +961,7 @@ class Data():
     async def new_hr(self) -> None:
         _LOGGER.debug("New hour!, Tomorrow calculated is: %s",self._tomorrow_calculated)
         await self.check_stuff()
-    
+
 
     async def new_day(self) -> None:
         await self.check_stuff()
