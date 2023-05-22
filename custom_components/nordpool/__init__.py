@@ -107,14 +107,13 @@ class NordpoolData:
 
     async def today(self, area: str, currency: str) -> dict:
         """Returns today's prices in an area in the requested currency"""
-        res = await self._someday(area, currency, "today")
-        return res
+        return await self._someday(area, currency, "today")
+        
 
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrow's prices in an area in the requested currency"""
-        res = await self._someday(area, currency, "tomorrow")
-        return res
-
+        return await self._someday(area, currency, "tomorrow")
+        
 
 async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
     """Set up using yaml config file."""
@@ -128,7 +127,7 @@ async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
             _LOGGER.debug("Called new_day_cb callback")
 
             for curr in api.currency:
-                if not api._data[curr]["tomorrow"]:
+                if not api._data.get(curr, {}).get("tomorrow"):
                     api._data[curr]["today"] = await api.update_today(None)
                 else:
                     api._data[curr]["today"] = api._data[curr]["tomorrow"]
