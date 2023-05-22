@@ -34,7 +34,7 @@ _PRICE_IN = {"kWh": 1000, "MWh": 1, "Wh": 1000 * 1000}
 _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
     "DK2": ["DKK", "Denmark", 0.25],
-    "FI": ["EUR", "Finland", 0.1],  # TODO: revert to 0.24 after 30.04.2023
+    "FI": ["EUR", "Finland", 0.24],
     "EE": ["EUR", "Estonia", 0.20],
     "LT": ["EUR", "Lithuania", 0.21],
     "LV": ["EUR", "Latvia", 0.21],
@@ -311,8 +311,6 @@ class NordpoolSensor(SensorEntity):
 
         self._additional_costs_value = template_value
         try:
-            # If the price is negative, subtract the additional costs from the price
-            template_value = abs(template_value) if price < 0 else template_value
             price += template_value
         except Exception:
             _LOGGER.debug(
