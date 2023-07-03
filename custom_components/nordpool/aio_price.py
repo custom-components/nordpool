@@ -179,7 +179,10 @@ class AioPrices(Prices):
 
     # Add more exceptions as we find them. KeyError is raised when the api return
     # junk due to currency not being available in the data.
-    @backoff.on_exception(backoff.expo, (aiohttp.ClientError, KeyError), logger=_LOGGER)
+    @backoff.on_exception(
+        backoff.expo,
+        (aiohttp.ClientError, KeyError),
+        logger=_LOGGER, max_value=20, max_time=60)
     async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.
