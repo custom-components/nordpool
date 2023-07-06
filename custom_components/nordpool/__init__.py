@@ -74,12 +74,12 @@ class NordpoolData:
             if data:
                 self._data[currency][type_] = data["areas"]
 
-    async def update_today(self, _: datetime):
+    async def update_today(self):
         """Update today's prices"""
         _LOGGER.debug("Updating today's prices.")
         await self._update("today")
 
-    async def update_tomorrow(self, _: datetime):
+    async def update_tomorrow(self):
         """Update tomorrows prices."""
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
@@ -96,8 +96,8 @@ class NordpoolData:
         # set in the sensor.
         if currency not in self.currency:
             self.currency.append(currency)
-            await self.update_today(None)
-            await self.update_tomorrow(None)
+            await self.update_today()
+            await self.update_tomorrow()
 
             # Send a new data request after new data is updated for this first run
             # This way if the user has multiple sensors they will all update
@@ -128,7 +128,7 @@ async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
 
             for curr in api.currency:
                 if not api._data.get(curr, {}).get("tomorrow"):
-                    api._data[curr]["today"] = await api.update_today(None)
+                    api._data[curr]["today"] = await api.update_today()
                 else:
                     api._data[curr]["today"] = api._data[curr]["tomorrow"]
                 api._data[curr]["tomorrow"] = {}
@@ -140,12 +140,12 @@ async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
             _LOGGER.debug("Called new_hr callback")
             async_dispatcher_send(hass, EVENT_NEW_HOUR)
 
-        async def new_data_cb(tdo):
+        async def new_data_cb(_):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data
             """
             # _LOGGER.debug("Called new_data_cb")
-            await api.update_tomorrow(tdo)
+            await api.update_tomorrow()
             async_dispatcher_send(hass, EVENT_NEW_PRICE)
 
         # Handles futures updates
