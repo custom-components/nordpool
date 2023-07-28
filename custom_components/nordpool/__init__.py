@@ -13,7 +13,7 @@ from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_utils
 from pytz import timezone
 
-from .aio_price import AioPrices
+from .aio_price import AioPrices, InvalidValueException
 from .events import async_track_time_change_in_tz
 
 DOMAIN = "nordpool"
@@ -97,7 +97,10 @@ class NordpoolData:
         if currency not in self.currency:
             self.currency.append(currency)
             await self.update_today()
-            await self.update_tomorrow()
+            try:
+                await self.update_tomorrow()
+            except InvalidValueException:
+                _LOGGER.debug("No data available for tomorrow, retrying later")
 
             # Send a new data request after new data is updated for this first run
             # This way if the user has multiple sensors they will all update
