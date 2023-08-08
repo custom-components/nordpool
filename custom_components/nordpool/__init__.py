@@ -1,9 +1,9 @@
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
-from functools import partial
+from datetime import timedelta
 from random import randint
 
+import backoff
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Config, HomeAssistant
@@ -13,7 +13,7 @@ from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_utils
 from pytz import timezone
 
-from .aio_price import AioPrices
+from .aio_price import AioPrices, InvalidValueException
 from .events import async_track_time_change_in_tz
 
 DOMAIN = "nordpool"
@@ -74,12 +74,12 @@ class NordpoolData:
             if data:
                 self._data[currency][type_] = data["areas"]
 
-    async def update_today(self, _: datetime):
+    async def update_today(self):
         """Update today's prices"""
         _LOGGER.debug("Updating today's prices.")
         await self._update("today")
 
-    async def update_tomorrow(self, _: datetime):
+    async def update_tomorrow(self):
         """Update tomorrows prices."""
         _LOGGER.debug("Updating tomorrows prices.")
         await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
@@ -96,8 +96,11 @@ class NordpoolData:
         # set in the sensor.
         if currency not in self.currency:
             self.currency.append(currency)
-            await self.update_today(None)
-            await self.update_tomorrow(None)
+            await self.update_today()
+            try:
+                await self.update_tomorrow()
+            except InvalidValueException:
+                _LOGGER.debug("No data available for tomorrow, retrying later")
 
             # Send a new data request after new data is updated for this first run
             # This way if the user has multiple sensors they will all update
@@ -128,7 +131,7 @@ async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
 
             for curr in api.currency:
                 if not api._data.get(curr, {}).get("tomorrow"):
-                    api._data[curr]["today"] = await api.update_today(None)
+                    api._data[curr]["today"] = await api.update_today()
                 else:
                     api._data[curr]["today"] = api._data[curr]["tomorrow"]
                 api._data[curr]["tomorrow"] = {}
@@ -140,12 +143,16 @@ async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
             _LOGGER.debug("Called new_hr callback")
             async_dispatcher_send(hass, EVENT_NEW_HOUR)
 
-        async def new_data_cb(tdo):
+        @backoff.on_exception(
+            backoff.constant,
+            (InvalidValueException),
+            logger=_LOGGER, interval=600, max_time=7200, jitter=None)
+        async def new_data_cb(_):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data
             """
             # _LOGGER.debug("Called new_data_cb")
-            await api.update_tomorrow(tdo)
+            await api.update_tomorrow()
             async_dispatcher_send(hass, EVENT_NEW_PRICE)
 
         # Handles futures updates
