@@ -56,7 +56,7 @@ class NordpoolData:
         self.currency = []
         self.listeners = []
 
-    async def _update(self, type_="today", dt=None):
+    async def _update(self, type_="today", dt=None, areas=None):
         _LOGGER.debug("calling _update %s %s", type_, dt)
         hass = self._hass
         client = async_get_clientsession(hass)
@@ -70,19 +70,19 @@ class NordpoolData:
         # Keeping this for now, but this should be changed.
         for currency in self.currency:
             spot = AioPrices(currency, client)
-            data = await spot.hourly(end_date=dt)
+            data = await spot.hourly(end_date=dt, areas=areas)
             if data:
                 self._data[currency][type_] = data["areas"]
 
-    async def update_today(self):
+    async def update_today(self, areas=None):
         """Update today's prices"""
         _LOGGER.debug("Updating today's prices.")
-        await self._update("today")
+        await self._update("today", areas=areas)
 
-    async def update_tomorrow(self):
+    async def update_tomorrow(self, areas=None):
         """Update tomorrows prices."""
         _LOGGER.debug("Updating tomorrows prices.")
-        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
+        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24), areas=areas)
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns today's or tomorrow's prices in an area in the currency"""
@@ -96,9 +96,12 @@ class NordpoolData:
         # set in the sensor.
         if currency not in self.currency:
             self.currency.append(currency)
-            await self.update_today()
             try:
-                await self.update_tomorrow()
+                await self.update_today(areas=[area])
+            except InvalidValueException:
+                _LOGGER.debug("No data available for today, retrying later")
+            try:
+                await self.update_tomorrow(areas=[area])
             except InvalidValueException:
                 _LOGGER.debug("No data available for tomorrow, retrying later")
 
