@@ -55,34 +55,41 @@ class NordpoolData:
         self._data = defaultdict(dict)
         self.currency = []
         self.listeners = []
+        self.areas = []
 
     async def _update(self, type_="today", dt=None, areas=None):
-        _LOGGER.debug("calling _update %s %s", type_, dt)
+        _LOGGER.debug("calling _update %s %s %s", type_, dt, areas)
         hass = self._hass
         client = async_get_clientsession(hass)
 
         if dt is None:
             dt = dt_utils.now()
 
+        if areas is not None:
+            self.areas += [area for area in areas if area not in self.areas]
         # We dont really need today and morrow
         # when the region is in another timezone
         # as we request data for 3 days anyway.
         # Keeping this for now, but this should be changed.
         for currency in self.currency:
             spot = AioPrices(currency, client)
-            data = await spot.hourly(end_date=dt, areas=areas)
+            data = await spot.hourly(end_date=dt, areas=self.areas if len(self.areas) > 0 else None)
             if data:
                 self._data[currency][type_] = data["areas"]
 
     async def update_today(self, areas=None):
         """Update today's prices"""
         _LOGGER.debug("Updating today's prices.")
-        await self._update("today", areas=areas)
+        if areas is not None:
+            self.areas += [area for area in areas if area not in self.areas]
+        await self._update("today", areas=self.areas if len(self.areas) > 0 else None)
 
     async def update_tomorrow(self, areas=None):
         """Update tomorrows prices."""
         _LOGGER.debug("Updating tomorrows prices.")
-        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24), areas=areas)
+        if areas is not None:
+            self.areas += [area for area in areas if area not in self.areas]
+        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24), areas=self.areas if len(self.areas) > 0 else None)
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns today's or tomorrow's prices in an area in the currency"""
@@ -92,16 +99,18 @@ class NordpoolData:
                 % (currency, ", ".join(_CURRENCY_LIST))
             )
 
+        if area not in self.areas:
+            self.areas.append(area);
         # This is needed as the currency is
         # set in the sensor.
         if currency not in self.currency:
             self.currency.append(currency)
             try:
-                await self.update_today(areas=[area])
+                await self.update_today(areas=self.areas)
             except InvalidValueException:
                 _LOGGER.debug("No data available for today, retrying later")
             try:
-                await self.update_tomorrow(areas=[area])
+                await self.update_tomorrow(areas=self.areas)
             except InvalidValueException:
                 _LOGGER.debug("No data available for tomorrow, retrying later")
 
@@ -121,7 +130,7 @@ class NordpoolData:
         return await self._someday(area, currency, "tomorrow")
         
 
-async def _dry_setup(hass: HomeAssistant, _: Config) -> bool:
+async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
     """Set up using yaml config file."""
     if DOMAIN not in hass.data:
         api = NordpoolData(hass)
