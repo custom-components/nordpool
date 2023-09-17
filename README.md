@@ -25,6 +25,11 @@ The Nordpool sensor provides the current price with today's and tomorrow's price
 ## Installation
 
 ### Option 1: HACS
+
+- Follow [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=custom-components&repository=nordpool&category=integration) and install it
+- Restart Home Assistant
+
+  *or*
 - Go to `HACS` -> `Integrations`, 
 - Select `+`, 
 - Search for `nordpool` and install it,
