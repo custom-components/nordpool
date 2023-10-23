@@ -1,0 +1,60 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PriceAnalyzer Sensor",
+        "description": "Nastavenie PriceAnalyzer snímača",
+        "data": {
+          "region": "Región",
+          "currency": "mena",
+          "VAT": "Vrátane DPH",
+          "precision": "Koľko desatinných miest zobraziť",
+          "low_price_cutoff": "nízka cena odrezaná",
+          "price_in_cents": "Cena v centoch",
+          "price_type": "Cena vo formáte",
+          "additional_costs": "Šablóna pre dodatočné náklady",
+          "percent_difference": "Percentuálny rozdiel medzi Min a Max za deň pred obťažovaním",
+          "hot_water_config" : "Nastavenia vlastných stupňov pre snímač teplej vody",
+          "price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou PriceAnalyzer horúca voda",
+          "pa_price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou snímača PriceAnalyzer",
+          "multiply_template": "Šablóna na opravu cien",
+          "hours_to_boost": "Hodiny VT",
+          "hours_to_save": "Hodiny NT"
+        }
+      }
+    },
+    "error": {
+      "name_exists": "Názov už existuje",
+      "invalid_template": "Šablóna je neplatná, skontrolujte https://github.com/custom-components/nordpool"
+    }
+  },
+  "options": {
+    "step": {
+      "edit": {
+        "title": "PriceAnalyzer snímač",
+        "description": "Editovať PriceAnalyzer snímač",
+        "data": {
+          "region": "Región",
+          "currency": "mena",
+          "VAT": "Vrátane DPH",
+          "precision": "Koľko desatinných miest zobraziť",
+          "low_price_cutoff": "nízka cena odrezaná",
+          "price_in_cents": "Cena v centoch",
+          "price_type": "Cena vo formáte",
+          "additional_costs": "Šablóna pre dodatočné náklady",
+          "percent_difference": "Percentuálny rozdiel medzi Min a Max za deň pred obťažovaním",
+          "hot_water_config" : "Nastavenia vlastných stupňov pre snímač teplej vody",
+          "price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou PriceAnalyzer teplá voda",
+          "pa_price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou snímača PriceAnalyzer",
+          "multiply_template": "Šablóna na opravu cien",
+          "hours_to_boost": "Hodiny VT",
+          "hours_to_save": "Hodiny NT"
+        }
+      }
+    },
+    "error": {
+      "name_exists": "Názov už existuje",
+      "invalid_template": "Šablóna je neplatná, skontrolujte https://github.com/custom-components/nordpool"
+    }
+  }
+}
