@@ -749,7 +749,9 @@ class Data:
         hour = 0
         percent_difference = (self.percent_difference + 100) / 100
         if is_tomorrow == False:
-            difference = (self._min / self._max) - 1
+            max_today = max([self._max, 0.00001])
+            min_today = max([self._min, 0.00001])
+            difference = (min_today / max_today) - 1
             self._percent_threshold = (difference / 4) * -1
             # TODO, consider lowering thershold. for more micro-calculations. also other place?
             self._diff = self._max / max([self._min, 0.00001])
