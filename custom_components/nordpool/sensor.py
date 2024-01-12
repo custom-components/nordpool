@@ -419,6 +419,7 @@ class NordpoolSensor(SensorEntity):
             "tomorrow_valid": self.tomorrow_valid,
             "raw_today": self.raw_today,
             "raw_tomorrow": self.raw_tomorrow,
+            "raw_combined": self.raw_combined,
             "current_price": self.current_price,
             "additional_costs_current_hour": self.additional_costs,
             "price_in_cents": self._use_cents,
@@ -445,6 +446,13 @@ class NordpoolSensor(SensorEntity):
     def raw_tomorrow(self) -> list:
         """Raw tomorrow"""
         return self._add_raw(self._data_tomorrow)
+        
+    @property
+    def raw_combined(self) -> list:
+        """Raw combined """
+        if (self.tomorrow_valid):
+            return(self.raw_today + self.raw_tomorrow)
+        return(self.raw_today)
 
     @property
     def tomorrow_valid(self) -> bool:
