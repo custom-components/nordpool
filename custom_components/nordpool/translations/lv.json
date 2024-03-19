@@ -1,0 +1,25 @@
+{
+    "config": {
+        "title": "Nordpool",
+        "step": {
+            "user": {
+                "title": "Nordpool Sensors",
+                "description": "Iestatīt Nordpool biržas sensoru",
+                "data": {
+                    "region": "Reģions",
+                    "currency": "Valūta",
+                    "VAT": "Iekļaut PVN",
+                    "precision": "Decimāldaļas noapaļošanas precizitāte",
+                    "low_price_cutoff": "Zemās cenas līmenis procentos",
+                    "price_in_cents": "Cena centos",
+                    "price_type": "Cenas formāts",
+                    "additional_costs": "Papildus izmaksu veidne"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Šāds nosaukums jau eksistē",
+            "invalid_template": "Veidne nav korekta, skatīt https://github.com/custom-components/nordpool"
+        }
+    }
+}
