@@ -253,7 +253,7 @@ class VVBSensor(SensorEntity):
         self._data.update(data)
 
     def update_sensor(self):
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
@@ -346,7 +346,7 @@ class PriceAnalyzerSensor(SensorEntity):
         self._data.update(data)
 
     def update_sensor(self):
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
@@ -418,7 +418,7 @@ class PriceSensor(SensorEntity):
         self._data.update(data)
 
     def update_sensor(self):
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
