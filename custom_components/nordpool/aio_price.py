@@ -227,10 +227,17 @@ class AioPrices(Prices):
 
         res = await asyncio.gather(*jobs)
 
-        raw = [self._parse_json(i, areas) for i in res]
+        raw = [await self._async_parse_json(i, areas) for i in res]
         # Just to test should be removed
         # exceptions_raiser()
         return await join_result_for_correct_time(raw, end_date)
+
+    async def _async_parse_json(self, data, areas):
+        """
+        Async version of _parse_json to prevent blocking calls inside the event loop.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._parse_json, data, areas)
 
     async def hourly(self, end_date=None, areas=None):
         """Helper to fetch hourly data, see Prices.fetch()"""
