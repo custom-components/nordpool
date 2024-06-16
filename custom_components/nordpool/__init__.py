@@ -11,7 +11,6 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.util import dt as dt_utils
-from pytz import timezone
 
 from .aio_price import AioPrices, InvalidValueException
 from .events import async_track_time_change_in_tz
@@ -174,7 +173,7 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
             hour=13,
             minute=RANDOM_MINUTE,
             second=RANDOM_SECOND,
-            tz=timezone("Europe/Stockholm"),
+            tz=await dt_utils.async_get_time_zone("Europe/Stockholm"),
         )
 
         cb_new_day = async_track_time_change(

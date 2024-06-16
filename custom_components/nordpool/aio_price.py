@@ -3,7 +3,7 @@ import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
-from dateutil import tz
+from homeassistant.util import dt as dt_utils
 from dateutil.parser import parse as parse_dt
 import backoff
 import aiohttp
@@ -97,7 +97,7 @@ class InvalidValueException(ValueError):
     pass
 
 
-def join_result_for_correct_time(results, dt):
+async def join_result_for_correct_time(results, dt):
     """Parse a list of responses from the api
     to extract the correct hours in there timezone.
     """
@@ -113,7 +113,7 @@ def join_result_for_correct_time(results, dt):
                 _LOGGER.debug("Skipping %s", key)
                 continue
             else:
-                zone = tz.gettz(zone)
+                zone = await dt_utils.async_get_time_zone(zone)
 
             # We add junk here as the peak etc
             # from the api is based on cet, not the
@@ -227,10 +227,17 @@ class AioPrices(Prices):
 
         res = await asyncio.gather(*jobs)
 
-        raw = [self._parse_json(i, areas) for i in res]
+        raw = [await self._async_parse_json(i, areas) for i in res]
         # Just to test should be removed
         # exceptions_raiser()
-        return join_result_for_correct_time(raw, end_date)
+        return await join_result_for_correct_time(raw, end_date)
+
+    async def _async_parse_json(self, data, areas):
+        """
+        Async version of _parse_json to prevent blocking calls inside the event loop.
+        """
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._parse_json, data, areas)
 
     async def hourly(self, end_date=None, areas=None):
         """Helper to fetch hourly data, see Prices.fetch()"""
