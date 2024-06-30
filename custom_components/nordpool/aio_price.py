@@ -141,13 +141,13 @@ async def join_result_for_correct_time(results, dt):
                 local = val["start"].astimezone(zone)
                 local_end = val["end"].astimezone(zone)
                 if start_of_day <= local and local <= end_of_day:
-                    if val['value'] in INVALID_VALUES:
-                        raise InvalidValueException(f"Invalid value in {val} for area '{key}'")
                     if local == local_end:
                         _LOGGER.info(
                             "Hour has the same start and end, most likly due to dst change %s exluded this hour",
                             val,
                         )
+                    elif val['value'] in INVALID_VALUES:
+                        raise InvalidValueException(f"Invalid value in {val} for area '{key}'")
                     else:
                         fin["areas"][key]["values"].append(val)
 
