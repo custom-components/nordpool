@@ -13,7 +13,7 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/custom-components/nordpool/issues",
   "requirements": [
-    "nordpool>=0.3.3",
+    "nordpool>=0.2",
     "backoff"
   ],
   "version": "0.0.14"
