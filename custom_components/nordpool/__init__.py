@@ -111,10 +111,6 @@ class NordpoolData:
                 await self.update_today(areas=self.areas)
             except InvalidValueException:
                 _LOGGER.debug("No data available for today, retrying later")
-            try:
-                await self.update_tomorrow(areas=self.areas)
-            except InvalidValueException:
-                _LOGGER.debug("No data available for tomorrow, retrying later")
 
             # Send a new data request after new data is updated for this first run
             # This way if the user has multiple sensors they will all update
