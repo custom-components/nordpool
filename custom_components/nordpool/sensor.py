@@ -8,7 +8,7 @@ import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.template import Template, attach
+from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_utils
 
 # Import sensor entity and classes.
@@ -197,8 +197,6 @@ class NordpoolSensor(SensorEntity):
         else:
             if self._ad_template.template in ("", None):
                 self._ad_template = cv.template(DEFAULT_TEMPLATE)
-
-        attach(self._hass, self._ad_template)
 
         # To control the updates.
         self._last_tick = None
