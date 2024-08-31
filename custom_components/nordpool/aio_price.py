@@ -189,8 +189,8 @@ class AioPrices(Prices):
     # junk due to currency not being available in the data.
     @backoff.on_exception(
         backoff.expo,
-        (aiohttp.ClientError, KeyError, InvalidValueException),
-        logger=_LOGGER, max_value=20, max_time=10800)
+        (aiohttp.ClientError, KeyError),
+        logger=_LOGGER, max_value=20)
     async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.
@@ -226,10 +226,8 @@ class AioPrices(Prices):
         ]
 
         res = await asyncio.gather(*jobs)
-
         raw = [await self._async_parse_json(i, areas) for i in res]
-        # Just to test should be removed
-        # exceptions_raiser()
+        
         return await join_result_for_correct_time(raw, end_date)
 
     async def _async_parse_json(self, data, areas):
