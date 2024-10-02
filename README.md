@@ -210,7 +210,7 @@ Add 21% tax and overhead cost stored in a helper
 - ```price_percent_to_average```: 
 - ```today```: List of all values
 - ```tomorrow```: list of all values
-- ```tomorrow_valid```: If tommorow´s values is in yet
+- ```tomorrow_valid```: If tomorow´s values is in yet
 - ```raw_today```: Array of all values
 - ```raw_tomorrow```: Array of values
 - ```current_price```: What the current price is
