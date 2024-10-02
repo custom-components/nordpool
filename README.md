@@ -193,6 +193,30 @@ Add 21% tax and overhead cost stored in a helper
 
 ## Other
 
+### Extra state attributes
+
+- ```average```: An average of every today
+- ```off_peak_1```: Off peak 1 refers to the average price of the time period from midnight to 8am
+- ```off_peak_2```: Off peak 2 refers to the average price of the time period from 8pm to midnight
+- ```peak```: Peak refers to the average price of the period from 8am to 8pm
+- ```min```: Lowest value today
+- ```max```: Highest value today
+- ```mean```: Actually just median of all values
+- ```unit```: what that of Unit, eg: kWh
+- ```currency```: What type of Currency
+- ```country```: What Country data is fetched for
+- ```region```: The specific region of prices
+- ```low_price```: If current hour is the lowest of the day
+- ```price_percent_to_average```: 
+- ```today```: List of all values
+- ```tomorrow```: list of all values
+- ```tomorrow_valid```: If tommorow´s values is in yet
+- ```raw_today```: Array of all values
+- ```raw_tomorrow```: Array of values
+- ```current_price```: What the current price is
+- ```additional_costs_current_hour```: If there is any additional costs this hour
+- ```price_in_cents```: Boolean if prices is in cents
+
 ### One sensor per hour
 
 By default, one sensor is created with the current energy price. The prices for other hours are stored in the attributes of this sensor. Most example code you will find uses the default one sensor option, but you can run the `create_template` script to create separate sensors for every hour. See the help options with ```python create_template --help```. You can run the script on any system where Python is installed (install the required packages `pyyaml` and `click` using `pip install pyyaml click`)
