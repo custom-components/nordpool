@@ -45,7 +45,7 @@ class AioPrices(Prices):
 
         return await resp.json()
 
-    def _parse_json(self, data, areas=[]):
+    def _parse_json(self, data, areas=None):
         """
         Parse json response from fetcher.
         Returns dictionary with
@@ -59,6 +59,8 @@ class AioPrices(Prices):
         """
 
         # If areas isn't a list, make it one
+        if areas is None:
+            areas = []
         if not isinstance(areas, list):
             areas = list(areas)
 

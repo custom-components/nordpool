@@ -171,7 +171,7 @@ class AioPrices(Prices):
 
         return await resp.json()
 
-    def _parse_json(self, data, areas=[]):
+    def _parse_json(self, data, areas=None):
         """
         Parse json response from fetcher.
         Returns dictionary with
@@ -184,7 +184,10 @@ class AioPrices(Prices):
                 - possible other values, such as min, max, average for hourly
         """
 
+        if areas is None:
+            areas = []
         # If areas isn't a list, make it one
+
         if not isinstance(areas, list):
             areas = list(areas)
 
@@ -244,8 +247,8 @@ class AioPrices(Prices):
     async def _fetch_json(self, data_type, end_date=None, areas=None):
         """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
-        if areas is None:
-            areas = []
+        if areas is None or len(areas) == 0:
+            raise Exception("Cannot query with empty areas")
         if end_date is None:
             end_date = date.today() + timedelta(days=1)
         # If end_date isn't a date or datetime object, try to parse a string
