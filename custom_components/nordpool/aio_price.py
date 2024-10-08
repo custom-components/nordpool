@@ -138,7 +138,7 @@ async def join_result_for_correct_time(results, dt):
             for val in values:
                 local = val["start"].astimezone(zone)
                 local_end = val["end"].astimezone(zone)
-                if start_of_day <= local and local <= end_of_day:
+                if start_of_day <= local <= end_of_day:
                     if local == local_end:
                         _LOGGER.info(
                             "Hour has the same start and end, most likly due to dst change %s exluded this hour",
@@ -168,6 +168,9 @@ class AioPrices(Prices):
 
         resp = await self.client.get(url, params=kwargs)
         _LOGGER.debug("requested %s %s", resp.url, kwargs)
+
+        if resp.status == 204:
+            return None
 
         return await resp.json()
 
@@ -306,7 +309,7 @@ class AioPrices(Prices):
         ]
 
         res = await asyncio.gather(*jobs)
-        raw = [await self._async_parse_json(i, areas) for i in res]
+        raw = [await self._async_parse_json(i, areas) for i in res if i]
 
         return await join_result_for_correct_time(raw, end_date)
 
