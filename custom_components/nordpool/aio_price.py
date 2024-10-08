@@ -3,16 +3,16 @@ import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
-from homeassistant.util import dt as dt_utils
-from dateutil.parser import parse as parse_dt
-import backoff
 import aiohttp
+import backoff
+from dateutil.parser import parse as parse_dt
+from homeassistant.util import dt as dt_utils
+from nordpool.base import CurrencyMismatch
 from nordpool.elspot import Prices
 
-from .misc import add_junk, exceptions_raiser
+from .misc import add_junk
 
 _LOGGER = logging.getLogger(__name__)
-
 
 tzs = {
     "DK1": "Europe/Copenhagen",
@@ -21,12 +21,11 @@ tzs = {
     "EE": "Europe/Tallinn",
     "LT": "Europe/Vilnius",
     "LV": "Europe/Riga",
-    "Oslo": "Europe/Oslo",
-    "Kr.sand": "Europe/Oslo",
-    "Bergen": "Europe/Oslo",
-    "Molde": "Europe/Oslo",
-    "Tr.heim": "Europe/Oslo",
-    "Tromsø": "Europe/Oslo",
+    "NO1": "Europe/Oslo",
+    "NO2": "Europe/Oslo",
+    "NO3": "Europe/Oslo",
+    "NO4": "Europe/Oslo",
+    "NO5": "Europe/Oslo",
     "SE1": "Europe/Stockholm",
     "SE2": "Europe/Stockholm",
     "SE3": "Europe/Stockholm",
@@ -37,9 +36,8 @@ tzs = {
     "NL": "Europe/Amsterdam",
     "BE": "Europe/Brussels",
     "AT": "Europe/Vienna",
-    "DE-LU": "Europe/Berlin",
+    "GER": "Europe/Berlin",
 }
-
 
 # List of page index for hourly data
 # Some are disabled as they don't contain the other currencies, NOK etc,
@@ -161,7 +159,10 @@ class AioPrices(Prices):
         super().__init__(currency)
         self.client = client
         self.timeezone = timeezone
-        self.API_URL_CURRENCY = "https://www.nordpoolgroup.com/api/marketdata/page/%s"
+        (self.HOURLY, self.DAILY, self.WEEKLY, self.MONTHLY, self.YEARLY) = ("DayAheadPrices", "AggregatePrices",
+                                                                             "AggregatePrices", "AggregatePrices",
+                                                                             "AggregatePrices")
+        self.API_URL = "https://dataportal-api.nordpoolgroup.com/api/%s"
 
     async def _io(self, url, **kwargs):
 
@@ -170,19 +171,95 @@ class AioPrices(Prices):
 
         return await resp.json()
 
-    async def _fetch_json(self, data_type, end_date=None):
+    def _parse_json(self, data, areas=[]):
+        """
+        Parse json response from fetcher.
+        Returns dictionary with
+            - start time
+            - end time
+            - update time
+            - currency
+            - dictionary of areas, based on selection
+                - list of values (dictionary with start and endtime and value)
+                - possible other values, such as min, max, average for hourly
+        """
+
+        # If areas isn't a list, make it one
+        if not isinstance(areas, list):
+            areas = list(areas)
+
+        if data.get("status", 200) != 200 and "version" not in data:
+            raise Exception(f"Invalid response from Nordpool API: {data}")
+
+        # Update currency from data
+        currency = data['currency']
+
+        # Ensure that the provided currency match the requested one
+        if currency != self.currency:
+            raise CurrencyMismatch
+
+        start_time = None
+        end_time = None
+
+        if len(data['multiAreaEntries']) > 0:
+            start_time = self._parse_dt(data['multiAreaEntries'][0]['deliveryStart'])
+            end_time = self._parse_dt(data['multiAreaEntries'][-1]['deliveryEnd'])
+        updated = self._parse_dt(data['updatedAt'])
+
+        area_data = {}
+
+        # Loop through response rows
+        for r in data['multiAreaEntries']:
+            row_start_time = self._parse_dt(r['deliveryStart'])
+            row_end_time = self._parse_dt(r['deliveryEnd'])
+
+            # Loop through columns
+            for area_key in r['entryPerArea'].keys():
+                area_price = r['entryPerArea'][area_key]
+                # If areas is defined and name isn't in areas, skip column
+                if area_key not in areas:
+                    continue
+
+                # If name isn't in area_data, initialize dictionary
+                if area_key not in area_data:
+                    area_data[area_key] = {
+                        'values': [],
+                    }
+
+                # Append dictionary to value list
+                area_data[area_key]['values'].append({
+                    'start': row_start_time,
+                    'end': row_end_time,
+                    'value': self._conv_to_float(area_price),
+                })
+
+        return {
+            'start': start_time,
+            'end': end_time,
+            'updated': updated,
+            'currency': currency,
+            'areas': area_data
+        }
+
+    async def _fetch_json(self, data_type, end_date=None, areas=None):
         """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
+        if areas is None:
+            areas = []
         if end_date is None:
             end_date = date.today() + timedelta(days=1)
         # If end_date isn't a date or datetime object, try to parse a string
         if not isinstance(end_date, date) and not isinstance(end_date, datetime):
             end_date = parse_dt(end_date)
 
+
+
         return await self._io(
             self.API_URL % data_type,
             currency=self.currency,
-            endDate=end_date.strftime("%d-%m-%Y"),
+            market="DayAhead",
+            deliveryArea=",".join(areas),
+            date=end_date.strftime("%Y-%m-%d"),
         )
 
     # Add more exceptions as we find them. KeyError is raised when the api return
@@ -220,14 +297,14 @@ class AioPrices(Prices):
         tomorrow = datetime.now() + timedelta(days=1)
 
         jobs = [
-            self._fetch_json(data_type, yesterday),
-            self._fetch_json(data_type, today),
-            self._fetch_json(data_type, tomorrow),
+            self._fetch_json(data_type, yesterday, areas),
+            self._fetch_json(data_type, today, areas),
+            self._fetch_json(data_type, tomorrow, areas),
         ]
 
         res = await asyncio.gather(*jobs)
         raw = [await self._async_parse_json(i, areas) for i in res]
-        
+
         return await join_result_for_correct_time(raw, end_date)
 
     async def _async_parse_json(self, data, areas):
@@ -269,6 +346,9 @@ class AioPrices(Prices):
 
     def _conv_to_float(self, s):
         """Convert numbers to float. Return infinity, if conversion fails."""
+        # Skip if already float
+        if isinstance(s, float):
+            return s
         try:
             return float(s.replace(",", ".").replace(" ", ""))
         except ValueError:
