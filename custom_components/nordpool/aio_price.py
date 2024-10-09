@@ -9,6 +9,7 @@ from dateutil.parser import parse as parse_dt
 from homeassistant.util import dt as dt_utils
 from nordpool.base import CurrencyMismatch
 from nordpool.elspot import Prices
+from pytz import timezone
 
 from .misc import add_junk
 
@@ -173,6 +174,13 @@ class AioPrices(Prices):
             return None
 
         return await resp.json()
+
+    def _parse_dt(self, time_str):
+        ''' Parse datetimes to UTC from Stockholm time, which Nord Pool uses. '''
+        time = parse_dt(time_str, tzinfos={"Z": timezone("Europe/Stockholm")})
+        if time.tzinfo is None:
+            return timezone('Europe/Stockholm').localize(time).astimezone(utc)
+        return time.astimezone(utc)
 
     def _parse_json(self, data, areas=None):
         """
