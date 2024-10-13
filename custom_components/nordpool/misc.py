@@ -22,6 +22,8 @@ __all__ = [
 
 _LOGGER = logging.getLogger(__name__)
 
+stockholm_tz = timezone("Europe/Stockholm")
+
 
 def exceptions_raiser():
     """Utility to check that all exceptions are raised."""
@@ -50,7 +52,7 @@ def add_junk(d):
 
 def stock(d):
     """convert datetime to stocholm time."""
-    return d.astimezone(timezone("Europe/Stockholm"))
+    return d.astimezone(stockholm_tz)
 
 
 def start_of(d, typ_="hour"):
