@@ -14,20 +14,20 @@
                     "price_in_cents": "Price in cents",
                     "price_type": "Energy scale",
                     "additional_costs": "Template for additional costs"
-                }
-            },
-            "reconfigure_confirm": {
-                "title": "Nordpool Sensor",
-                "description": "Reconfigure a Nordpool sensor",
-                "data": {
-                    "region": "Region",
-                    "currency": "Currency",
-                    "VAT": "Include VAT",
-                    "precision": "Decimal rounding precision",
-                    "low_price_cutoff": "Low price percentage",
-                    "price_in_cents": "Price in cents",
-                    "price_type": "Energy scale",
-                    "additional_costs": "Template for additional costs"
+                },
+                "reconfigure_confirm": {
+                    "title": "Nordpool Sensor",
+                    "description": "Reconfigure Nordpool sensor",
+                    "data": {
+                        "region": "Region",
+                        "currency": "Currency",
+                        "VAT": "Include VAT",
+                        "precision": "Decimal rounding precision",
+                        "low_price_cutoff": "Low price percentage",
+                        "price_in_cents": "Price in cents",
+                        "price_type": "Energy scale",
+                        "additional_costs": "Template for additional costs"
+                    }
                 }
             }
         },

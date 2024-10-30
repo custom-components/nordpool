@@ -3,12 +3,27 @@
         "title": "Nord Pool",
         "step": {
             "user": {
-                "title": "Sensor",
+                "title": "Nordpool Sensor",
                 "description": "Konfigurera en Nord Pool-sensor",
                 "data": {
                     "region": "Region",
                     "friendly_name": "Visningsnamn",
-                    "currency": "SEK",
+                    "currency": "Valuta",
+                    "VAT": "Inkludera moms",
+                    "precision": "Hur många decimaler ska visas",
+                    "low_price_cutoff": "Lägsta prisnivå",
+                    "price_in_cents": "Pris i ören",
+                    "price_type": "Prisformat",
+                    "additional_costs": "Mall för ytterligare kostnader"
+                }
+            },
+            "reconfigure_confirm": {
+                "title": "Nordpool Sensor",
+                "description": "Konfigurera en Nord Pool-sensor",
+                "data": {
+                    "region": "Region",
+                    "friendly_name": "Visningsnamn",
+                    "currency": "Valuta",
                     "VAT": "Inkludera moms",
                     "precision": "Hur många decimaler ska visas",
                     "low_price_cutoff": "Lägsta prisnivå",
