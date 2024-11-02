@@ -6,11 +6,12 @@ from random import randint
 import backoff
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Config, HomeAssistant
+from homeassistant.core import HomeAssistant
 from homeassistant.const import Platform
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_time_change
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_utils
 
 from .aio_price import AioPrices, InvalidValueException
@@ -132,7 +133,7 @@ class NordpoolData:
         return await self._someday(area, currency, "tomorrow")
         
 
-async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
+async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up using yaml config file."""
     if DOMAIN not in hass.data:
         api = NordpoolData(hass)
@@ -192,7 +193,7 @@ async def _dry_setup(hass: HomeAssistant, config: Config) -> bool:
     return True
 
 
-async def async_setup(hass: HomeAssistant, config: Config) -> bool:
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up using yaml config file."""
     return await _dry_setup(hass, config)
 
