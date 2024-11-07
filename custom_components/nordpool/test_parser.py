@@ -9,8 +9,7 @@ from aiozoneinfo import async_get_time_zone
 # https://repl.it/repls/WildImpishMass
 from dateutil import tz
 from dateutil.parser import parse as parse_dt
-from nordpool.base import CurrencyMismatch
-from nordpool.elspot import Prices
+from nordpool.elspot import CurrencyMismatch, Prices
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)

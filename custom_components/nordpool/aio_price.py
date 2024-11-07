@@ -7,8 +7,7 @@ import aiohttp
 import backoff
 from dateutil.parser import parse as parse_dt
 from homeassistant.util import dt as dt_utils
-from nordpool.base import CurrencyMismatch
-from nordpool.elspot import Prices
+from nordpool.elspot import CurrencyMismatch, Prices
 from pytz import timezone, utc
 
 from .misc import add_junk
