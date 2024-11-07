@@ -76,7 +76,7 @@ Set up the sensor using in `configuration.yaml`.
 ```yaml
 sensor:
   - platform: nordpool
-    region: "Kr.sand" 
+    region: "NO1" 
 ```
 
 #### Example configuration:
@@ -84,7 +84,7 @@ sensor:
 sensor:
   - platform: nordpool
     # Country/region to get the energy prices for. 
-    region: "Kr.sand"
+    region: "NO1"
     
     # Override HA local currency used to fetch the prices from the API.
     currency: "EUR"
