@@ -21,6 +21,7 @@ The Nordpool sensor provides the current price with today's and tomorrow's price
 - Video tutorial: [variable energy prices in HA](https://youtu.be/NFJ510uhswY) by Smart Home Junkie
 - Written guide: [Nordpool and ApexChart](https://www.creatingsmarthome.com/index.php/2022/09/17/home-assistant-nord-pool-spot-prices-and-how-to-automate-devices-for-cheapest-hours/) by Creating Smart Home
 - Community: [Nordpool integration](https://community.home-assistant.io/t/any-good-ideas-are-welcome-nordpool-energy-price-per-hour/) on Home Assistant Community
+- Cheapest hours sensor: [Cheapest Energy Hours](https://github.com/TheFes/cheapest-energy-hours) to create an sensor with the cheapest hours
 
 ## Installation
 
