@@ -206,7 +206,7 @@ Add 21% tax and overhead cost stored in a helper
 - ```currency```: What type of Currency
 - ```country```: What Country data is fetched for
 - ```region```: The specific region of prices
-- ```low_price```: If current hour is the lowest of the day
+- ```low_price```: If price is below low_price_threshold
 - ```price_percent_to_average```: 
 - ```today```: List of all values
 - ```tomorrow```: list of all values
