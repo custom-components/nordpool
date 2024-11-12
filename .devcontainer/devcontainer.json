@@ -1,31 +1,42 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
-	"image": "ghcr.io/ludeeus/devcontainer/integration:stable",
+	"image": "mcr.microsoft.com/devcontainers/python:3.12",
 	"name": "Nordpool integration development",
-	"context": "..",
 	"appPort": [
 		"9123:8123"
 	],
-	"postCreateCommand": "container install",
-	"extensions": [
-		"ms-python.python",
-		"github.vscode-pull-request-github",
-		"ryanluker.vscode-coverage-gutters",
-		"ms-python.vscode-pylance"
+	// Mount the path to custom_components
+	// This let's us have the structure we want <root>/custom_components/integration_blueprint
+	// while at the same time have Home Assistant configuration inside <root>/config
+	// without resulting to symlinks.
+	"mounts": [
+		"source=${localWorkspaceFolder}/custom_components,target=${containerWorkspaceFolder}/config/custom_components,type=bind,consistency=cached"
 	],
-	"settings": {
-		"files.eol": "\n",
-		"editor.tabSize": 4,
-		"terminal.integrated.shell.linux": "/bin/bash",
-		"python.pythonPath": "/usr/bin/python3",
-		"python.analysis.autoSearchPaths": false,
-		"python.linting.pylintEnabled": true,
-		"python.linting.enabled": true,
-		"python.formatting.provider": "black",
-		"editor.formatOnPaste": false,
-		"editor.formatOnSave": true,
-		"editor.formatOnType": true,
-		"files.trimTrailingWhitespace": true
-	}
-	
+	"postCreateCommand": "scripts/setup",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"github.vscode-pull-request-github",
+				"ryanluker.vscode-coverage-gutters",
+				"ms-python.vscode-pylance"
+			],
+			"settings": {
+				"files.eol": "\n",
+				"editor.tabSize": 4,
+				"terminal.integrated.shell.linux": "/bin/bash",
+				"python.pythonPath": "/usr/bin/python3",
+				"python.analysis.autoSearchPaths": false,
+				"python.linting.pylintEnabled": true,
+				"python.linting.enabled": true,
+				"python.formatting.provider": "black",
+				"editor.formatOnPaste": false,
+				"editor.formatOnSave": true,
+				"editor.formatOnType": true,
+				"files.trimTrailingWhitespace": true
+			}
+		}
+	},
+	"remoteUser": "vscode",
+	"features": {}
 }
