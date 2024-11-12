@@ -395,6 +395,18 @@ class NordpoolSensor(SensorEntity):
         ]
 
     @property
+    def nth_cheapest_hour(self) -> int:
+        """Get which position this price has in the "cheapest" hours list
+
+        Returns:
+            the position the current price has in the ordered list of prices for today
+        """
+        current = self.current_price
+        today = sorted(self.today)
+
+        return today.index(current) + 1
+
+    @property
     def extra_state_attributes(self) -> dict:
         return {
             "average": self._average,
@@ -409,6 +421,7 @@ class NordpoolSensor(SensorEntity):
             "country": _REGIONS[self._area][1],
             "region": self._area,
             "low_price": self.low_price,
+            "nth_cheapest_hour": self.nth_cheapest_hour,
             "price_percent_to_average": self.price_percent_to_average,
             "today": self.today,
             "tomorrow": self.tomorrow,
