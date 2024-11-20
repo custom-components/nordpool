@@ -1,0 +1,25 @@
+{
+    "config": {
+        "title": "Nordpool",
+        "step": {
+            "user": {
+                "title": "Nordpool jutiklis",
+                "description": "Nordpool jutiklio nustatymas",
+                "data": {
+                    "region": "Regionas",
+                    "currency": "Valiuta",
+                    "VAT": "Įtraukti PVM",
+                    "precision": "Dešimtainių skaičių apvalinimo tikslumas",
+                    "low_price_cutoff": "Žemos kainos procentas",
+                    "price_in_cents": "Kaina centais",
+                    "price_type": "Energijos skalė",
+                    "additional_costs": "Papildomų išlaidų šablonas"
+                }
+            }
+        },
+        "error": {
+            "name_exists": "Toks pavadinimas jau egzistuoja",
+            "invalid_template": "Šablonas neteisingas, žiūrėkite https://github.com/custom-components/nordpool"
+        }
+    }
+}
