@@ -15,14 +15,7 @@ from jinja2 import pass_context
 from homeassistant.util import dt as dt_utils
 
 from . import DOMAIN
-from .const import (
-    _PRICE_IN,
-    _REGIONS,
-    DEFAULT_TEMPLATE,
-    HOT_WATER_CONFIG,
-    HOT_WATER_DEFAULT_CONFIG,
-    HOT_WATER_DEFAULT_CONFIG_JSON,
-)
+from .const import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE, HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON
 
 regions = sorted(list(_REGIONS.keys()))
 currencys = sorted(list(set(v[0] for k, v in _REGIONS.items())))
@@ -38,7 +31,8 @@ placeholders = {
 _LOGGER = logging.getLogger(__name__)
 
 
-def get_schema(existing_config=None) -> dict:
+
+def get_schema(existing_config = None) -> dict:
     """Helper to get schema with editable default"""
 
     ec = existing_config
@@ -49,35 +43,17 @@ def get_schema(existing_config=None) -> dict:
         vol.Required("region", default=ec.get("region", None)): vol.In(regions),
         vol.Optional("currency", default=ec.get("currency", "")): vol.In(currencys),
         vol.Optional("VAT", default=ec.get("VAT", True)): bool,
-        vol.Optional(
-            "low_price_cutoff", default=ec.get("low_price_cutoff", 1.0)
-        ): vol.Coerce(float),
+        vol.Optional("low_price_cutoff", default=ec.get("low_price_cutoff", 1.0)): vol.Coerce(float),
         vol.Optional("price_in_cents", default=ec.get("price_in_cents", False)): bool,
-        vol.Optional("price_type", default=ec.get("price_type", "kWh")): vol.In(
-            price_types
-        ),
-        vol.Optional(
-            "additional_costs", default=ec.get("additional_costs", DEFAULT_TEMPLATE)
-        ): str,
-        vol.Optional(
-            "multiply_template",
-            default=ec.get("multiply_template", "{{correction * 1}}"),
-        ): str,
+        vol.Optional("price_type", default=ec.get("price_type", "kWh")): vol.In(price_types),
+        vol.Optional("additional_costs", default=ec.get("additional_costs", DEFAULT_TEMPLATE)): str,
+        vol.Optional("multiply_template", default=ec.get("multiply_template", '{{correction * 1}}')): str,
         vol.Optional("hours_to_boost", default=ec.get("hours_to_boost", 2)): int,
         vol.Optional("hours_to_save", default=ec.get("hours_to_save", 2)): int,
-        vol.Optional(
-            "pa_price_before_active", default=ec.get("pa_price_before_active", 0.2)
-        ): float,
-        vol.Optional(
-            "percent_difference", default=ec.get("percent_difference", 20)
-        ): int,
-        vol.Optional(
-            "price_before_active", default=ec.get("price_before_active", 0.2)
-        ): float,
-        vol.Optional(
-            HOT_WATER_CONFIG,
-            default=ec.get(HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON),
-        ): str,
+        vol.Optional("pa_price_before_active", default=ec.get('pa_price_before_active',0.2)): float,
+        vol.Optional("percent_difference", default=ec.get("percent_difference",20)): int,
+        vol.Optional("price_before_active", default=ec.get('price_before_active',0.2)): float,
+        vol.Optional(HOT_WATER_CONFIG, default=ec.get(HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON)): str,
     }
     return schema
 
@@ -87,13 +63,10 @@ class Base:
 
     async def _valid_template(self, user_template):
         try:
-
             def faker():
                 def inner(*_, **__):
                     return dt_utils.now()
-
                 return pass_context(inner)
-
             _LOGGER.debug(user_template)
             ut = Template(user_template, self.hass).async_render(
                 current_price=200
@@ -158,12 +131,17 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
             errors=self._errors,
         )
 
+
+
     async def async_step_import(self, user_input):  # pylint: disable=unused-argument
         """Import a config entry.
         Special type of import, we're not actually going to store any data.
         Instead, we're going to rely on the values that are in config file.
         """
         return self.async_create_entry(title="configuration.yaml", data={})
+
+
+
 
     @staticmethod
     @callback
@@ -194,20 +172,14 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
-        _LOGGER.debug("Trying updating Integration for PA with options: %s", user_input)
+        _LOGGER.debug('Trying updating Integration for PA with options: %s', user_input)
         if user_input is not None:
             template_ok, user_input = await self.check_settings(user_input)
             if template_ok:
                 title = DOMAIN + user_input["region"]
-                _LOGGER.debug(
-                    "updating Integration (template_ok) for %s with options: %s",
-                    title,
-                    user_input,
-                )
+                _LOGGER.debug('updating Integration (template_ok) for %s with options: %s', title, user_input)
                 self.hass.config_entries.async_update_entry(
-                    self.config_entry,
-                    data=user_input,
-                    options=self.config_entry.options,
+                    self.config_entry, data=user_input, options=self.config_entry.options
                 )
                 return self.async_create_entry(title=title, data=user_input)
             else:
@@ -215,11 +187,7 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
 
             self.options.update(user_input)
             title = DOMAIN + user_input["region"]
-            _LOGGER.debug(
-                "updating Integration for %s with options i think: %s",
-                title,
-                user_input,
-            )
+            _LOGGER.debug('updating Integration for %s with options i think: %s', title, user_input)
             return self.async_create_entry(title=title, data=self.options)
 
         # Get the current settings and use them as default.

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from functools import partial
 from random import randint
 
+import backoff
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -23,7 +24,9 @@ from homeassistant.util import dt as dt_utils
 
 from pytz import timezone
 
-from .aio_price import AioPrices
+
+
+from .aio_price import AioPrices, InvalidValueException
 from .events import async_track_time_change_in_tz
 from .const import (
     DOMAIN,
@@ -49,11 +52,14 @@ from .const import (
     DEFAULT_REGION,
     DEFAULT_NAME,
     DEFAULT_TEMPLATE,
-    PLATFORM_SCHEMA,
-)
+    PLATFORM_SCHEMA
+    )
+
+EVENT_NEW_DAY = "nordpool_update_day"
+EVENT_NEW_PRICE = "nordpool_update_new_price"
+SENTINEL = object()
 
 _LOGGER = logging.getLogger(__name__)
-
 
 class NordpoolData:
     def __init__(self, hass: HomeAssistant) -> None:
@@ -63,14 +69,17 @@ class NordpoolData:
         self._tomorrow_valid = False
         self.currency = []
         self.listeners = []
+        self.areas = []
 
-    async def _update(self, type_="today", dt=None):
+    async def _update(self, type_="today", dt=None, areas=None):
         _LOGGER.debug("calling _update %s %s", type_, dt)
         hass = self._hass
         client = async_get_clientsession(hass)
 
         if dt is None:
             dt = dt_utils.now()
+        if areas is not None:
+            self.areas += [area for area in areas if area not in self.areas]
 
         # We dont really need today and morrow
         # when the region is in another timezone
@@ -78,7 +87,7 @@ class NordpoolData:
         # Keeping this for now, but this should be changed.
         for currency in self.currency:
             spot = AioPrices(currency, client)
-            data = await spot.hourly(end_date=dt)
+            data = await spot.hourly(end_date=dt, areas=self.areas if len(self.areas) > 0 else None)
             if data:
                 self._data[currency][type_] = data["areas"]
                 async_dispatcher_send(hass, API_DATA_LOADED)
@@ -86,32 +95,46 @@ class NordpoolData:
                 _LOGGER.info("Some crap happend, retrying request later.")
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
-    async def update_today(self, n: datetime):
-        _LOGGER.debug("Updating todays prices.")
-        await self._update("today")
+    async def update_today(self, areas=None):
+        """Update today's prices"""
+        _LOGGER.debug("Updating today's prices.")
+        if areas is not None:
+            self.areas += [area for area in areas if area not in self.areas]
+        await self._update("today", areas=self.areas if len(self.areas) > 0 else None)
 
-    async def update_tomorrow(self, n: datetime):
+    async def update_tomorrow(self, areas=None):
+        """Update tomorrows prices."""
         _LOGGER.debug("Updating tomorrows prices.")
-        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24))
-        # self._tomorrow_valid = True
+        if areas is not None:
+            self.areas += [area for area in areas if area not in self.areas]
+        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24), areas=self.areas if len(self.areas) > 0 else None)
 
     async def _someday(self, area: str, currency: str, day: str):
-        """Returns todays or tomorrows prices in a area in the currency"""
+        """Returns today's or tomorrow's prices in an area in the currency"""
         if currency not in _CURRENCY_LIST:
             raise ValueError(
-                "%s is a invalid currency possible values are %s"
+                "%s is an invalid currency, possible values are %s"
                 % (currency, ", ".join(_CURRENCY_LIST))
             )
 
+        if area not in self.areas:
+            self.areas.append(area);
         # This is needed as the currency is
         # set in the sensor.
         if currency not in self.currency:
             self.currency.append(currency)
-            await self.update_today(None)
-            await self.update_tomorrow(None)
+            try:
+                await self.update_today(areas=self.areas)
+            except InvalidValueException:
+                _LOGGER.debug("No data available for today, retrying later")
+            try:
+                await self.update_tomorrow(areas=self.areas)
+            except InvalidValueException:
+                _LOGGER.debug("No data available for tomorrow, retrying later")
 
-        # if(day == 'tomorrow'):
-        # self._tomorrow_valid = True
+            # Send a new data request after new data is updated for this first run
+            # This way if the user has multiple sensors they will all update
+            async_dispatcher_send(self._hass, EVENT_NEW_HOUR)
 
         return self._data.get(currency, {}).get(day, {}).get(area)
 
@@ -127,13 +150,13 @@ class NordpoolData:
         """Returns tomorrows prices in a area in the requested currency"""
 
         dt = dt_utils.now()
-        if dt.hour < 11:
+        if(dt.hour < 11):
             return []
 
-        # TODO Handle when API returns todays prices for tomorrow.
+        #TODO Handle when API returns todays prices for tomorrow.
         res = await self._someday(area, currency, "tomorrow")
-        if res and len(res) > 0 and len(res["values"]) > 0:
-            starttime = res["values"][0].get("start", None)
+        if res and len(res) > 0 and len(res['values']) > 0:
+            starttime = res['values'][0].get('start', None)
             if starttime:
                 start = dt_utils.as_local(starttime)
                 _LOGGER.debug("Fetching tomorrow. Start: %s", starttime)
@@ -166,9 +189,10 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         # TODO This is the reason why only one sensor sets up correctly at startup.
         # When the first sensor sets up, the rest does not because domain is in hass.data.
         # If we remove it like this, i think every sensor will use the same api instance?
-        # nope, data is called with config from Oslo, for Trondheim.
+        #nope, data is called with config from Oslo, for Trondheim.
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
+
 
         async def new_day_cb(n):
             """Cb to handle some house keeping when it a new day."""
@@ -189,13 +213,18 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
             _LOGGER.debug("Called new_hr callback")
             async_dispatcher_send(hass, EVENT_NEW_HOUR)
 
-        async def new_data_cb(n):
+
+        @backoff.on_exception(
+            backoff.constant,
+            (InvalidValueException),
+            logger=_LOGGER, interval=600, max_time=7200, jitter=None)
+        async def new_data_cb(_):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data
             """
-            _LOGGER.debug("Called new_data_cb")
-            await api.update_tomorrow(n)
-            async_dispatcher_send(hass, EVENT_NEW_DATA)
+            # _LOGGER.debug("Called new_data_cb")
+            await api.update_tomorrow()
+            async_dispatcher_send(hass, EVENT_NEW_PRICE)
 
         # Handles futures updates
         cb_update_tomorrow = async_track_time_change_in_tz(
@@ -211,7 +240,9 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
             hass, new_day_cb, hour=0, minute=0, second=0
         )
 
-        cb_new_hr = async_track_time_change(hass, new_hr, minute=0, second=0)
+        cb_new_hr = async_track_time_change(
+            hass, new_hr, minute=0, second=0
+            )
 
         api.listeners.append(cb_update_tomorrow)
         api.listeners.append(cb_new_hr)
@@ -247,7 +278,7 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         num_hours_to_save,
         percent_difference,
         hass,
-        pa_config,
+        pa_config
     )
 
     hass.data[DATA][region] = data
@@ -259,20 +290,17 @@ async def async_setup(hass: HomeAssistant, config: Config) -> bool:
     return True
     return await _dry_setup(hass, config)
 
-
 async def async_migrate_entry(title, domain) -> bool:
-    # sorry, we dont support migrate
+    #sorry, we dont support migrate
     return True
-
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
     res = await _dry_setup(hass, entry)
-    # hass.config_entries.async_setup_platforms(entry, PLATFORMS)
+    #hass.config_entries.async_setup_platforms(entry, PLATFORMS)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.add_update_listener(async_reload_entry)
     return res
-
 
 # async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry, options):
 #     res = await hass.config_entries.async_update_entry(entry,options)
@@ -293,11 +321,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return False
 
-
 async def async_remove_config_entry_device(
     hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
 ) -> bool:
-    res = await device_entry.async_unload_entry(hass, config_entry)
+    res = await device_entry.async_unload_entry(hass,config_entry)
     return res
 
 

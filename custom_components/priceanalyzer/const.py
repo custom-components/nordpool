@@ -47,19 +47,19 @@ If you have any issues with this you need to open an issue here:
 
 _CENT_MULTIPLIER = 100
 _PRICE_IN = {"kWh": 1000, "MWh": 0, "Wh": 1000 * 1000}
+
 _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
     "DK2": ["DKK", "Denmark", 0.25],
-    "FI": ["EUR", "Finland", 0.24],
-    "EE": ["EUR", "Estonia", 0.20],
+    "FI": ["EUR", "Finland", 0.255],
+    "EE": ["EUR", "Estonia", 0.22],
     "LT": ["EUR", "Lithuania", 0.21],
     "LV": ["EUR", "Latvia", 0.21],
-    "Oslo": ["NOK", "Norway", 0.25],
-    "Kr.sand": ["NOK", "Norway", 0.25],
-    "Bergen": ["NOK", "Norway", 0.25],
-    "Molde": ["NOK", "Norway", 0.25],
-    "Tr.heim": ["NOK", "Norway", 0.25],
-    "Tromsø": ["NOK", "Norway", 0.25],
+    "NO1": ["NOK", "Norway", 0.25],
+    "NO2": ["NOK", "Norway", 0.25],
+    "NO3": ["NOK", "Norway", 0.25],
+    "NO4": ["NOK", "Norway", 0.25],
+    "NO5": ["NOK", "Norway", 0.25],
     "SE1": ["SEK", "Sweden", 0.25],
     "SE2": ["SEK", "Sweden", 0.25],
     "SE3": ["SEK", "Sweden", 0.25],
@@ -68,12 +68,12 @@ _REGIONS = {
     "SYS": ["EUR", "System zone", 0.25],
     "FR": ["EUR", "France", 0.055],
     "NL": ["EUR", "Netherlands", 0.21],
-    "BE": ["EUR", "Belgium", 0.21],
+    "BE": ["EUR", "Belgium", 0.06],
     "AT": ["EUR", "Austria", 0.20],
-    # Tax is disabled for now, i need to split the areas
-    # to handle the tax.
-    "DE-LU": ["EUR", "Germany and Luxembourg", 0],
+    # Unsure about tax rate, correct if wrong
+    "GER": ["EUR", "Germany", 0.23],
 }
+
 
 # Needed incase a user wants the prices in non local currency
 _CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}

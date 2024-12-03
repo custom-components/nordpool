@@ -14,7 +14,7 @@ if __name__ == "__main__":
     @click.option('--path', default="result.yaml", help="What path to write the file to.")
     def make_sensors(entity_id, friendly_name, icon, unit, path):
         """A simple tool to make 48 template sensors, one for each hour."""
-        
+
         entity_id = entity_id.replace("sensor.", "")
 
         head = {"sensor": [{"platform": "template", "sensors": {}}]}
