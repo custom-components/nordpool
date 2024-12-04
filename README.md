@@ -6,6 +6,8 @@ If you like this, you can [buy me a beer](http://paypal.me/erlendsellie) or a [K
 If you like being in control of your electricity usage, sign up for Tibber using my my referral link, and get 50 EUR off smart home gadgets in their store:
 [https://invite.tibber.com/yuxfw0uu](https://invite.tibber.com/yuxfw0uu)
 
+If you are thinking about buying a Tesla, you can get some discount or goodies by using my referral link; [https://ts.la/erlend56568](https://ts.la/erlend56568).
+
 PriceAnalyzer keeps your energy bill down, by analyzing the prices from Nordpool, and provides you sensors to automatically control your climate entities and hot water heater.
 
 ![image](https://user-images.githubusercontent.com/18458417/197388506-d623cb01-141d-4e44-b384-5a3aa21975a0.png)
