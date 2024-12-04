@@ -33,6 +33,11 @@ from .const import (
     _PRICE_IN
 )
 
+# Needed incase a user wants the prices in non local currency
+_CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
+_CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
+
+
 
 from homeassistant.helpers.template import Template, attach
 from homeassistant.util import dt as dt_utils
@@ -397,8 +402,13 @@ class PriceSensor(SensorEntity):
         return self._data._price_type
 
     @property
-    def unit_of_measurement(self) -> str:
-        return self._data._currency + '/' + self._data._price_type
+    def unit_of_measurement(self) -> str:  # FIXME
+        """Return the unit of measurement this sensor expresses itself in."""
+        _currency = self._data._currency
+        if self._data._use_cents is True:
+            # Convert unit of measurement to cents based on chosen currency
+            _currency = _CURRENTY_TO_CENTS[_currency]
+        return "%s/%s" % (_currency, self._data._price_type)
 
 
     @property
