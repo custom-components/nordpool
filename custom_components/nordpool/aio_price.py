@@ -7,7 +7,6 @@ import aiohttp
 import backoff
 from dateutil.parser import parse as parse_dt
 from homeassistant.util import dt as dt_utils
-from nordpool.base import CurrencyMismatch
 from nordpool.elspot import Prices
 from pytz import timezone, utc
 
@@ -96,6 +95,10 @@ class InvalidValueException(ValueError):
     pass
 
 
+class CurrencyMismatch(ValueError):  # pylint: disable=missing-class-docstring
+    pass
+
+
 async def join_result_for_correct_time(results, dt):
     """Parse a list of responses from the api
     to extract the correct hours in there timezone.
@@ -146,7 +149,8 @@ async def join_result_for_correct_time(results, dt):
                             val,
                         )
                     elif val['value'] in INVALID_VALUES:
-                        raise InvalidValueException(f"Invalid value in {val} for area '{key}'")
+                        raise InvalidValueException(
+                            f"Invalid value in {val} for area '{key}'")
                     else:
                         fin["areas"][key]["values"].append(val)
 
@@ -214,10 +218,12 @@ class AioPrices(Prices):
 
         start_time = None
         end_time = None
-
+        # multiAreaDailyAggregates
         if len(data['multiAreaEntries']) > 0:
-            start_time = self._parse_dt(data['multiAreaEntries'][0]['deliveryStart'])
-            end_time = self._parse_dt(data['multiAreaEntries'][-1]['deliveryEnd'])
+            start_time = self._parse_dt(
+                data['multiAreaEntries'][0]['deliveryStart'])
+            end_time = self._parse_dt(
+                data['multiAreaEntries'][-1]['deliveryEnd'])
         updated = self._parse_dt(data['updatedAt'])
 
         area_data = {}
@@ -265,8 +271,6 @@ class AioPrices(Prices):
         # If end_date isn't a date or datetime object, try to parse a string
         if not isinstance(end_date, date) and not isinstance(end_date, datetime):
             end_date = parse_dt(end_date)
-
-
 
         return await self._io(
             self.API_URL % data_type,

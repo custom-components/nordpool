@@ -16,6 +16,7 @@ from homeassistant.util import dt as dt_utils
 
 from .aio_price import AioPrices, InvalidValueException
 from .events import async_track_time_change_in_tz
+from .services import async_setup_services
 
 DOMAIN = "nordpool"
 _LOGGER = logging.getLogger(__name__)
@@ -103,7 +104,7 @@ class NordpoolData:
             )
 
         if area not in self.areas:
-            self.areas.append(area);
+            self.areas.append(area)
         # This is needed as the currency is
         # set in the sensor.
         if currency not in self.currency:
@@ -126,12 +127,11 @@ class NordpoolData:
     async def today(self, area: str, currency: str) -> dict:
         """Returns today's prices in an area in the requested currency"""
         return await self._someday(area, currency, "today")
-        
 
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrow's prices in an area in the requested currency"""
         return await self._someday(area, currency, "tomorrow")
-        
+
 
 async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up using yaml config file."""
@@ -139,6 +139,7 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
         _LOGGER.debug("Added %s to hass.data", DOMAIN)
+        await async_setup_services(hass)
 
         async def new_day_cb(_):
             """Cb to handle some house keeping when it a new day."""

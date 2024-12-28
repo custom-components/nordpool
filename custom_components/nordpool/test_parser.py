@@ -9,7 +9,7 @@ from aiozoneinfo import async_get_time_zone
 # https://repl.it/repls/WildImpishMass
 from dateutil import tz
 from dateutil.parser import parse as parse_dt
-from nordpool.base import CurrencyMismatch
+
 from nordpool.elspot import Prices
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,6 +22,9 @@ INVALID_VALUES = frozenset((None, float("inf")))
 class InvalidValueException(ValueError):
     pass
 
+
+class CurrencyMismatch(ValueError):
+    pass
 
 
 class AioPrices(Prices):
@@ -78,8 +81,10 @@ class AioPrices(Prices):
         end_time = None
 
         if len(data['multiAreaEntries']) > 0:
-            start_time = self._parse_dt(data['multiAreaEntries'][0]['deliveryStart'])
-            end_time = self._parse_dt(data['multiAreaEntries'][-1]['deliveryEnd'])
+            start_time = self._parse_dt(
+                data['multiAreaEntries'][0]['deliveryStart'])
+            end_time = self._parse_dt(
+                data['multiAreaEntries'][-1]['deliveryEnd'])
         updated = self._parse_dt(data['updatedAt'])
 
         area_data = {}
@@ -127,8 +132,6 @@ class AioPrices(Prices):
         # If end_date isn't a date or datetime object, try to parse a string
         if not isinstance(end_date, date) and not isinstance(end_date, datetime):
             end_date = parse_dt(end_date)
-
-
 
         return await self._io(
             self.API_URL % data_type,
@@ -229,20 +232,6 @@ tch yearly data, see Prices.fetch()"""
             return float("inf")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 tzs = {
     "DK1": "Europe/Copenhagen",
     "DK2": "Europe/Copenhagen",
@@ -327,13 +316,12 @@ async def join_result_for_correct_time(results, dt):
                             val,
                         )
                     elif val['value'] in INVALID_VALUES:
-                        raise InvalidValueException(f"Invalid value in {val} for area '{key}'")
+                        raise InvalidValueException(
+                            f"Invalid value in {val} for area '{key}'")
                     else:
                         fin["areas"][key]["values"].append(val)
 
     return fin
-
-
 
 
 if __name__ == "__main__":
@@ -344,7 +332,6 @@ if __name__ == "__main__":
     @click.option('--currency', '-c', default="NOK")
     @click.option('--vat', '-v', default=0)
     async def manual_check(region, currency, vat):
-
 
         ts = tz.gettz(tzs[region])
         utc = datetime.utcnow()
@@ -358,9 +345,9 @@ if __name__ == "__main__":
         yesterday = await spot.hourly(end_date=dt_yesterday, areas=[region])
         today = await spot.hourly(end_date=dt_today, areas=[region])
         tomorrow = await spot.hourly(end_date=dt_today + timedelta(days=1), areas=[region])
-        #print(today)
-        #print(pprint(today.get("areas")))
-        #return
+        # print(today)
+        # print(pprint(today.get("areas")))
+        # return
 
         results = [yesterday, today, tomorrow]
 
@@ -386,7 +373,8 @@ if __name__ == "__main__":
             if len(values):
                 print("Report for region %s" % key)
             for vvv in sorted(values, key=itemgetter("start")):
-                print("from %s to %s price %s" % (vvv["start"], vvv["end"], vvv["value"]))
+                print("from %s to %s price %s" %
+                      (vvv["start"], vvv["end"], vvv["value"]))
             if len(values):
                 print("total hours %s" % len(values))
 
