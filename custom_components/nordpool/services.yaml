@@ -1,0 +1,11 @@
+do_action:
+  fields:
+    currency:
+      example: "NOK"
+      selector:
+        text:
+    something:
+      required: false
+      example: "hello"
+      selector:
+        text:

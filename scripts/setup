@@ -3,5 +3,6 @@
 set -e
 
 cd "$(dirname "$0")/.."
-
+python3 -m pip install homeassistant
+# This might fail if the file is missing, we dont care
 python3 -m pip install --requirement requirements.txt
