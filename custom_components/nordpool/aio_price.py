@@ -100,7 +100,7 @@ class AioPrices:
             "AggregatePrices",
             "AggregatePrices",
             "AggregatePrices",
-            "GetAnnuals",
+            "AggregatePrices/GetAnnuals",
         )
         self.API_URL = "https://dataportal-api.nordpoolgroup.com/api/%s"
         self.currency = currency
@@ -142,7 +142,7 @@ class AioPrices:
             areas = list(areas)
 
         # Ripped from Kipe's nordpool
-        elif data_type == self.DAILY:
+        if data_type == self.DAILY:
             data_source = ("multiAreaDailyAggregates", "averagePerArea")
         elif data_type == self.WEEKLY:
             data_source = ("multiAreaWeeklyAggregates", "averagePerArea")
@@ -157,9 +157,12 @@ class AioPrices:
             raise Exception(f"Invalid response from Nordpool API: {data}")
 
         # Update currency from data
-        currency = data["currency"]
+        # currency it not avaiable in yearly... We just have to trust that the one
+        # we set in the class is correct.
+        currency = data.get("currency", self.currency)
 
         # Ensure that the provided currency match the requested one
+
         if currency != self.currency:
             raise CurrencyMismatch
 
@@ -222,6 +225,9 @@ class AioPrices:
         if not isinstance(end_date, date) and not isinstance(end_date, datetime):
             end_date = parse_dt(end_date)
 
+        if not isinstance(areas, list) and areas is not None:
+            areas = [i.strip() for i in areas.split(",")]
+
         kws = {
             "currency": self.currency,
             "market": "DayAhead",
@@ -237,9 +243,9 @@ class AioPrices:
 
     # Add more exceptions as we find them. KeyError is raised when the api return
     # junk due to currency not being available in the data.
-    @backoff.on_exception(
-        backoff.expo, (aiohttp.ClientError, KeyError), logger=_LOGGER, max_value=20
-    )
+    # @backoff.on_exception(
+    #    backoff.expo, (aiohttp.ClientError, KeyError), logger=_LOGGER, max_value=20
+    # )
     async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.
@@ -268,12 +274,16 @@ class AioPrices:
         today = datetime.now()
         tomorrow = datetime.now() + timedelta(days=1)
 
-        jobs = [
-            self._fetch_json(data_type, yesterday, areas),
-            self._fetch_json(data_type, today, areas),
-            self._fetch_json(data_type, tomorrow, areas),
-        ]
-        print(jobs)
+        if data_type == self.HOURLY:
+            jobs = [
+                self._fetch_json(data_type, yesterday, areas),
+                self._fetch_json(data_type, today, areas),
+                self._fetch_json(data_type, tomorrow, areas),
+            ]
+        else:
+            # This is really not today but a year..
+            # All except from hourly returns the raw values
+            return await self._fetch_json(data_type, today, areas)
 
         res = await asyncio.gather(*jobs)
         raw = [
