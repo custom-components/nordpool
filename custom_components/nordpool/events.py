@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from typing import Any, Optional
-from collections.abc import Awaitable, Callable
 
 #
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback, HassJob
@@ -10,18 +9,12 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
     async_track_point_in_utc_time,
 )
-from pytz import timezone
 
 # For targeted patching in tests
 time_tracker_utcnow = dt_util.utcnow
 
 
-__ALL__ = ["stock", "async_track_time_change_in_tz"]
-
-
-def stock(d):
-    """convert datetime to stocholm time."""
-    return d.astimezone(timezone("Europe/Stockholm"))
+__ALL__ = ["async_track_time_change_in_tz"]
 
 
 @callback

@@ -12,11 +12,12 @@ from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_utils
 
 # Import sensor entity and classes.
-from homeassistant.components.sensor import (
+from homeassistant.components.sensor.const import (
     SensorDeviceClass,
     SensorStateClass,
-    SensorEntity,
 )
+
+from homeassistant.components.sensor import SensorEntity
 from jinja2 import pass_context
 
 from .const import (

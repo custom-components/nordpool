@@ -4,8 +4,8 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from datetime import timezone as ts
 
-import aiohttp
-import backoff
+# import aiohttp
+# import backoff
 from dateutil.parser import parse as parse_dt
 from homeassistant.util import dt as dt_utils
 
@@ -137,12 +137,15 @@ class AioPrices:
         if areas is None:
             areas = []
 
-        # If areas isn't a list, make it one
-        if not isinstance(areas, list):
-            areas = list(areas)
+        if not isinstance(areas, list) and areas is not None:
+            areas = [i.strip() for i in areas.split(",")]
+
+        _LOGGER.debug("data type in _parser %s, areas %s", data_type, areas)
 
         # Ripped from Kipe's nordpool
-        if data_type == self.DAILY:
+        if data_type == self.HOURLY:
+            data_source = ("multiAreaEntries", "entryPerArea")
+        elif data_type == self.DAILY:
             data_source = ("multiAreaDailyAggregates", "averagePerArea")
         elif data_type == self.WEEKLY:
             data_source = ("multiAreaWeeklyAggregates", "averagePerArea")
@@ -162,7 +165,6 @@ class AioPrices:
         currency = data.get("currency", self.currency)
 
         # Ensure that the provided currency match the requested one
-
         if currency != self.currency:
             raise CurrencyMismatch
 
@@ -232,10 +234,11 @@ class AioPrices:
             "currency": self.currency,
             "market": "DayAhead",
             "deliveryArea": ",".join(areas),
+            # This one is default for hourly..
             "date": end_date.strftime("%Y-%m-%d"),
         }
 
-        if data_type == self.YEARLY:
+        if data_type != self.HOURLY:
             kws.pop("date")
             kws["year"] = end_date.strftime("%Y")
 
@@ -246,7 +249,7 @@ class AioPrices:
     # @backoff.on_exception(
     #    backoff.expo, (aiohttp.ClientError, KeyError), logger=_LOGGER, max_value=20
     # )
-    async def fetch(self, data_type, end_date=None, areas=None):
+    async def fetch(self, data_type, end_date=None, areas=None, raw=False):
         """
         Fetch data from API.
         Inputs:
@@ -270,11 +273,19 @@ class AioPrices:
         if areas is None:
             areas = []
 
-        yesterday = datetime.now() - timedelta(days=1)
-        today = datetime.now()
-        tomorrow = datetime.now() + timedelta(days=1)
+        if end_date is None:
+            end_date = datetime.now()
+
+        if isinstance(end_date, str):
+            end_date = parse_dt(end_date)
+
+        today = end_date
+        yesterday = today - timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
 
         if data_type == self.HOURLY:
+            if raw:
+                return await self._fetch_json(data_type, today, areas)
             jobs = [
                 self._fetch_json(data_type, yesterday, areas),
                 self._fetch_json(data_type, today, areas),
@@ -303,11 +314,11 @@ class AioPrices:
             None, self._parse_json, data, areas, data_type
         )
 
-    async def hourly(self, end_date=None, areas=None):
+    async def hourly(self, end_date=None, areas=None, raw=False):
         """Helper to fetch hourly data, see Prices.fetch()"""
         if areas is None:
             areas = []
-        return await self.fetch(self.HOURLY, end_date, areas)
+        return await self.fetch(self.HOURLY, end_date, areas, raw=raw)
 
     async def daily(self, end_date=None, areas=None):
         """Helper to fetch daily data, see Prices.fetch()"""
