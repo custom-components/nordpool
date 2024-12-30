@@ -1,0 +1,60 @@
+yearly:
+  name: yearly
+  description: >-
+    Action that gets the raw aggrigated yearly prices from Nordpool
+  fields:
+    currency:
+      description: "What currecy should the prices be returned in"
+      example: "NOK"
+    year:
+      description: "For what year, default to currect year"
+      example: "2024"
+    area:
+      description: "Return the prices for what price area"
+      example: "NO2"
+
+daily:
+  name: daily
+  description: >-
+    Action that gets the raw aggrigated daily prices from Nordpool
+  fields:
+    currency:
+      description: "What currecy should the prices be returned in"
+      example: "NOK"
+    year:
+      description: "For what year, default to currect year"
+      example: "2024"
+    area:
+      description: "Return the prices for what price area"
+      example: "NO2"
+
+
+monthly:
+  name: monthly
+  description: >-
+    Action that gets the raw aggrigated monthly prices from Nordpool
+  fields:
+    currency:
+      description: "What currecy should the prices be returned in"
+      example: "NOK"
+    year:
+      description: "For what year, default to currect year"
+      example: "2024"
+    area:
+      description: "Return the prices for what price area"
+      example: "NO2"
+
+hourly:
+  name: hourly
+  description: >-
+    Action that gets the raw hourly price for spesific date from Nordpool
+  fields:
+    currency:
+      description: "What currecy should the prices be returned in"
+      example: "NOK"
+    date:
+      description: "For what year, default to currect year"
+      example: "YYYY-MM-DD"
+    area:
+      description: "Return the prices for what price area"
+      example: "NO2"

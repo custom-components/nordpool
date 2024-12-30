@@ -1,10 +1,9 @@
 import logging
 from collections import defaultdict
 from datetime import timedelta
-from random import randint
+
 
 import backoff
-import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import Platform
@@ -16,25 +15,21 @@ from homeassistant.util import dt as dt_utils
 
 from .aio_price import AioPrices, InvalidValueException
 from .events import async_track_time_change_in_tz
+from .services import async_setup_services
 
-DOMAIN = "nordpool"
-_LOGGER = logging.getLogger(__name__)
-RANDOM_MINUTE = randint(10, 30)
-RANDOM_SECOND = randint(0, 59)
-EVENT_NEW_HOUR = "nordpool_update_hour"
-EVENT_NEW_DAY = "nordpool_update_day"
-EVENT_NEW_PRICE = "nordpool_update_new_price"
-SENTINEL = object()
+from .const import (
+    NAME,
+    VERSION,
+    ISSUEURL,
+    DOMAIN,
+    EVENT_NEW_DAY,
+    EVENT_NEW_HOUR,
+    EVENT_NEW_PRICE,
+    _CURRENCY_LIST,
+    RANDOM_MINUTE,
+    RANDOM_SECOND,
+)
 
-_CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
-
-
-CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
-
-
-NAME = DOMAIN
-VERSION = "0.0.16"
-ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 STARTUP = f"""
 -------------------------------------------------------------------
@@ -45,6 +40,8 @@ If you have any issues with this you need to open an issue here:
 {ISSUEURL}
 -------------------------------------------------------------------
 """
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
@@ -76,7 +73,9 @@ class NordpoolData:
         # Keeping this for now, but this should be changed.
         for currency in self.currency:
             spot = AioPrices(currency, client)
-            data = await spot.hourly(end_date=dt, areas=self.areas if len(self.areas) > 0 else None)
+            data = await spot.hourly(
+                end_date=dt, areas=self.areas if len(self.areas) > 0 else None
+            )
             if data:
                 self._data[currency][type_] = data["areas"]
 
@@ -92,7 +91,11 @@ class NordpoolData:
         _LOGGER.debug("Updating tomorrows prices.")
         if areas is not None:
             self.areas += [area for area in areas if area not in self.areas]
-        await self._update(type_="tomorrow", dt=dt_utils.now() + timedelta(hours=24), areas=self.areas if len(self.areas) > 0 else None)
+        await self._update(
+            type_="tomorrow",
+            dt=dt_utils.now() + timedelta(hours=24),
+            areas=self.areas if len(self.areas) > 0 else None,
+        )
 
     async def _someday(self, area: str, currency: str, day: str):
         """Returns today's or tomorrow's prices in an area in the currency"""
@@ -103,7 +106,7 @@ class NordpoolData:
             )
 
         if area not in self.areas:
-            self.areas.append(area);
+            self.areas.append(area)
         # This is needed as the currency is
         # set in the sensor.
         if currency not in self.currency:
@@ -126,12 +129,11 @@ class NordpoolData:
     async def today(self, area: str, currency: str) -> dict:
         """Returns today's prices in an area in the requested currency"""
         return await self._someday(area, currency, "today")
-        
 
     async def tomorrow(self, area: str, currency: str):
         """Returns tomorrow's prices in an area in the requested currency"""
         return await self._someday(area, currency, "tomorrow")
-        
+
 
 async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up using yaml config file."""
@@ -139,6 +141,7 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
         _LOGGER.debug("Added %s to hass.data", DOMAIN)
+        await async_setup_services(hass)
 
         async def new_day_cb(_):
             """Cb to handle some house keeping when it a new day."""
@@ -161,7 +164,11 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         @backoff.on_exception(
             backoff.constant,
             (InvalidValueException),
-            logger=_LOGGER, interval=600, max_time=7200, jitter=None)
+            logger=_LOGGER,
+            interval=600,
+            max_time=7200,
+            jitter=None,
+        )
         async def new_data_cb(_):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data

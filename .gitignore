@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Dont commit the config folder.
+config/
+
 # Distribution / packaging
 .Python
 build/

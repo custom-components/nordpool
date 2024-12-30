@@ -12,10 +12,15 @@ from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_utils
 
 # Import sensor entity and classes.
-from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass, SensorEntity
+from homeassistant.components.sensor.const import (
+    SensorDeviceClass,
+    SensorStateClass,
+)
+
+from homeassistant.components.sensor import SensorEntity
 from jinja2 import pass_context
 
-from . import (
+from .const import (
     DOMAIN,
     EVENT_NEW_DAY,
     EVENT_NEW_PRICE,
@@ -23,50 +28,17 @@ from . import (
     SENTINEL,
     RANDOM_MINUTE,
     RANDOM_SECOND,
+    DEFAULT_TEMPLATE,
+    DEFAULT_REGION,
+    _PRICE_IN,
+    _REGIONS,
+    _CURRENTY_TO_CENTS,
+    _CENT_MULTIPLIER,
 )
-from .misc import start_of, stock, round_decimal
+from .misc import start_of, stock
 
 
 _LOGGER = logging.getLogger(__name__)
-
-_CENT_MULTIPLIER = 100
-_PRICE_IN = {"kWh": 1000, "MWh": 1, "Wh": 1000 * 1000}
-_REGIONS = {
-    "DK1": ["DKK", "Denmark", 0.25],
-    "DK2": ["DKK", "Denmark", 0.25],
-    "FI": ["EUR", "Finland", 0.255],
-    "EE": ["EUR", "Estonia", 0.22],
-    "LT": ["EUR", "Lithuania", 0.21],
-    "LV": ["EUR", "Latvia", 0.21],
-    "NO1": ["NOK", "Norway", 0.25],
-    "NO2": ["NOK", "Norway", 0.25],
-    "NO3": ["NOK", "Norway", 0.25],
-    "NO4": ["NOK", "Norway", 0.25],
-    "NO5": ["NOK", "Norway", 0.25],
-    "SE1": ["SEK", "Sweden", 0.25],
-    "SE2": ["SEK", "Sweden", 0.25],
-    "SE3": ["SEK", "Sweden", 0.25],
-    "SE4": ["SEK", "Sweden", 0.25],
-    # What zone is this?
-    "SYS": ["EUR", "System zone", 0.25],
-    "FR": ["EUR", "France", 0.055],
-    "NL": ["EUR", "Netherlands", 0.21],
-    "BE": ["EUR", "Belgium", 0.06],
-    "AT": ["EUR", "Austria", 0.20],
-    # Unsure about tax rate, correct if wrong
-    "GER": ["EUR", "Germany", 0.23],
-}
-
-# Needed incase a user wants the prices in non local currency
-_CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
-_CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
-
-DEFAULT_CURRENCY = "NOK"
-DEFAULT_REGION = list(_REGIONS.keys())[0]
-DEFAULT_NAME = "Elspot"
-
-
-DEFAULT_TEMPLATE = "{{0.0|float}}"
 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
@@ -118,7 +90,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     add_devices([sensor])
 
 
-async def async_setup_platform(hass, config, add_devices, discovery_info=None) -> None:
+async def async_setup_platform(hass, config, add_devices, discovery_info=None) -> True:
     _dry_setup(hass, config, add_devices)
     return True
 
@@ -132,9 +104,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
 class NordpoolSensor(SensorEntity):
     "Sensors data"
+
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_suggested_display_precision = None
     _attr_state_class = SensorStateClass.TOTAL
+
     def __init__(
         self,
         friendly_name,
