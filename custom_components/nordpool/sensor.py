@@ -261,7 +261,7 @@ class NordpoolSensor(SensorEntity):
 
             return pass_context(inner)
 
-        price = value / _PRICE_IN[self._price_type] * (float(1 + self._vat))
+        price = value / _PRICE_IN[self._price_type] + (_PRICE_IN[self._price_type]*float(self._vat))
         template_value = self._ad_template.async_render(
             now=faker(), current_price=price
         )
