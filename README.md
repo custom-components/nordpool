@@ -111,7 +111,7 @@ sensor:
     additional_costs: "{{0.0|float}}"
 ```
 ### Regions
-See the [Nord Pool region map](https://www.nordpoolgroup.com/en/maps/) for details
+See the [Nord Pool region map](https://data.nordpoolgroup.com/map) for details
 
 | Country   | Region code |
 | --------- | ----------- |
