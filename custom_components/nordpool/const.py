@@ -104,7 +104,7 @@ _REGIONS = {
     "DK1": ["DKK", "Denmark", 0.25],
     "DK2": ["DKK", "Denmark", 0.25],
     "FI": ["EUR", "Finland", 0.255],
-    "EE": ["EUR", "Estonia", 0.22],
+    "EE": ["EUR", "Estonia", 0.24],
     "LT": ["EUR", "Lithuania", 0.21],
     "LV": ["EUR", "Latvia", 0.21],
     "NO1": ["NOK", "Norway", 0.25],
