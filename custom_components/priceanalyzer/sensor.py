@@ -173,12 +173,35 @@ class VVBSensor(SensorEntity):
 
 
     def get_config_key(self, key=TEMP_DEFAULT):
+        # First check if we have individual config fields (new format)
+        individual_key_map = {
+            TEMP_DEFAULT: 'temp_default',
+            TEMP_FIVE_MOST_EXPENSIVE: 'temp_five_most_expensive',
+            TEMP_IS_FALLING: 'temp_is_falling',
+            TEMP_FIVE_CHEAPEST: 'temp_five_cheapest',
+            TEMP_TEN_CHEAPEST: 'temp_ten_cheapest',
+            TEMP_LOW_PRICE: 'temp_low_price',
+            TEMP_NOT_CHEAP_NOT_EXPENSIVE: 'temp_not_cheap_not_expensive',
+            TEMP_MINIMUM: 'temp_minimum'
+        }
+        
+        # Check if we have the individual field (new format)
+        if key in individual_key_map:
+            individual_key = individual_key_map[key]
+            if individual_key in self._config:
+                return self._config[individual_key]
+        
+        # Fall back to JSON format (old format) for backward compatibility
         config = self._config.get(HOT_WATER_CONFIG, "")
         list = {}
         if config:
-            list = json.loads(config)
+            try:
+                list = json.loads(config)
+            except (json.JSONDecodeError, TypeError):
+                list = HOT_WATER_DEFAULT_CONFIG
         else:
             list = HOT_WATER_DEFAULT_CONFIG
+            
         if key in list.keys():
             return list[key]
         else:

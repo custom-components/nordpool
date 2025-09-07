@@ -15,7 +15,9 @@ from jinja2 import pass_context
 from homeassistant.util import dt as dt_utils
 
 from . import DOMAIN
-from .const import _PRICE_IN, _REGIONS, DEFAULT_TEMPLATE, HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON
+from .const import (_PRICE_IN, _REGIONS, DEFAULT_TEMPLATE, HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG, 
+                   HOT_WATER_DEFAULT_CONFIG_JSON, TEMP_DEFAULT, TEMP_FIVE_MOST_EXPENSIVE, TEMP_IS_FALLING,
+                   TEMP_FIVE_CHEAPEST, TEMP_TEN_CHEAPEST, TEMP_LOW_PRICE, TEMP_NOT_CHEAP_NOT_EXPENSIVE, TEMP_MINIMUM)
 
 regions = sorted(list(_REGIONS.keys()))
 currencys = sorted(list(set(v[0] for k, v in _REGIONS.items())))
@@ -31,11 +33,46 @@ placeholders = {
 _LOGGER = logging.getLogger(__name__)
 
 
+def _migrate_hot_water_config(existing_config):
+    """Migrate existing JSON hot water config to individual fields"""
+    if existing_config is None:
+        return {}
+    
+    # If we have individual fields already, return as-is
+    if any(key.startswith('temp_') for key in existing_config.keys()):
+        return existing_config
+    
+    # Migrate from JSON config
+    migrated = existing_config.copy()
+    hot_water_json = existing_config.get(HOT_WATER_CONFIG)
+    
+    if hot_water_json:
+        try:
+            import json
+            hot_water_dict = json.loads(hot_water_json) if isinstance(hot_water_json, str) else hot_water_json
+            
+            # Map JSON keys to individual config keys
+            migrated['temp_default'] = hot_water_dict.get(TEMP_DEFAULT, HOT_WATER_DEFAULT_CONFIG[TEMP_DEFAULT])
+            migrated['temp_five_most_expensive'] = hot_water_dict.get(TEMP_FIVE_MOST_EXPENSIVE, HOT_WATER_DEFAULT_CONFIG[TEMP_FIVE_MOST_EXPENSIVE])
+            migrated['temp_is_falling'] = hot_water_dict.get(TEMP_IS_FALLING, HOT_WATER_DEFAULT_CONFIG[TEMP_IS_FALLING])
+            migrated['temp_five_cheapest'] = hot_water_dict.get(TEMP_FIVE_CHEAPEST, HOT_WATER_DEFAULT_CONFIG[TEMP_FIVE_CHEAPEST])
+            migrated['temp_ten_cheapest'] = hot_water_dict.get(TEMP_TEN_CHEAPEST, HOT_WATER_DEFAULT_CONFIG[TEMP_TEN_CHEAPEST])
+            migrated['temp_low_price'] = hot_water_dict.get(TEMP_LOW_PRICE, HOT_WATER_DEFAULT_CONFIG[TEMP_LOW_PRICE])
+            migrated['temp_not_cheap_not_expensive'] = hot_water_dict.get(TEMP_NOT_CHEAP_NOT_EXPENSIVE, HOT_WATER_DEFAULT_CONFIG[TEMP_NOT_CHEAP_NOT_EXPENSIVE])
+            migrated['temp_minimum'] = hot_water_dict.get(TEMP_MINIMUM, HOT_WATER_DEFAULT_CONFIG[TEMP_MINIMUM])
+            
+            # Remove old JSON config
+            migrated.pop(HOT_WATER_CONFIG, None)
+        except (json.JSONDecodeError, TypeError):
+            # If JSON parsing fails, use defaults
+            pass
+    
+    return migrated
 
 def get_schema(existing_config = None) -> dict:
     """Helper to get schema with editable default"""
 
-    ec = existing_config
+    ec = _migrate_hot_water_config(existing_config)
 
     if ec is None:
         ec = {}
@@ -53,7 +90,15 @@ def get_schema(existing_config = None) -> dict:
         vol.Optional("pa_price_before_active", default=ec.get('pa_price_before_active',0.2)): float,
         vol.Optional("percent_difference", default=ec.get("percent_difference",20)): int,
         vol.Optional("price_before_active", default=ec.get('price_before_active',0.2)): float,
-        vol.Optional(HOT_WATER_CONFIG, default=ec.get(HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG_JSON)): str,
+        # Individual hot water temperature settings
+        vol.Optional("temp_default", default=ec.get('temp_default', HOT_WATER_DEFAULT_CONFIG[TEMP_DEFAULT])): vol.Coerce(float),
+        vol.Optional("temp_five_most_expensive", default=ec.get('temp_five_most_expensive', HOT_WATER_DEFAULT_CONFIG[TEMP_FIVE_MOST_EXPENSIVE])): vol.Coerce(float),
+        vol.Optional("temp_is_falling", default=ec.get('temp_is_falling', HOT_WATER_DEFAULT_CONFIG[TEMP_IS_FALLING])): vol.Coerce(float),
+        vol.Optional("temp_five_cheapest", default=ec.get('temp_five_cheapest', HOT_WATER_DEFAULT_CONFIG[TEMP_FIVE_CHEAPEST])): vol.Coerce(float),
+        vol.Optional("temp_ten_cheapest", default=ec.get('temp_ten_cheapest', HOT_WATER_DEFAULT_CONFIG[TEMP_TEN_CHEAPEST])): vol.Coerce(float),
+        vol.Optional("temp_low_price", default=ec.get('temp_low_price', HOT_WATER_DEFAULT_CONFIG[TEMP_LOW_PRICE])): vol.Coerce(float),
+        vol.Optional("temp_not_cheap_not_expensive", default=ec.get('temp_not_cheap_not_expensive', HOT_WATER_DEFAULT_CONFIG[TEMP_NOT_CHEAP_NOT_EXPENSIVE])): vol.Coerce(float),
+        vol.Optional("temp_minimum", default=ec.get('temp_minimum', HOT_WATER_DEFAULT_CONFIG[TEMP_MINIMUM])): vol.Coerce(float),
     }
     return schema
 
