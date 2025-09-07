@@ -12,7 +12,7 @@ from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.entity import Entity, DeviceInfo
-from homeassistant.helpers.template import Template, attach
+from homeassistant.helpers.template import Template
 from homeassistant.util import dt as dt_utils
 from jinja2 import pass_context
 
@@ -162,7 +162,7 @@ class Data():
             if self._ad_template.template in ("", None):
                 self._ad_template = cv.template(DEFAULT_TEMPLATE)
 
-        attach(self._hass, self._ad_template)
+        self._ad_template.hass = self._hass
 
         if not isinstance(self._multiply_template, Template):
             if self._multiply_template in (None, ""):
@@ -173,7 +173,7 @@ class Data():
             if self._multiply_template.template in ("", None):
                 self._multiply_template = cv.template(1)
 
-        attach(self._hass, self._multiply_template)
+        self._multiply_template.hass = self._hass
 
         self.multiply_template = multiply_template
 
