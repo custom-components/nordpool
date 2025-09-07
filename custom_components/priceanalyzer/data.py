@@ -1,14 +1,11 @@
 import logging
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from operator import itemgetter
 from statistics import mean
-from datetime import date
-
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 from homeassistant.helpers.entity import Entity, DeviceInfo
@@ -22,38 +19,6 @@ from .misc import extract_attrs, has_junk, is_new, start_of
 _LOGGER = logging.getLogger(__name__)
 
 _CENT_MULTIPLIER = 100
-# _PRICE_IN = {"kWh": 1000, "MWh": 0, "Wh": 1000 * 1000}
-
-_REGIONS = {
-    "DK1": ["DKK", "Denmark", 0.25],
-    "DK2": ["DKK", "Denmark", 0.25],
-    "FI": ["EUR", "Finland", 0.255],
-    "EE": ["EUR", "Estonia", 0.22],
-    "LT": ["EUR", "Lithuania", 0.21],
-    "LV": ["EUR", "Latvia", 0.21],
-    "NO1": ["NOK", "Norway", 0.25],
-    "NO2": ["NOK", "Norway", 0.25],
-    "NO3": ["NOK", "Norway", 0.25],
-    "NO4": ["NOK", "Norway", 0.25],
-    "NO5": ["NOK", "Norway", 0.25],
-    "SE1": ["SEK", "Sweden", 0.25],
-    "SE2": ["SEK", "Sweden", 0.25],
-    "SE3": ["SEK", "Sweden", 0.25],
-    "SE4": ["SEK", "Sweden", 0.25],
-    # What zone is this?
-    "SYS": ["EUR", "System zone", 0.25],
-    "FR": ["EUR", "France", 0.055],
-    "NL": ["EUR", "Netherlands", 0.21],
-    "BE": ["EUR", "Belgium", 0.06],
-    "AT": ["EUR", "Austria", 0.20],
-    # Unsure about tax rate, correct if wrong
-    "GER": ["EUR", "Germany", 0.23],
-}
-
-
-# Needed incase a user wants the prices in non local currency
-_CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
-_CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
 
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
@@ -103,7 +68,7 @@ class Data():
 
         self._precision = 3
 
-        if vat is True:
+        if 'vat' in config.keys():
             self._vat = _REGIONS[area][2]
         else:
             self._vat = 0
@@ -344,27 +309,7 @@ class Data():
 
 
 
-    def get_hour(self, hour: int, is_tomorrow: bool) -> int:# This code compares the hours in the tomorrow_hours list to the hour variable. If there is a match, it returns the dictionary in the list that matches the hour variable.
-        if is_tomorrow is True:
-            if hour > 24:
-                hour = hour - 24
-            for h in self.tomorrow_hours:
-                if h["start"].hour == hour:
-                    return h
-        else:
-            for h in self.today_hours:
-                if h["start"].hour == hour:
-                    return h
 
-    def get_price_for_hour(self, hour: int, is_tomorrow: bool) -> int:
-            if hour > 24 and is_tomorrow is False:
-                hour = hour - 24
-                is_tomorrow = True
-            hour = self.get_hour(hour,is_tomorrow)
-            if hour is not None:
-                return self._calc_price(hour["value"], fake_dt=hour["start"])
-            else:
-                return None
 
     def _is_gaining(self, hour, is_tomorrow) -> bool:
         threshold = self._percent_threshold_tomorrow if is_tomorrow else self._percent_threshold
@@ -594,26 +539,10 @@ class Data():
         _LOGGER.debug(
             "Called _update setting attrs for the day for %s", self._area)
 
-        # if has_junk(data):
-        #    # _LOGGER.debug("It was junk infinity in api response, fixed it.")
         d = extract_attrs(data.get("values"))
         data.update(d)
 
-        # if self._ad_template.template == DEFAULT_TEMPLATE:
         #TODO, cant use it like this, since  we don't know the time, and therefore not the template value.
-        # self._average = self._calc_price(data.get("Average"))
-        # self._min = self._calc_price(data.get("Min"))
-        # self._max = self._calc_price(data.get("Max"))
-        # _LOGGER.error(
-        #         "self min and max are %s %s",
-        #         self._min, self._max
-        # )
-        # self._off_peak_1 = self._calc_price(data.get("Off-peak 1"))
-        # self._off_peak_2 = self._calc_price(data.get("Off-peak 2"))
-        # self._peak = self._calc_price(data.get("Peak"))
-        # self._add_raw_calculated(False)
-
-        # else:
         data = sorted(data.get("values"), key=itemgetter("start"))
         formatted_prices = [
             self._calc_price(

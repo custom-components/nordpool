@@ -154,7 +154,7 @@ class NordpoolData:
         if(dt.hour < 11):
             return []
 
-        #TODO Handle when API returns todays prices for tomorrow.
+        # TODO Handle when API returns todays prices for tomorrow.
         res = await self._someday(area, currency, "tomorrow")
         if res and len(res) > 0 and len(res['values']) > 0:
             starttime = res['values'][0].get('start', None)
@@ -165,9 +165,6 @@ class NordpoolData:
                 _LOGGER.debug("Setting Tomrrow Valid to True. Res: %s", res)
                 return res
                 # TODO fix this logic.
-                # first_key = next(iter(res.values))
-                # tomorrow_date = datetime.fromisoformat(res.values[first_key].start)
-                # # Check if the input date is in the future
                 # if start > dt:
                 #     _LOGGER.debug('The input date is in the future')
                 #     self._tomorrow_valid = True
@@ -188,9 +185,6 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
 
     if DOMAIN not in hass.data and True:
         # TODO This is the reason why only one sensor sets up correctly at startup.
-        # When the first sensor sets up, the rest does not because domain is in hass.data.
-        # If we remove it like this, i think every sensor will use the same api instance?
-        #nope, data is called with config from Oslo, for Trondheim.
         api = NordpoolData(hass)
         hass.data[DOMAIN] = api
 

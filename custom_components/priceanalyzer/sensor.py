@@ -3,11 +3,9 @@ import math
 from datetime import datetime
 from operator import itemgetter
 from statistics import mean
-#from custom_components.nordpool import EVENT_NEW_HOUR
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_REGION
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
@@ -88,7 +86,7 @@ class VVBSensor(SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_state_class = SensorStateClass.MEASUREMENT
 
-    def __init__(self,data, config, unique_id) -> None:
+    def __init__(self, data, config, unique_id) -> None:
         self._data = data
         self._hass = self._data.api._hass
         self._config = config
@@ -96,8 +94,8 @@ class VVBSensor(SensorEntity):
         self._unique_id = unique_id + '_VVBSensor'
         self._attr_force_update = True
 
-    def getTemp(self, current_hour, is_tomorrow = False, reason = False):
-        temp = self.getConfigKey(TEMP_DEFAULT)
+    def getTemp(self, current_hour, is_tomorrow=False, reason=False):
+        temp = self.get_config_key(TEMP_DEFAULT)
         if not isinstance(temp, (int, float)):
             if isinstance(temp, (str)) and (temp == 'on' or temp == 'off'):
                 temp = temp
@@ -129,41 +127,41 @@ class VVBSensor(SensorEntity):
             # wrong in the case that we keep it on more than necessary maybe,
             # as it may very well get cheaper overnight.
 
-            #todo is gaining the next day, set extra temp.
-            #todo if tomorrow is available,
-            #and is the cheapest 5 hours for the forseeable future, set temp
+            # TODO is gaining the next day, set extra temp.
+            # TODO if tomorrow is available,
+            # and is the cheapest 5 hours for the forseeable future, set temp
 
-            #TODO Setting if price is only going down from now as well. Then set minimum temp?
+            # TODO Setting if price is only going down from now as well. Then set minimum temp?
 
             if small_price_difference or below_threshold:
                 temp = temp
                 reasonText = 'Small price difference or below threshold for settings'
             elif is_min_price:
-                temp = self.getConfigKey(TEMP_MINIMUM)
+                temp = self.get_config_key(TEMP_MINIMUM)
                 reasonText = 'Is minimum price'
             elif is_low_compared_to_tomorrow:
-                temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
+                temp = self.get_config_key(TEMP_FIVE_CHEAPEST)
                 reasonText = 'The price is only gaining for today and tomorrow, using config for five cheapest'
             elif is_cheap_compared_to_future:
-                temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
+                temp = self.get_config_key(TEMP_FIVE_CHEAPEST)
                 reasonText = 'The price is in the five cheapest hours for the known future, using config for five_cheapest'
             elif is_five_most_expensive:
-                temp = self.getConfigKey(TEMP_FIVE_MOST_EXPENSIVE)
+                temp = self.get_config_key(TEMP_FIVE_MOST_EXPENSIVE)
                 reasonText = 'Is five most expensive'
             elif is_five_cheapest:
-                temp = self.getConfigKey(TEMP_FIVE_CHEAPEST)
+                temp = self.get_config_key(TEMP_FIVE_CHEAPEST)
                 reasonText = 'Is five cheapest'
             elif is_ten_cheapest:
-                temp = self.getConfigKey(TEMP_TEN_CHEAPEST)
+                temp = self.get_config_key(TEMP_TEN_CHEAPEST)
                 reasonText = 'Is ten cheapest'
             elif temp_correction_down:
-                temp = self.getConfigKey(TEMP_IS_FALLING)
+                temp = self.get_config_key(TEMP_IS_FALLING)
                 reasonText = 'Is falling'
             elif is_low_price:
-                temp = self.getConfigKey(TEMP_LOW_PRICE)
+                temp = self.get_config_key(TEMP_LOW_PRICE)
                 reasonText = 'Is low price'
             else:
-                temp = self.getConfigKey(TEMP_NOT_CHEAP_NOT_EXPENSIVE)
+                temp = self.get_config_key(TEMP_NOT_CHEAP_NOT_EXPENSIVE)
                 reasonText = 'Not cheap, not expensive. '
 
         if reason:
@@ -174,14 +172,14 @@ class VVBSensor(SensorEntity):
         return temp if (reason is False) else reasonText
 
 
-    def getConfigKey(self, key=TEMP_DEFAULT):
+    def get_config_key(self, key=TEMP_DEFAULT):
         config = self._config.get(HOT_WATER_CONFIG, "")
         list = {}
         if config:
             list = json.loads(config)
         else:
             list = HOT_WATER_DEFAULT_CONFIG
-        if(key in list.keys()):
+        if key in list.keys():
             return list[key]
         else:
             return HOT_WATER_DEFAULT_CONFIG[key]
