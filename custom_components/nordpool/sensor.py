@@ -429,7 +429,7 @@ class NordpoolSensor(SensorEntity):
         data = await self._api.today(self._area, self._currency)
         if data:
             for item in self._someday(data):
-                if item["start"] == start_of(local_now, "hour"):
+                if item["start"] <= local_now < item["end"]:
                     self._current_price = item["value"]
                     _LOGGER.debug(
                         "Updated %s _current_price %s", self.name, item["value"]
