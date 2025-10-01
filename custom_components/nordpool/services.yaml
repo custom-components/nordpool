@@ -44,10 +44,10 @@ monthly:
       description: "Return the prices for what price area"
       example: "NO2"
 
-hourly:
-  name: hourly
+quarterhourly:
+  name: quarterhourly
   description: >-
-    Action that gets the raw hourly price for spesific date from Nordpool
+    Action that gets the raw quarterhourly price for spesific date from Nordpool
   fields:
     currency:
       description: "What currecy should the prices be returned in"

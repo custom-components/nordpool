@@ -4,7 +4,7 @@ from random import randint
 DOMAIN = "nordpool"
 RANDOM_MINUTE = randint(10, 30)
 RANDOM_SECOND = randint(0, 59)
-EVENT_NEW_HOUR = "nordpool_update_hour"
+EVENT_NEW_QUARTERHOUR = "nordpool_update_quarterhour"
 EVENT_NEW_DAY = "nordpool_update_day"
 EVENT_NEW_PRICE = "nordpool_update_new_price"
 SENTINEL = object()

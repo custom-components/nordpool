@@ -24,7 +24,7 @@ from .const import (
     DOMAIN,
     EVENT_NEW_DAY,
     EVENT_NEW_PRICE,
-    EVENT_NEW_HOUR,
+    EVENT_NEW_QUARTERHOUR,
     SENTINEL,
     RANDOM_MINUTE,
     RANDOM_SECOND,
@@ -35,7 +35,7 @@ from .const import (
     _CURRENTY_TO_CENTS,
     _CENT_MULTIPLIER,
 )
-from .misc import start_of, stock
+from .misc import time_in_range, stock
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -429,7 +429,7 @@ class NordpoolSensor(SensorEntity):
         data = await self._api.today(self._area, self._currency)
         if data:
             for item in self._someday(data):
-                if item["start"] == start_of(local_now, "hour"):
+                if time_in_range(item["start"], item["end"], local_now):
                     self._current_price = item["value"]
                     _LOGGER.debug(
                         "Updated %s _current_price %s", self.name, item["value"]
@@ -442,11 +442,11 @@ class NordpoolSensor(SensorEntity):
         _LOGGER.debug("handle_new_day")
         self._data_tomorrow = None
         # update attrs for the new day
-        await self.handle_new_hr()
+        await self.handle_new_quarterhr()
 
-    async def handle_new_hr(self):
+    async def handle_new_quarterhr(self):
         """Update attrs for the new hour"""
-        _LOGGER.debug("handle_new_hr")
+        _LOGGER.debug("handle_new_quarterhr")
         today = await self._api.today(self._area, self._currency)
         if today:
             self._data_today = today
@@ -473,7 +473,7 @@ class NordpoolSensor(SensorEntity):
         if tomorrow:
             self._data_tomorrow = tomorrow
 
-        await self.handle_new_hr()
+        await self.handle_new_quarterhr()
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
@@ -484,5 +484,5 @@ class NordpoolSensor(SensorEntity):
         async_dispatcher_connect(
             self._api._hass, EVENT_NEW_PRICE, self.handle_new_price
         )
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_HOUR, self.handle_new_hr)
-        await self.handle_new_hr()
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_QUARTERHOUR, self.handle_new_quarterhr)
+        await self.handle_new_quarterhr()

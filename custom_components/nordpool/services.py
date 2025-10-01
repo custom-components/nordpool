@@ -28,7 +28,7 @@ def check_setting(value):
     return validator
 
 
-HOURLY_SCHEMA = vol.Schema(
+QUARTERHOURLY_SCHEMA = vol.Schema(
     {
         vol.Required("currency"): str,
         vol.Required("date"): cv.date,
@@ -54,16 +54,16 @@ async def async_setup_services(hass: HomeAssistant):
 
     client = async_get_clientsession(hass)
 
-    async def hourly(service_call: ServiceCall) -> Any:
+    async def quarterhourly(service_call: ServiceCall) -> Any:
         sc = service_call.data
-        _LOGGER.debug("called hourly with %r", sc)
+        _LOGGER.debug("called quarterhourly with %r", sc)
 
         # Convert the date to datetime as the rest of the code expects a datetime. We will want to keep date as it easier for ppl to use.
         end_date = datetime(
             year=sc["date"].year, month=sc["date"].month, day=sc["date"].day
         )
 
-        value = await AioPrices(sc["currency"], client).hourly(
+        value = await AioPrices(sc["currency"], client).quarterhourly(
             areas=sc["area"], end_date=end_date, raw=True
         )
 
@@ -114,9 +114,9 @@ async def async_setup_services(hass: HomeAssistant):
 
     hass.services.async_register(
         domain="nordpool",
-        service="hourly",
-        service_func=hourly,
-        schema=HOURLY_SCHEMA,
+        service="quarterhourly",
+        service_func=quarterhourly,
+        schema=QUARTERHOURLY_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(

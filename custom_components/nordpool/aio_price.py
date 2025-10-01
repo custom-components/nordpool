@@ -75,7 +75,7 @@ async def join_result_for_correct_time(results, dt):
                 if start_of_day <= local <= end_of_day:
                     if local == local_end:
                         _LOGGER.info(
-                            "Hour has the same start and end, most likly due to dst change %s exluded this hour",
+                            "Period has the same start and end, most likly due to dst change %s exluded this hour",
                             val,
                         )
                     elif val["value"] in INVALID_VALUES:
@@ -95,19 +95,17 @@ class AioPrices:
         # super().__init__(currency)
         self.client = client
         self.timeezone = timeezone
-        (self.HOURLY, self.DAILY, self.WEEKLY, self.MONTHLY, self.YEARLY) = (
-            "DayAheadPrices",
-            "AggregatePrices",
-            "AggregatePrices",
-            "AggregatePrices",
-            "AggregatePrices/GetAnnuals",
-        )
+        self.QUARTERHOURLY = "DayAheadPrices"
+        self.DAILY = "AggregatePrices"
+        self.WEEKLY = "AggregatePrices"
+        self.MONTHLY = "AggregatePrices"
+        self.YEARLY = "AggregatePrices/GetAnnuals"
         self.API_URL = "https://dataportal-api.nordpoolgroup.com/api/%s"
         self.currency = currency
 
     async def _io(self, url, **kwargs):
         resp = await self.client.get(url, params=kwargs)
-        _LOGGER.debug("requested %s %s", resp.url, kwargs)
+        _LOGGER.debug("requested %s %s %d", resp.url, kwargs, resp.status)
 
         if resp.status == 204:
             return None
@@ -143,7 +141,7 @@ class AioPrices:
         _LOGGER.debug("data type in _parser %s, areas %s", data_type, areas)
 
         # Ripped from Kipe's nordpool
-        if data_type == self.HOURLY:
+        if data_type == self.QUARTERHOURLY:
             data_source = ("multiAreaEntries", "entryPerArea")
         elif data_type == self.DAILY:
             data_source = ("multiAreaDailyAggregates", "averagePerArea")
@@ -217,7 +215,7 @@ class AioPrices:
         """Fetch JSON from API"""
         # If end_date isn't set, default to tomorrow
         if data_type is None:
-            data_type = self.HOURLY
+            data_type = self.QUARTERHOURLY
 
         if areas is None or len(areas) == 0:
             raise Exception("Cannot query with empty areas")
@@ -234,12 +232,11 @@ class AioPrices:
             "currency": self.currency,
             "market": "DayAhead",
             "deliveryArea": ",".join(areas),
-            # This one is default for hourly..
-            "date": end_date.strftime("%Y-%m-%d"),
         }
 
-        if data_type != self.HOURLY:
-            kws.pop("date")
+        if data_type == self.QUARTERHOURLY:
+            kws["date"] = end_date.strftime("%Y-%m-%d")
+        else:
             kws["year"] = end_date.strftime("%Y")
 
         return await self._io(self.API_URL % data_type, **kws)
@@ -254,7 +251,7 @@ class AioPrices:
         Fetch data from API.
         Inputs:
             - data_type
-                API page id, one of Prices.HOURLY, Prices.DAILY etc
+                API page id, one of Prices.QUARTERHOURLY, Prices.DAILY etc
             - end_date
                 datetime to end the data fetching
                 defaults to tomorrow
@@ -283,7 +280,7 @@ class AioPrices:
         yesterday = today - timedelta(days=1)
         tomorrow = today + timedelta(days=1)
 
-        if data_type == self.HOURLY:
+        if data_type == self.QUARTERHOURLY:
             if raw:
                 return await self._fetch_json(data_type, today, areas)
             jobs = [
@@ -314,11 +311,11 @@ class AioPrices:
             None, self._parse_json, data, areas, data_type
         )
 
-    async def hourly(self, end_date=None, areas=None, raw=False):
+    async def quarterhourly(self, end_date=None, areas=None, raw=False):
         """Helper to fetch hourly data, see Prices.fetch()"""
         if areas is None:
             areas = []
-        return await self.fetch(self.HOURLY, end_date, areas, raw=raw)
+        return await self.fetch(self.QUARTERHOURLY, end_date, areas, raw=raw)
 
     async def daily(self, end_date=None, areas=None):
         """Helper to fetch daily data, see Prices.fetch()"""

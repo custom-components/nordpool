@@ -23,7 +23,7 @@ from .const import (
     ISSUEURL,
     DOMAIN,
     EVENT_NEW_DAY,
-    EVENT_NEW_HOUR,
+    EVENT_NEW_QUARTERHOUR,
     EVENT_NEW_PRICE,
     _CURRENCY_LIST,
     RANDOM_MINUTE,
@@ -73,7 +73,7 @@ class NordpoolData:
         # Keeping this for now, but this should be changed.
         for currency in self.currency:
             spot = AioPrices(currency, client)
-            data = await spot.hourly(
+            data = await spot.quarterhourly(
                 end_date=dt, areas=self.areas if len(self.areas) > 0 else None
             )
             if data:
@@ -122,7 +122,7 @@ class NordpoolData:
 
             # Send a new data request after new data is updated for this first run
             # This way if the user has multiple sensors they will all update
-            async_dispatcher_send(self._hass, EVENT_NEW_HOUR)
+            async_dispatcher_send(self._hass, EVENT_NEW_QUARTERHOUR)
 
         return self._data.get(currency, {}).get(day, {}).get(area)
 
@@ -156,10 +156,10 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
             async_dispatcher_send(hass, EVENT_NEW_DAY)
 
-        async def new_hr(_):
+        async def new_quarterhr(_):
             """Callback to tell the sensors to update on a new hour."""
-            _LOGGER.debug("Called new_hr callback")
-            async_dispatcher_send(hass, EVENT_NEW_HOUR)
+            _LOGGER.debug("Called new_quarterhr callback")
+            async_dispatcher_send(hass, EVENT_NEW_QUARTERHOUR)
 
         @backoff.on_exception(
             backoff.constant,
@@ -178,24 +178,20 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             async_dispatcher_send(hass, EVENT_NEW_PRICE)
 
         # Handles futures updates
-        cb_update_tomorrow = async_track_time_change_in_tz(
+        api.listeners.append(async_track_time_change_in_tz(
             hass,
             new_data_cb,
             hour=13,
             minute=RANDOM_MINUTE,
             second=RANDOM_SECOND,
             tz=await dt_utils.async_get_time_zone("Europe/Stockholm"),
-        )
+        ))
 
-        cb_new_day = async_track_time_change(
-            hass, new_day_cb, hour=0, minute=0, second=0
-        )
-
-        cb_new_hr = async_track_time_change(hass, new_hr, minute=0, second=0)
-
-        api.listeners.append(cb_update_tomorrow)
-        api.listeners.append(cb_new_hr)
-        api.listeners.append(cb_new_day)
+        api.listeners.append(async_track_time_change(hass, new_day_cb, hour=0, minute=0, second=0))
+        api.listeners.append(async_track_time_change(hass, new_quarterhr, minute=0, second=0))
+        api.listeners.append(async_track_time_change(hass, new_quarterhr, minute=15, second=0))
+        api.listeners.append(async_track_time_change(hass, new_quarterhr, minute=30, second=0))
+        api.listeners.append(async_track_time_change(hass, new_quarterhr, minute=45, second=0))
 
     return True
 
