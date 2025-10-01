@@ -60,6 +60,9 @@ def start_of(d, typ_="hour"):
         return d.replace(minute=0, second=0, microsecond=0)
     elif typ_ == "day":
         return d.replace(hour=0, minute=0, microsecond=0)
+    elif typ_ == "quarter":
+        minute = (d.minute // 15) * 15
+        return d.replace(minute=minute, second=0, microsecond=0)
 
 
 def time_in_range(start, end, x):
@@ -76,6 +79,11 @@ def end_of(d, typ_="hour"):
         return d.replace(minute=59, second=59, microsecond=999999)
     elif typ_ == "day":
         return d.replace(hour=23, minute=59, second=59, microsecond=999999)
+    elif typ_ == "quarter":
+        minute = (d.minute // 15) * 15 + 14
+        second = 59
+        microsecond = 999999
+        return d.replace(minute=minute, second=second, microsecond=microsecond)
 
 
 def is_new(date=None, typ="day") -> bool:
