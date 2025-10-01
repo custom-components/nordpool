@@ -157,9 +157,9 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             async_dispatcher_send(hass, EVENT_NEW_DAY)
 
         async def new_hr(_):
-            """Callback to tell the sensors to update on a new hour."""
-            _LOGGER.debug("Called new_hr callback")
-            async_dispatcher_send(hass, EVENT_NEW_HOUR)
+            """Callback to tell the sensors to update on a new 15-min slot."""
+            _LOGGER.debug("Called new_slot callback")
+            async_dispatcher_send(hass, EVENT_NEW_SLOT)
 
         @backoff.on_exception(
             backoff.constant,
@@ -191,10 +191,10 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             hass, new_day_cb, hour=0, minute=0, second=0
         )
 
-        cb_new_hr = async_track_time_change(hass, new_hr, minute=0, second=0)
-
+        cb_new_slot = async_track_time_change(hass, new_hr, minute=[0, 15, 30, 45], second=0)
+        
         api.listeners.append(cb_update_tomorrow)
-        api.listeners.append(cb_new_hr)
+        api.listeners.append(cb_new_slot)
         api.listeners.append(cb_new_day)
 
     return True
