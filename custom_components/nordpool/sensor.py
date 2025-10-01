@@ -1,3 +1,4 @@
+
 import logging
 import math
 from operator import itemgetter
@@ -423,20 +424,20 @@ class NordpoolSensor(SensorEntity):
         return len([i for i in self.tomorrow if i not in (None, float("inf"))]) >= 23
 
     async def _update_current_price(self) -> None:
-        """update the current price (price this hour)"""
+        """update the current price (price this 15-min slot)"""
         local_now = dt_utils.now()
-
+        
         data = await self._api.today(self._area, self._currency)
         if data:
             for item in self._someday(data):
-                if item["start"] == start_of(local_now, "hour"):
+                if item["start"] == start_of(local_now, "quarter"):
                     self._current_price = item["value"]
                     _LOGGER.debug(
                         "Updated %s _current_price %s", self.name, item["value"]
                     )
         else:
             _LOGGER.debug("Cant update _update_current_price because it was no data")
-
+    
     async def handle_new_day(self):
         """Update attrs for the new day"""
         _LOGGER.debug("handle_new_day")
@@ -482,7 +483,6 @@ class NordpoolSensor(SensorEntity):
 
         async_dispatcher_connect(self._api._hass, EVENT_NEW_DAY, self.handle_new_day)
         async_dispatcher_connect(
-            self._api._hass, EVENT_NEW_PRICE, self.handle_new_price
-        )
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_HOUR, self.handle_new_hr)
+            self._api._hass, EVENT_NEW_PRICE, self.handle_new_price)
+        async_dispatcher_connect(self._api._hass, EVENT_NEW_SLOT, self.handle_new_hr)
         await self.handle_new_hr()
