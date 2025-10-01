@@ -483,6 +483,7 @@ class NordpoolSensor(SensorEntity):
 
         async_dispatcher_connect(self._api._hass, EVENT_NEW_DAY, self.handle_new_day)
         async_dispatcher_connect(
-            self._api._hass, EVENT_NEW_PRICE, self.handle_new_price)
+            self._api._hass, EVENT_NEW_PRICE, self.handle_new_price
+        )
         async_dispatcher_connect(self._api._hass, EVENT_NEW_SLOT, self.handle_new_hr)
         await self.handle_new_hr()
