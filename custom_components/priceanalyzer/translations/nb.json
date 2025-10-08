@@ -2,33 +2,79 @@
     "config": {
         "step": {
             "user": {
-                "title": "PriceAnalyzer",
-                "description": "Opprett en PriceAnalyzer sensor",
+                "title": "Grunnleggende oppsett",
+                "description": "Konfigurer de grunnleggende innstillingene for PriceAnalyzer-sensoren. Velg din region og valuta for å komme i gang.",
                 "data": {
                     "region": "Region",
-                    "currency": "NOK",
-                    "VAT": "Inkluder MVA",
-                    "precision": "Antall desimaler som vises",
-                    "low_price_cutoff": "Grense for lav-pris",
-                    "price_in_cents": "Pris i øre",
-                    "price_type": "Pris i format",
-                    "time_resolution": "Tidsoppløsning (Kvartersvis/Timevis)",
-                    "additional_costs": "Mal for tilleggskostnader",
-                    "hot_water_config" : "Instilling for å sette egne temperaturer for VVB-sensoren",
-                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
-                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
-                    "multiply_template": "Priskorreksjons Template",
+                    "currency": "Valuta (la stå tom for standard)",
+                    "VAT": "Inkluder MVA i priser",
+                    "time_resolution": "Tidsoppløsning"
+                },
+                "data_description": {
+                    "region": "Velg din strømprisregion (f.eks. NO1, NO2, NO3)",
+                    "currency": "Overstyr standard valuta for din region om nødvendig",
+                    "VAT": "Inkluder merverdiavgift i de viste prisene",
+                    "time_resolution": "Velg mellom time- eller kvartersoppløsning (15-minutters) prisoppdateringer"
+                }
+            },
+            "price_settings": {
+                "title": "Prisinnstillinger",
+                "description": "Konfigurer hvordan priser vises og beregnes. Du kan legge til tilleggskostnader som nettleie og tilpasse prisformatet.",
+                "data": {
+                    "price_type": "Prisformat",
+                    "price_in_cents": "Vis priser i øre",
+                    "low_price_cutoff": "Lavpris-terskel",
+                    "additional_costs": "Mal for tilleggskostnader"
+                },
+                "data_description": {
+                    "price_type": "Vis pris per kWh, MWh eller Wh",
+                    "price_in_cents": "Vis priser i øre i stedet for kroner",
+                    "low_price_cutoff": "Multiplikator for å bestemme lavprisperioder (1.0 = gjennomsnittspris)",
+                    "additional_costs": "Jinja2-mal for å legge til faste kostnader, nettleie, osv. Eksempel: {{0.50|float}} legger til 0.50 til hver pris"
+                }
+            },
+            "advanced_settings": {
+                "title": "Avanserte innstillinger",
+                "description": "Finjuster PriceAnalyzer-oppførselen med avanserte alternativer for priskorrigeringer, boost/spare-timer og aktiveringsterskler.",
+                "data": {
+                    "multiply_template": "Priskorreksjonsmal",
                     "hours_to_boost": "Timer å booste",
                     "hours_to_save": "Timer å spare",
-                    "temp_default": "VVB: Standard temperatur (°C)",
-                    "temp_five_most_expensive": "VVB: Temperatur under 5 dyreste timer (°C)",
-                    "temp_is_falling": "VVB: Temperatur når pris faller (°C)",
-                    "temp_five_cheapest": "VVB: Temperatur under 5 billigste timer (°C)",
-                    "temp_ten_cheapest": "VVB: Temperatur under 10 billigste timer (°C)",
-                    "temp_low_price": "VVB: Temperatur under lavpris-perioder (°C)",
-                    "temp_not_cheap_not_expensive": "VVB: Temperatur under normale prisperioder (°C)",
-                    "temp_minimum": "VVB: Temperatur ved minimumspris (°C)"
-
+                    "pa_price_before_active": "PriceAnalyzer aktiveringsterskel",
+                    "percent_difference": "Minimum daglig prisvariasjon (%)",
+                    "price_before_active": "VVB aktiveringsterskel"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2-mal for å multiplisere/korrigere priser. Bruk 'correction'-variabelen. Eksempel: {{correction * 1.25}}",
+                    "hours_to_boost": "Antall billigste timer å booste forbruk",
+                    "hours_to_save": "Antall dyreste timer å redusere forbruk",
+                    "pa_price_before_active": "Minimum maks dagspris før PriceAnalyzer-sensor aktiveres (i din valuta)",
+                    "percent_difference": "Minimum prosentvis forskjell mellom daglig min/maks pris for å aktivere funksjoner",
+                    "price_before_active": "Minimum maks dagspris før varmtvannoptimalisering aktiveres (i din valuta)"
+                }
+            },
+            "hot_water": {
+                "title": "Varmtvannsstyring",
+                "description": "Konfigurer varmtvannsberedertempera turer for ulike prisscenarier. Systemet vil automatisk justere basert på strømpriser.",
+                "data": {
+                    "temp_default": "Standardtemperatur (°C)",
+                    "temp_five_most_expensive": "5 dyreste timer (°C)",
+                    "temp_is_falling": "Pris faller (°C)",
+                    "temp_five_cheapest": "5 billigste timer (°C)",
+                    "temp_ten_cheapest": "10 billigste timer (°C)",
+                    "temp_low_price": "Lavprisperioder (°C)",
+                    "temp_not_cheap_not_expensive": "Normale prisperioder (°C)",
+                    "temp_minimum": "Minimum dagspris (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Standardtemperatur når ingen spesielle forhold gjelder",
+                    "temp_five_most_expensive": "Reduser temperatur under de 5 dyreste timene for å spare energi",
+                    "temp_is_falling": "Temperatur når pristrenden faller",
+                    "temp_five_cheapest": "Boost temperatur under de 5 billigste timene",
+                    "temp_ten_cheapest": "Temperatur under de 10 billigste timene",
+                    "temp_low_price": "Temperatur under lavprisperioder (under terskel)",
+                    "temp_not_cheap_not_expensive": "Temperatur under normale prisperioder",
+                    "temp_minimum": "Maksimal temperatur ved minimum dagspris"
                 }
             }
         },
@@ -39,30 +85,80 @@
     },
     "options": {
         "step": {
-            "edit": {
-                "title": "PriceAnalyzer",
-                "description": "Rediger en PriceAnalyzer sensor",
+            "basic_setup": {
+                "title": "Grunnleggende oppsett",
+                "description": "Konfigurer de grunnleggende innstillingene for PriceAnalyzer-sensoren. Velg din region og valuta for å komme i gang.",
                 "data": {
                     "region": "Region",
-                    "currency": "NOK",
-                    "VAT": "Inkluder MVA",
-                    "precision": "Antall desimaler som vises",
-                    "low_price_cutoff": "Grense for lav-pris",
-                    "price_in_cents": "Pris i øre",
-                    "price_type": "Pris i format",
-                    "time_resolution": "Tidsoppløsning (Kvartersvis/Timevis)",
-                    "additional_costs": "Mal for tilleggskostnader",
-                    "hot_water_config" : "Instilling for å sette egne temperaturer for VVB-sensoren",
-                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
-                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
-                    "temp_default": "VVB: Standard temperatur (°C)",
-                    "temp_five_most_expensive": "VVB: Temperatur under 5 dyreste timer (°C)",
-                    "temp_is_falling": "VVB: Temperatur når pris faller (°C)",
-                    "temp_five_cheapest": "VVB: Temperatur under 5 billigste timer (°C)",
-                    "temp_ten_cheapest": "VVB: Temperatur under 10 billigste timer (°C)",
-                    "temp_low_price": "VVB: Temperatur under lavpris-perioder (°C)",
-                    "temp_not_cheap_not_expensive": "VVB: Temperatur under normale prisperioder (°C)",
-                    "temp_minimum": "VVB: Temperatur ved minimumspris (°C)"
+                    "currency": "Valuta (la stå tom for standard)",
+                    "VAT": "Inkluder MVA i priser",
+                    "time_resolution": "Tidsoppløsning"
+                },
+                "data_description": {
+                    "region": "Velg din strømprisregion (f.eks. NO1, NO2, NO3)",
+                    "currency": "Overstyr standard valuta for din region om nødvendig",
+                    "VAT": "Inkluder merverdiavgift i de viste prisene",
+                    "time_resolution": "Velg mellom time- eller kvartersoppløsning (15-minutters) prisoppdateringer"
+                }
+            },
+            "price_settings": {
+                "title": "Prisinnstillinger",
+                "description": "Konfigurer hvordan priser vises og beregnes. Du kan legge til tilleggskostnader som nettleie og tilpasse prisformatet.",
+                "data": {
+                    "price_type": "Prisformat",
+                    "price_in_cents": "Vis priser i øre",
+                    "low_price_cutoff": "Lavpris-terskel",
+                    "additional_costs": "Mal for tilleggskostnader"
+                },
+                "data_description": {
+                    "price_type": "Vis pris per kWh, MWh eller Wh",
+                    "price_in_cents": "Vis priser i øre i stedet for kroner",
+                    "low_price_cutoff": "Multiplikator for å bestemme lavprisperioder (1.0 = gjennomsnittspris)",
+                    "additional_costs": "Jinja2-mal for å legge til faste kostnader, nettleie, osv. Eksempel: {{0.50|float}} legger til 0.50 til hver pris"
+                }
+            },
+            "advanced_settings": {
+                "title": "Avanserte innstillinger",
+                "description": "Finjuster PriceAnalyzer-oppførselen med avanserte alternativer for priskorrigeringer, boost/spare-timer og aktiveringsterskler.",
+                "data": {
+                    "multiply_template": "Priskorreksjonsmal",
+                    "hours_to_boost": "Timer å booste",
+                    "hours_to_save": "Timer å spare",
+                    "pa_price_before_active": "PriceAnalyzer aktiveringsterskel",
+                    "percent_difference": "Minimum daglig prisvariasjon (%)",
+                    "price_before_active": "VVB aktiveringsterskel"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2-mal for å multiplisere/korrigere priser. Bruk 'correction'-variabelen. Eksempel: {{correction * 1.25}}",
+                    "hours_to_boost": "Antall billigste timer å booste forbruk",
+                    "hours_to_save": "Antall dyreste timer å redusere forbruk",
+                    "pa_price_before_active": "Minimum maks dagspris før PriceAnalyzer-sensor aktiveres (i din valuta)",
+                    "percent_difference": "Minimum prosentvis forskjell mellom daglig min/maks pris for å aktivere funksjoner",
+                    "price_before_active": "Minimum maks dagspris før varmtvannoptimalisering aktiveres (i din valuta)"
+                }
+            },
+            "hot_water": {
+                "title": "Varmtvannsstyring",
+                "description": "Konfigurer varmtvannsberedertempera turer for ulike prisscenarier. Systemet vil automatisk justere basert på strømpriser.",
+                "data": {
+                    "temp_default": "Standardtemperatur (°C)",
+                    "temp_five_most_expensive": "5 dyreste timer (°C)",
+                    "temp_is_falling": "Pris faller (°C)",
+                    "temp_five_cheapest": "5 billigste timer (°C)",
+                    "temp_ten_cheapest": "10 billigste timer (°C)",
+                    "temp_low_price": "Lavprisperioder (°C)",
+                    "temp_not_cheap_not_expensive": "Normale prisperioder (°C)",
+                    "temp_minimum": "Minimum dagspris (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Standardtemperatur når ingen spesielle forhold gjelder",
+                    "temp_five_most_expensive": "Reduser temperatur under de 5 dyreste timene for å spare energi",
+                    "temp_is_falling": "Temperatur når pristrenden faller",
+                    "temp_five_cheapest": "Boost temperatur under de 5 billigste timene",
+                    "temp_ten_cheapest": "Temperatur under de 10 billigste timene",
+                    "temp_low_price": "Temperatur under lavprisperioder (under terskel)",
+                    "temp_not_cheap_not_expensive": "Temperatur under normale prisperioder",
+                    "temp_minimum": "Maksimal temperatur ved minimum dagspris"
                 }
             }
         },

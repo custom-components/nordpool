@@ -2,33 +2,79 @@
     "config": {
         "step": {
             "user": {
-                "title": "PriceAnalyzer sensori",
-                "description": "PriceAnalyzer sensorin asetukset",
+                "title": "Perusasetukset",
+                "description": "Määritä PriceAnalyzer-sensorin perusasetukset. Valitse alue ja valuutta aloittaaksesi.",
                 "data": {
                     "region": "Alue",
-                    "friendly_name": "Nimi käyttöliittymässä",
-                    "currency": "EUR",
-                    "VAT": "Sisällytä ALV",
-                    "precision": "Desimaalien lukumäärä",
-                    "low_price_cutoff": "Matalan hinnan raja-arvo",
-                    "price_in_cents": "Hinta senteissä",
-                    "price_type": "Hinnan yksikkö",
-                    "time_resolution": "Aikaresoluutio (Neljännesvuosittainen/Tunneittain)",
-                    "additional_costs": "Sivukulujen laskenta Template",
-                    "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
-                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
-                    "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active",
-                    "multiply_template": "Price Correction Template",
-                    "hours_to_boost": "Hours to boost",
-                    "hours_to_save": "Hours to save",
-                    "temp_default": "Lämmin vesi: Oletuslämpötila (°C)",
-                    "temp_five_most_expensive": "Lämmin vesi: Lämpötila 5 kalleimman tunnin aikana (°C)",
-                    "temp_is_falling": "Lämmin vesi: Lämpötila kun hinta laskee (°C)",
-                    "temp_five_cheapest": "Lämmin vesi: Lämpötila 5 halvimman tunnin aikana (°C)",
-                    "temp_ten_cheapest": "Lämmin vesi: Lämpötila 10 halvimman tunnin aikana (°C)",
-                    "temp_low_price": "Lämmin vesi: Lämpötila matalan hinnan aikana (°C)",
-                    "temp_not_cheap_not_expensive": "Lämmin vesi: Lämpötila normaalin hinnan aikana (°C)",
-                    "temp_minimum": "Lämmin vesi: Lämpötila minimihinnan aikana (°C)"
+                    "currency": "Valuutta (jätä tyhjäksi oletusarvolle)",
+                    "VAT": "Sisällytä ALV hintoihin",
+                    "time_resolution": "Aikaresoluutio"
+                },
+                "data_description": {
+                    "region": "Valitse sähköhinta-alue (esim. FI)",
+                    "currency": "Ohita alueen oletusvaluutta tarvittaessa",
+                    "VAT": "Sisällytä arvonlisävero näytettyihin hintoihin",
+                    "time_resolution": "Valitse tunti- tai neljännesvuosittainen (15 minuutin) hintapäivitys"
+                }
+            },
+            "price_settings": {
+                "title": "Hinta-asetukset",
+                "description": "Määritä hintojen näyttö ja laskenta. Voit lisätä lisäkustannuksia, kuten verkkomaksuja, ja mukauttaa hintamuotoa.",
+                "data": {
+                    "price_type": "Hintamuoto",
+                    "price_in_cents": "Näytä hinnat sentteinä",
+                    "low_price_cutoff": "Matalan hinnan kynnys",
+                    "additional_costs": "Lisäkustannusten malli"
+                },
+                "data_description": {
+                    "price_type": "Näytä hinta per kWh, MWh tai Wh",
+                    "price_in_cents": "Näytä hinnat sentteinä eurojen sijaan",
+                    "low_price_cutoff": "Kerroin matalan hinnan jaksojen määrittämiseen (1.0 = keskihinta)",
+                    "additional_costs": "Jinja2-malli kiinteiden kustannusten, verkkomaksujen jne. lisäämiseen. Esimerkki: {{0.50|float}} lisää 0.50 jokaiseen hintaan"
+                }
+            },
+            "advanced_settings": {
+                "title": "Lisäasetukset",
+                "description": "Hienosäädä PriceAnalyzer-toimintaa edistyneillä vaihtoehdoilla hintakorjauksille, tehostus-/säästötunneille ja aktivointikynnysarvoille.",
+                "data": {
+                    "multiply_template": "Hintakorjausmalli",
+                    "hours_to_boost": "Tehostustunnit",
+                    "hours_to_save": "Säästötunnit",
+                    "pa_price_before_active": "PriceAnalyzer aktivointikynnys",
+                    "percent_difference": "Vähimmäis päivittäinen hintavaihtelu (%)",
+                    "price_before_active": "Lämminvesi aktivointikynnys"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2-malli hintojen kertomiseen/korjaamiseen. Käytä 'correction'-muuttujaa. Esimerkki: {{correction * 1.25}}",
+                    "hours_to_boost": "Halvimpien tuntien määrä kulutuksen tehostamiseen",
+                    "hours_to_save": "Kalleimpien tuntien määrä kulutuksen vähentämiseen",
+                    "pa_price_before_active": "Vähimmäis päivän enimmäishinta ennen PriceAnalyzer-sensorin aktivoitumista (valuutassasi)",
+                    "percent_difference": "Vähimmäisprosenttiero päivän min/max hinnan välillä toimintojen aktivoimiseksi",
+                    "price_before_active": "Vähimmäis päivän enimmäishinta ennen lämminvesioptimointia (valuutassasi)"
+                }
+            },
+            "hot_water": {
+                "title": "Lämminveden ohjaus",
+                "description": "Määritä lämminvesivaraajan lämpötilat eri hintaskenaarioille. Järjestelmä säätää automaattisesti sähköhintojen perusteella.",
+                "data": {
+                    "temp_default": "Oletuslämpötila (°C)",
+                    "temp_five_most_expensive": "5 kalleinta tuntia (°C)",
+                    "temp_is_falling": "Hinta laskee (°C)",
+                    "temp_five_cheapest": "5 halvinta tuntia (°C)",
+                    "temp_ten_cheapest": "10 halvinta tuntia (°C)",
+                    "temp_low_price": "Matalan hinnan jaksot (°C)",
+                    "temp_not_cheap_not_expensive": "Normaalit hintajaksot (°C)",
+                    "temp_minimum": "Päivän minimihinta (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Oletuslämpötila kun erityisolosuhteet eivät päde",
+                    "temp_five_most_expensive": "Vähennä lämpötilaa 5 kalleimman tunnin aikana energian säästämiseksi",
+                    "temp_is_falling": "Lämpötila kun hintatrendi laskee",
+                    "temp_five_cheapest": "Nosta lämpötilaa 5 halvimman tunnin aikana",
+                    "temp_ten_cheapest": "Lämpötila 10 halvimman tunnin aikana",
+                    "temp_low_price": "Lämpötila matalan hinnan jaksoilla (kynnysarvon alapuolella)",
+                    "temp_not_cheap_not_expensive": "Lämpötila normaalien hintojen aikana",
+                    "temp_minimum": "Maksimilämpötila päivän minimihinnan aikana"
                 }
             }
         },
@@ -39,34 +85,80 @@
     },
     "options": {
         "step": {
-            "edit": {
-                "title": "PriceAnalyzer sensori",
-                "description": "PriceAnalyzer sensorin asetukset",
+            "basic_setup": {
+                "title": "Perusasetukset",
+                "description": "Määritä PriceAnalyzer-sensorin perusasetukset. Valitse alue ja valuutta aloittaaksesi.",
                 "data": {
                     "region": "Alue",
-                    "friendly_name": "Nimi käyttöliittymässä",
-                    "currency": "EUR",
-                    "VAT": "Sisällytä ALV",
-                    "precision": "Desimaalien lukumäärä",
-                    "low_price_cutoff": "Matalan hinnan raja-arvo",
-                    "price_in_cents": "Hinta senteissä",
-                    "price_type": "Hinnan yksikkö",
-                    "time_resolution": "Aikaresoluutio (Neljännesvuosittainen/Tunneittain)",
-                    "additional_costs": "Sivukulujen laskenta Template",
-                    "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
-                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
-                    "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active",
-                    "multiply_template": "Price Correction Template",
-                    "hours_to_boost": "Hours to boost",
-                    "hours_to_save": "Hours to save",
-                    "temp_default": "Lämmin vesi: Oletuslämpötila (°C)",
-                    "temp_five_most_expensive": "Lämmin vesi: Lämpötila 5 kalleimman tunnin aikana (°C)",
-                    "temp_is_falling": "Lämmin vesi: Lämpötila kun hinta laskee (°C)",
-                    "temp_five_cheapest": "Lämmin vesi: Lämpötila 5 halvimman tunnin aikana (°C)",
-                    "temp_ten_cheapest": "Lämmin vesi: Lämpötila 10 halvimman tunnin aikana (°C)",
-                    "temp_low_price": "Lämmin vesi: Lämpötila matalan hinnan aikana (°C)",
-                    "temp_not_cheap_not_expensive": "Lämmin vesi: Lämpötila normaalin hinnan aikana (°C)",
-                    "temp_minimum": "Lämmin vesi: Lämpötila minimihinnan aikana (°C)"
+                    "currency": "Valuutta (jätä tyhjäksi oletusarvolle)",
+                    "VAT": "Sisällytä ALV hintoihin",
+                    "time_resolution": "Aikaresoluutio"
+                },
+                "data_description": {
+                    "region": "Valitse sähköhinta-alue (esim. FI)",
+                    "currency": "Ohita alueen oletusvaluutta tarvittaessa",
+                    "VAT": "Sisällytä arvonlisävero näytettyihin hintoihin",
+                    "time_resolution": "Valitse tunti- tai neljännesvuosittainen (15 minuutin) hintapäivitys"
+                }
+            },
+            "price_settings": {
+                "title": "Hinta-asetukset",
+                "description": "Määritä hintojen näyttö ja laskenta. Voit lisätä lisäkustannuksia, kuten verkkomaksuja, ja mukauttaa hintamuotoa.",
+                "data": {
+                    "price_type": "Hintamuoto",
+                    "price_in_cents": "Näytä hinnat sentteinä",
+                    "low_price_cutoff": "Matalan hinnan kynnys",
+                    "additional_costs": "Lisäkustannusten malli"
+                },
+                "data_description": {
+                    "price_type": "Näytä hinta per kWh, MWh tai Wh",
+                    "price_in_cents": "Näytä hinnat sentteinä eurojen sijaan",
+                    "low_price_cutoff": "Kerroin matalan hinnan jaksojen määrittämiseen (1.0 = keskihinta)",
+                    "additional_costs": "Jinja2-malli kiinteiden kustannusten, verkkomaksujen jne. lisäämiseen. Esimerkki: {{0.50|float}} lisää 0.50 jokaiseen hintaan"
+                }
+            },
+            "advanced_settings": {
+                "title": "Lisäasetukset",
+                "description": "Hienosäädä PriceAnalyzer-toimintaa edistyneillä vaihtoehdoilla hintakorjauksille, tehostus-/säästötunneille ja aktivointikynnysarvoille.",
+                "data": {
+                    "multiply_template": "Hintakorjausmalli",
+                    "hours_to_boost": "Tehostustunnit",
+                    "hours_to_save": "Säästötunnit",
+                    "pa_price_before_active": "PriceAnalyzer aktivointikynnys",
+                    "percent_difference": "Vähimmäis päivittäinen hintavaihtelu (%)",
+                    "price_before_active": "Lämminvesi aktivointikynnys"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2-malli hintojen kertomiseen/korjaamiseen. Käytä 'correction'-muuttujaa. Esimerkki: {{correction * 1.25}}",
+                    "hours_to_boost": "Halvimpien tuntien määrä kulutuksen tehostamiseen",
+                    "hours_to_save": "Kalleimpien tuntien määrä kulutuksen vähentämiseen",
+                    "pa_price_before_active": "Vähimmäis päivän enimmäishinta ennen PriceAnalyzer-sensorin aktivoitumista (valuutassasi)",
+                    "percent_difference": "Vähimmäisprosenttiero päivän min/max hinnan välillä toimintojen aktivoimiseksi",
+                    "price_before_active": "Vähimmäis päivän enimmäishinta ennen lämminvesioptimointia (valuutassasi)"
+                }
+            },
+            "hot_water": {
+                "title": "Lämminveden ohjaus",
+                "description": "Määritä lämminvesivaraajan lämpötilat eri hintaskenaarioille. Järjestelmä säätää automaattisesti sähköhintojen perusteella.",
+                "data": {
+                    "temp_default": "Oletuslämpötila (°C)",
+                    "temp_five_most_expensive": "5 kalleinta tuntia (°C)",
+                    "temp_is_falling": "Hinta laskee (°C)",
+                    "temp_five_cheapest": "5 halvinta tuntia (°C)",
+                    "temp_ten_cheapest": "10 halvinta tuntia (°C)",
+                    "temp_low_price": "Matalan hinnan jaksot (°C)",
+                    "temp_not_cheap_not_expensive": "Normaalit hintajaksot (°C)",
+                    "temp_minimum": "Päivän minimihinta (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Oletuslämpötila kun erityisolosuhteet eivät päde",
+                    "temp_five_most_expensive": "Vähennä lämpötilaa 5 kalleimman tunnin aikana energian säästämiseksi",
+                    "temp_is_falling": "Lämpötila kun hintatrendi laskee",
+                    "temp_five_cheapest": "Nosta lämpötilaa 5 halvimman tunnin aikana",
+                    "temp_ten_cheapest": "Lämpötila 10 halvimman tunnin aikana",
+                    "temp_low_price": "Lämpötila matalan hinnan jaksoilla (kynnysarvon alapuolella)",
+                    "temp_not_cheap_not_expensive": "Lämpötila normaalien hintojen aikana",
+                    "temp_minimum": "Maksimilämpötila päivän minimihinnan aikana"
                 }
             }
         },

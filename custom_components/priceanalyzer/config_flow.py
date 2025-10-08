@@ -70,29 +70,44 @@ def _migrate_hot_water_config(existing_config):
     
     return migrated
 
-def get_schema(existing_config = None) -> dict:
-    """Helper to get schema with editable default"""
-
-    ec = _migrate_hot_water_config(existing_config)
-
-    if ec is None:
-        ec = {}
-    schema = {
+def get_basic_schema(existing_config = None) -> dict:
+    """Schema for basic setup step"""
+    ec = existing_config if existing_config else {}
+    return {
         vol.Required("region", default=ec.get("region", None)): vol.In(regions),
         vol.Optional("currency", default=ec.get("currency", "")): vol.In(currencys),
         vol.Optional("VAT", default=ec.get("VAT", True)): bool,
-        vol.Optional("low_price_cutoff", default=ec.get("low_price_cutoff", 1.0)): vol.Coerce(float),
-        vol.Optional("price_in_cents", default=ec.get("price_in_cents", False)): bool,
-        vol.Optional("price_type", default=ec.get("price_type", "kWh")): vol.In(price_types),
         vol.Optional("time_resolution", default=ec.get("time_resolution", DEFAULT_TIME_RESOLUTION)): vol.In(time_resolutions),
+    }
+
+def get_price_schema(existing_config = None) -> dict:
+    """Schema for price settings step"""
+    ec = existing_config if existing_config else {}
+    return {
+        vol.Optional("price_type", default=ec.get("price_type", "kWh")): vol.In(price_types),
+        vol.Optional("price_in_cents", default=ec.get("price_in_cents", False)): bool,
+        vol.Optional("low_price_cutoff", default=ec.get("low_price_cutoff", 1.0)): vol.Coerce(float),
         vol.Optional("additional_costs", default=ec.get("additional_costs", DEFAULT_TEMPLATE)): str,
+    }
+
+def get_advanced_schema(existing_config = None) -> dict:
+    """Schema for advanced settings step"""
+    ec = existing_config if existing_config else {}
+    return {
         vol.Optional("multiply_template", default=ec.get("multiply_template", '{{correction * 1}}')): str,
         vol.Optional("hours_to_boost", default=ec.get("hours_to_boost", 2)): int,
         vol.Optional("hours_to_save", default=ec.get("hours_to_save", 2)): int,
         vol.Optional("pa_price_before_active", default=ec.get('pa_price_before_active',0.2)): float,
         vol.Optional("percent_difference", default=ec.get("percent_difference",20)): int,
         vol.Optional("price_before_active", default=ec.get('price_before_active',0.2)): float,
-        # Individual hot water temperature settings
+    }
+
+def get_hot_water_schema(existing_config = None) -> dict:
+    """Schema for hot water temperature settings step"""
+    ec = _migrate_hot_water_config(existing_config)
+    if ec is None:
+        ec = {}
+    return {
         vol.Optional("temp_default", default=ec.get('temp_default', HOT_WATER_DEFAULT_CONFIG[TEMP_DEFAULT])): vol.Coerce(float),
         vol.Optional("temp_five_most_expensive", default=ec.get('temp_five_most_expensive', HOT_WATER_DEFAULT_CONFIG[TEMP_FIVE_MOST_EXPENSIVE])): vol.Coerce(float),
         vol.Optional("temp_is_falling", default=ec.get('temp_is_falling', HOT_WATER_DEFAULT_CONFIG[TEMP_IS_FALLING])): vol.Coerce(float),
@@ -102,6 +117,19 @@ def get_schema(existing_config = None) -> dict:
         vol.Optional("temp_not_cheap_not_expensive", default=ec.get('temp_not_cheap_not_expensive', HOT_WATER_DEFAULT_CONFIG[TEMP_NOT_CHEAP_NOT_EXPENSIVE])): vol.Coerce(float),
         vol.Optional("temp_minimum", default=ec.get('temp_minimum', HOT_WATER_DEFAULT_CONFIG[TEMP_MINIMUM])): vol.Coerce(float),
     }
+
+def get_schema(existing_config = None) -> dict:
+    """Helper to get complete schema with editable defaults (for backward compatibility)"""
+    ec = _migrate_hot_water_config(existing_config)
+    if ec is None:
+        ec = {}
+    
+    # Combine all schemas for backward compatibility
+    schema = {}
+    schema.update(get_basic_schema(ec))
+    schema.update(get_price_schema(ec))
+    schema.update(get_advanced_schema(ec))
+    schema.update(get_hot_water_schema(ec))
     return schema
 
 
@@ -146,7 +174,7 @@ class Base:
 
 
 class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Nordpool."""
+    """Config flow for PriceAnalyzer."""
 
     VERSION = "1.0"
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
@@ -154,25 +182,79 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self):
         """Initialize."""
         self._errors = {}
+        self._data = {}
 
     async def async_step_user(
         self, user_input=None
     ):  # pylint: disable=dangerous-default-value
-        """Handle a flow initialized by the user."""
+        """Handle a flow initialized by the user - Step 1: Basic Setup."""
         self._errors = {}
 
         if user_input is not None:
-            template_ok, user_input = await self.check_settings(user_input)
-            if template_ok:
-                title = DOMAIN + user_input["region"]
-                return self.async_create_entry(title=title, data=user_input)
-            else:
-                self._errors["base"] = "invalid_template"
+            self._data.update(user_input)
+            return await self.async_step_price_settings()
 
-        schema = get_schema(user_input)
+        schema = get_basic_schema(self._data)
 
         return self.async_show_form(
             step_id="user",
+            data_schema=vol.Schema(schema),
+            description_placeholders=placeholders,
+            errors=self._errors,
+        )
+
+    async def async_step_price_settings(self, user_input=None):
+        """Handle Step 2: Price Settings."""
+        self._errors = {}
+
+        if user_input is not None:
+            # Validate template
+            template_ok, validated_input = await self.check_settings(user_input)
+            if not template_ok:
+                self._errors["base"] = "invalid_template"
+            else:
+                self._data.update(validated_input)
+                return await self.async_step_advanced_settings()
+
+        schema = get_price_schema(self._data)
+
+        return self.async_show_form(
+            step_id="price_settings",
+            data_schema=vol.Schema(schema),
+            description_placeholders=placeholders,
+            errors=self._errors,
+        )
+
+    async def async_step_advanced_settings(self, user_input=None):
+        """Handle Step 3: Advanced Settings."""
+        self._errors = {}
+
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self.async_step_hot_water()
+
+        schema = get_advanced_schema(self._data)
+
+        return self.async_show_form(
+            step_id="advanced_settings",
+            data_schema=vol.Schema(schema),
+            description_placeholders=placeholders,
+            errors=self._errors,
+        )
+
+    async def async_step_hot_water(self, user_input=None):
+        """Handle Step 4: Hot Water Configuration."""
+        self._errors = {}
+
+        if user_input is not None:
+            self._data.update(user_input)
+            title = DOMAIN + " " + self._data["region"]
+            return self.async_create_entry(title=title, data=self._data)
+
+        schema = get_hot_water_schema(self._data)
+
+        return self.async_show_form(
+            step_id="hot_water",
             data_schema=vol.Schema(schema),
             description_placeholders=placeholders,
             errors=self._errors,
@@ -206,43 +288,87 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
         # settings to be edit after the sensor is created.
         # For this to work we need to have a stable entity id.
         self.options = dict(config_entry.data)
-        # self.data = config_entries.data
         self._errors = {}
+        self._data = dict(config_entry.data)
 
     async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
         """Manage the options."""
-        return await self.async_step_user(user_input=user_input)
+        return await self.async_step_basic_setup(user_input=user_input)
 
-    async def async_step_edit(self, user_input=None):  # pylint: disable=unused-argument
-        """Manage the options."""
-        return await self.async_step_user(user_input=user_input)
+    async def async_step_basic_setup(self, user_input=None):
+        """Handle Step 1: Basic Setup."""
+        self._errors = {}
 
-    async def async_step_user(self, user_input=None):
-        """Handle a flow initialized by the user."""
-        _LOGGER.debug('Trying updating Integration for PA with options: %s', user_input)
         if user_input is not None:
-            template_ok, user_input = await self.check_settings(user_input)
-            if template_ok:
-                title = DOMAIN + user_input["region"]
-                _LOGGER.debug('updating Integration (template_ok) for %s with options: %s', title, user_input)
-                self.hass.config_entries.async_update_entry(
-                    self.config_entry, data=user_input, options=self.config_entry.options
-                )
-                return self.async_create_entry(title=title, data=user_input)
-            else:
-                self._errors["base"] = "invalid_template"
+            self._data.update(user_input)
+            return await self.async_step_price_settings()
 
-            self.options.update(user_input)
-            title = DOMAIN + user_input["region"]
-            _LOGGER.debug('updating Integration for %s with options i think: %s', title, user_input)
-            return self.async_create_entry(title=title, data=self.options)
-
-        # Get the current settings and use them as default.
-        ds = get_schema(self.options)
+        schema = get_basic_schema(self._data)
 
         return self.async_show_form(
-            step_id="edit",
-            data_schema=vol.Schema(ds),
+            step_id="basic_setup",
+            data_schema=vol.Schema(schema),
             description_placeholders=placeholders,
-            errors={},
+            errors=self._errors,
+        )
+
+    async def async_step_price_settings(self, user_input=None):
+        """Handle Step 2: Price Settings."""
+        self._errors = {}
+
+        if user_input is not None:
+            # Validate template
+            template_ok, validated_input = await self.check_settings(user_input)
+            if not template_ok:
+                self._errors["base"] = "invalid_template"
+            else:
+                self._data.update(validated_input)
+                return await self.async_step_advanced_settings()
+
+        schema = get_price_schema(self._data)
+
+        return self.async_show_form(
+            step_id="price_settings",
+            data_schema=vol.Schema(schema),
+            description_placeholders=placeholders,
+            errors=self._errors,
+        )
+
+    async def async_step_advanced_settings(self, user_input=None):
+        """Handle Step 3: Advanced Settings."""
+        self._errors = {}
+
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self.async_step_hot_water()
+
+        schema = get_advanced_schema(self._data)
+
+        return self.async_show_form(
+            step_id="advanced_settings",
+            data_schema=vol.Schema(schema),
+            description_placeholders=placeholders,
+            errors=self._errors,
+        )
+
+    async def async_step_hot_water(self, user_input=None):
+        """Handle Step 4: Hot Water Configuration."""
+        self._errors = {}
+
+        if user_input is not None:
+            self._data.update(user_input)
+            title = DOMAIN + " " + self._data["region"]
+            _LOGGER.debug('updating Integration for %s with options: %s', title, self._data)
+            self.hass.config_entries.async_update_entry(
+                self.config_entry, data=self._data, options=self.config_entry.options
+            )
+            return self.async_create_entry(title=title, data=self._data)
+
+        schema = get_hot_water_schema(self._data)
+
+        return self.async_show_form(
+            step_id="hot_water",
+            data_schema=vol.Schema(schema),
+            description_placeholders=placeholders,
+            errors=self._errors,
         )

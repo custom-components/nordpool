@@ -2,33 +2,79 @@
   "config": {
     "step": {
       "user": {
-        "title": "PriceAnalyzer Sensor",
-        "description": "Nastavenie PriceAnalyzer snímača",
+        "title": "Základné nastavenie",
+        "description": "Nakonfigurujte základné nastavenia pre váš PriceAnalyzer snímač. Vyberte váš región a menu pre začiatok.",
         "data": {
           "region": "Región",
-          "currency": "mena",
-          "VAT": "Vrátane DPH",
-          "precision": "Koľko desatinných miest zobraziť",
-          "low_price_cutoff": "nízka cena odrezaná",
-          "price_in_cents": "Cena v centoch",
-          "price_type": "Cena vo formáte",
-          "time_resolution": "Časové rozlíšenie (Štvrťročne/Hodinové)",
-          "additional_costs": "Šablóna pre dodatočné náklady",
-          "percent_difference": "Percentuálny rozdiel medzi Min a Max za deň pred obťažovaním",
-          "hot_water_config" : "Nastavenia vlastných stupňov pre snímač teplej vody",
-          "price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou PriceAnalyzer horúca voda",
-          "pa_price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou snímača PriceAnalyzer",
-          "multiply_template": "Šablóna na opravu cien",
-          "hours_to_boost": "Hodiny VT",
-          "hours_to_save": "Hodiny NT",
-          "temp_default": "Teplá voda: Predvolená teplota (°C)",
-          "temp_five_most_expensive": "Teplá voda: Teplota počas 5 najdrahších hodín (°C)",
-          "temp_is_falling": "Teplá voda: Teplota keď cena klesá (°C)",
-          "temp_five_cheapest": "Teplá voda: Teplota počas 5 najlacnejších hodín (°C)",
-          "temp_ten_cheapest": "Teplá voda: Teplota počas 10 najlacnejších hodín (°C)",
-          "temp_low_price": "Teplá voda: Teplota počas nízkych cien (°C)",
-          "temp_not_cheap_not_expensive": "Teplá voda: Teplota počas normálnych cien (°C)",
-          "temp_minimum": "Teplá voda: Teplota pri minimálnej cene (°C)"
+          "currency": "Mena (nechajte prázdne pre predvolené)",
+          "VAT": "Zahrnúť DPH v cenách",
+          "time_resolution": "Časové rozlíšenie"
+        },
+        "data_description": {
+          "region": "Vyberte váš región cien elektriny (napr. SK)",
+          "currency": "Prepíšte predvolenú menu pre váš región ak je potrebné",
+          "VAT": "Zahrnúť daň z pridanej hodnoty v zobrazených cenách",
+          "time_resolution": "Vyberte hodinové alebo štvrťhodinové (15-minútové) aktualizácie cien"
+        }
+      },
+      "price_settings": {
+        "title": "Nastavenia cien",
+        "description": "Nakonfigurujte ako sa ceny zobrazujú a počítajú. Môžete pridať dodatočné náklady ako poplatky za sieť a prispôsobiť formát ceny.",
+        "data": {
+          "price_type": "Formát ceny",
+          "price_in_cents": "Zobraziť ceny v centoch",
+          "low_price_cutoff": "Prah nízkej ceny",
+          "additional_costs": "Šablóna dodatočných nákladov"
+        },
+        "data_description": {
+          "price_type": "Zobraziť cenu za kWh, MWh alebo Wh",
+          "price_in_cents": "Zobraziť ceny v centoch namiesto hlavnej menovej jednotky",
+          "low_price_cutoff": "Násobiteľ pre určenie období nízkych cien (1.0 = priemerná cena)",
+          "additional_costs": "Jinja2 šablóna na pridanie fixných nákladov, poplatkov za sieť atď. Príklad: {{0.50|float}} pridá 0.50 ku každej cene"
+        }
+      },
+      "advanced_settings": {
+        "title": "Pokročilé nastavenia",
+        "description": "Dolaďte správanie PriceAnalyzer s pokročilými možnosťami pre opravy cien, hodiny zvýšenia/úspory a prahy aktivácie.",
+        "data": {
+          "multiply_template": "Šablóna korekcie ceny",
+          "hours_to_boost": "Hodiny na zvýšenie",
+          "hours_to_save": "Hodiny na úsporu",
+          "pa_price_before_active": "Prah aktivácie PriceAnalyzer",
+          "percent_difference": "Minimálna denná variácia ceny (%)",
+          "price_before_active": "Prah aktivácie teplej vody"
+        },
+        "data_description": {
+          "multiply_template": "Jinja2 šablóna na násobenie/opravu cien. Použite premennú 'correction'. Príklad: {{correction * 1.25}}",
+          "hours_to_boost": "Počet najlacnejších hodín na zvýšenie spotreby",
+          "hours_to_save": "Počet najdrahších hodín na zníženie spotreby",
+          "pa_price_before_active": "Minimálna maximálna denná cena pred aktiváciou snímača PriceAnalyzer (vo vašej mene)",
+          "percent_difference": "Minimálny percentuálny rozdiel medzi denným min/max cenou na aktiváciu funkcií",
+          "price_before_active": "Minimálna maximálna denná cena pred optimalizáciou teplej vody (vo vašej mene)"
+        }
+      },
+      "hot_water": {
+        "title": "Riadenie teplej vody",
+        "description": "Nakonfigurujte teploty ohrievača teplej vody pre rôzne cenové scenáre. Systém sa automaticky prispôsobí na základe cien elektriny.",
+        "data": {
+          "temp_default": "Predvolená teplota (°C)",
+          "temp_five_most_expensive": "5 najdrahších hodín (°C)",
+          "temp_is_falling": "Cena klesá (°C)",
+          "temp_five_cheapest": "5 najlacnejších hodín (°C)",
+          "temp_ten_cheapest": "10 najlacnejších hodín (°C)",
+          "temp_low_price": "Obdobia nízkych cien (°C)",
+          "temp_not_cheap_not_expensive": "Normálne cenové obdobia (°C)",
+          "temp_minimum": "Minimálna denná cena (°C)"
+        },
+        "data_description": {
+          "temp_default": "Predvolená teplota keď neplatia žiadne špeciálne podmienky",
+          "temp_five_most_expensive": "Znížte teplotu počas 5 najdrahších hodín na úsporu energie",
+          "temp_is_falling": "Teplota keď cenový trend klesá",
+          "temp_five_cheapest": "Zvýšte teplotu počas 5 najlacnejších hodín",
+          "temp_ten_cheapest": "Teplota počas 10 najlacnejších hodín",
+          "temp_low_price": "Teplota počas období nízkych cien (pod prahom)",
+          "temp_not_cheap_not_expensive": "Teplota počas normálnych cenových období",
+          "temp_minimum": "Maximálna teplota pri minimálnej dennej cene"
         }
       }
     },
@@ -39,34 +85,80 @@
   },
   "options": {
     "step": {
-      "edit": {
-        "title": "PriceAnalyzer snímač",
-        "description": "Editovať PriceAnalyzer snímač",
+      "basic_setup": {
+        "title": "Základné nastavenie",
+        "description": "Nakonfigurujte základné nastavenia pre váš PriceAnalyzer snímač. Vyberte váš región a menu pre začiatok.",
         "data": {
           "region": "Región",
-          "currency": "mena",
-          "VAT": "Vrátane DPH",
-          "precision": "Koľko desatinných miest zobraziť",
-          "low_price_cutoff": "nízka cena odrezaná",
-          "price_in_cents": "Cena v centoch",
-          "price_type": "Cena vo formáte",
-          "time_resolution": "Časové rozlíšenie (Štvrťročne/Hodinové)",
-          "additional_costs": "Šablóna pre dodatočné náklady",
-          "percent_difference": "Percentuálny rozdiel medzi Min a Max za deň pred obťažovaním",
-          "hot_water_config" : "Nastavenia vlastných stupňov pre snímač teplej vody",
-          "price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou PriceAnalyzer teplá voda",
-          "pa_price_before_active":  "Minimálna maximálna cena za deň pred aktiváciou snímača PriceAnalyzer",
-          "multiply_template": "Šablóna na opravu cien",
-          "hours_to_boost": "Hodiny VT",
-          "hours_to_save": "Hodiny NT",
-          "temp_default": "Teplá voda: Predvolená teplota (°C)",
-          "temp_five_most_expensive": "Teplá voda: Teplota počas 5 najdrahších hodín (°C)",
-          "temp_is_falling": "Teplá voda: Teplota keď cena klesá (°C)",
-          "temp_five_cheapest": "Teplá voda: Teplota počas 5 najlacnejších hodín (°C)",
-          "temp_ten_cheapest": "Teplá voda: Teplota počas 10 najlacnejších hodín (°C)",
-          "temp_low_price": "Teplá voda: Teplota počas nízkych cien (°C)",
-          "temp_not_cheap_not_expensive": "Teplá voda: Teplota počas normálnych cien (°C)",
-          "temp_minimum": "Teplá voda: Teplota pri minimálnej cene (°C)"
+          "currency": "Mena (nechajte prázdne pre predvolené)",
+          "VAT": "Zahrnúť DPH v cenách",
+          "time_resolution": "Časové rozlíšenie"
+        },
+        "data_description": {
+          "region": "Vyberte váš región cien elektriny (napr. SK)",
+          "currency": "Prepíšte predvolenú menu pre váš región ak je potrebné",
+          "VAT": "Zahrnúť daň z pridanej hodnoty v zobrazených cenách",
+          "time_resolution": "Vyberte hodinové alebo štvrťhodinové (15-minútové) aktualizácie cien"
+        }
+      },
+      "price_settings": {
+        "title": "Nastavenia cien",
+        "description": "Nakonfigurujte ako sa ceny zobrazujú a počítajú. Môžete pridať dodatočné náklady ako poplatky za sieť a prispôsobiť formát ceny.",
+        "data": {
+          "price_type": "Formát ceny",
+          "price_in_cents": "Zobraziť ceny v centoch",
+          "low_price_cutoff": "Prah nízkej ceny",
+          "additional_costs": "Šablóna dodatočných nákladov"
+        },
+        "data_description": {
+          "price_type": "Zobraziť cenu za kWh, MWh alebo Wh",
+          "price_in_cents": "Zobraziť ceny v centoch namiesto hlavnej menovej jednotky",
+          "low_price_cutoff": "Násobiteľ pre určenie období nízkych cien (1.0 = priemerná cena)",
+          "additional_costs": "Jinja2 šablóna na pridanie fixných nákladov, poplatkov za sieť atď. Príklad: {{0.50|float}} pridá 0.50 ku každej cene"
+        }
+      },
+      "advanced_settings": {
+        "title": "Pokročilé nastavenia",
+        "description": "Dolaďte správanie PriceAnalyzer s pokročilými možnosťami pre opravy cien, hodiny zvýšenia/úspory a prahy aktivácie.",
+        "data": {
+          "multiply_template": "Šablóna korekcie ceny",
+          "hours_to_boost": "Hodiny na zvýšenie",
+          "hours_to_save": "Hodiny na úsporu",
+          "pa_price_before_active": "Prah aktivácie PriceAnalyzer",
+          "percent_difference": "Minimálna denná variácia ceny (%)",
+          "price_before_active": "Prah aktivácie teplej vody"
+        },
+        "data_description": {
+          "multiply_template": "Jinja2 šablóna na násobenie/opravu cien. Použite premennú 'correction'. Príklad: {{correction * 1.25}}",
+          "hours_to_boost": "Počet najlacnejších hodín na zvýšenie spotreby",
+          "hours_to_save": "Počet najdrahších hodín na zníženie spotreby",
+          "pa_price_before_active": "Minimálna maximálna denná cena pred aktiváciou snímača PriceAnalyzer (vo vašej mene)",
+          "percent_difference": "Minimálny percentuálny rozdiel medzi denným min/max cenou na aktiváciu funkcií",
+          "price_before_active": "Minimálna maximálna denná cena pred optimalizáciou teplej vody (vo vašej mene)"
+        }
+      },
+      "hot_water": {
+        "title": "Riadenie teplej vody",
+        "description": "Nakonfigurujte teploty ohrievača teplej vody pre rôzne cenové scenáre. Systém sa automaticky prispôsobí na základe cien elektriny.",
+        "data": {
+          "temp_default": "Predvolená teplota (°C)",
+          "temp_five_most_expensive": "5 najdrahších hodín (°C)",
+          "temp_is_falling": "Cena klesá (°C)",
+          "temp_five_cheapest": "5 najlacnejších hodín (°C)",
+          "temp_ten_cheapest": "10 najlacnejších hodín (°C)",
+          "temp_low_price": "Obdobia nízkych cien (°C)",
+          "temp_not_cheap_not_expensive": "Normálne cenové obdobia (°C)",
+          "temp_minimum": "Minimálna denná cena (°C)"
+        },
+        "data_description": {
+          "temp_default": "Predvolená teplota keď neplatia žiadne špeciálne podmienky",
+          "temp_five_most_expensive": "Znížte teplotu počas 5 najdrahších hodín na úsporu energie",
+          "temp_is_falling": "Teplota keď cenový trend klesá",
+          "temp_five_cheapest": "Zvýšte teplotu počas 5 najlacnejších hodín",
+          "temp_ten_cheapest": "Teplota počas 10 najlacnejších hodín",
+          "temp_low_price": "Teplota počas období nízkych cien (pod prahom)",
+          "temp_not_cheap_not_expensive": "Teplota počas normálnych cenových období",
+          "temp_minimum": "Maximálna teplota pri minimálnej dennej cene"
         }
       }
     },

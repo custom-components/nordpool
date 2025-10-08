@@ -2,75 +2,169 @@
     "config": {
         "step": {
             "user": {
-                "title": "Andur",
-                "description": "Seadista elektrihinna andur",
+                "title": "Põhiseadistus",
+                "description": "Seadista PriceAnalyzer anduri põhiseaded. Vali oma piirkond ja valuuta alustamiseks.",
                 "data": {
                     "region": "Piirkond",
-                    "friendly_name": "Kuvatav nimi",
-                    "currency": "EUR",
-                    "VAT": "Koos käibemaksuga",
-                    "precision": "Mitu kohta peale koma",
-                    "low_price_cutoff": "Madala hinna tase",
-                    "price_in_cents": "Hind sentides",
-                    "price_type": "Hinna vorming",
-                    "time_resolution": "Aja resolutsioon (Kvartaalselt/Tunniti)",
-                    "additional_costs": "Lisanduvate hindade mall",
-                    "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
-                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
-                    "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active",
-                    "multiply_template": "Price Correction Template",
-                    "hours_to_boost": "Hours to boost",
-                    "hours_to_save": "Hours to save",
-                    "temp_default": "VVB: Vaikimisi temperatuur (°C)",
-                    "temp_five_most_expensive": "VVB: Temperatuur 5 kõige kallima tunni ajal (°C)",
-                    "temp_is_falling": "VVB: Temperatuur hinna langemisel (°C)",
-                    "temp_five_cheapest": "VVB: Temperatuur 5 kõige odavama tunni ajal (°C)",
-                    "temp_ten_cheapest": "VVB: Temperatuur 10 kõige odavama tunni ajal (°C)",
-                    "temp_low_price": "VVB: Temperatuur madala hinnaga perioodidel (°C)",
-                    "temp_not_cheap_not_expensive": "VVB: Temperatuur normaalsete hindadega perioodidel (°C)",
-                    "temp_minimum": "VVB: Temperatuur miinimumhinna ajal (°C)"
-                    }
+                    "currency": "Valuuta (jäta tühjaks vaikimisi jaoks)",
+                    "VAT": "Kaasa käibemaks hindades",
+                    "time_resolution": "Aja resolutsioon"
+                },
+                "data_description": {
+                    "region": "Vali oma elektrihinna piirkond (nt EE, LT, LV)",
+                    "currency": "Tühista piirkonna vaikimisi valuuta vajadusel",
+                    "VAT": "Kaasa käibemaks kuvatud hindades",
+                    "time_resolution": "Vali tunni- või kvartaalipõhine (15-minutiline) hinnavärskendus"
+                }
+            },
+            "price_settings": {
+                "title": "Hinnaseaded",
+                "description": "Seadista hindade kuvamine ja arvutamine. Saad lisada lisatasusid nagu võrgutasud ja kohandada hinnaformaati.",
+                "data": {
+                    "price_type": "Hinna formaat",
+                    "price_in_cents": "Kuva hinnad sentides",
+                    "low_price_cutoff": "Madala hinna lävi",
+                    "additional_costs": "Lisatasude mall"
+                },
+                "data_description": {
+                    "price_type": "Kuva hind kWh, MWh või Wh kohta",
+                    "price_in_cents": "Kuva hinnad sentides euroe asemel",
+                    "low_price_cutoff": "Kordaja madala hinna perioodide määramiseks (1.0 = keskmine hind)",
+                    "additional_costs": "Jinja2 mall püsikulude, võrgutasude jne lisamiseks. Näide: {{0.50|float}} lisab 0.50 igale hinnale"
+                }
+            },
+            "advanced_settings": {
+                "title": "Täpsemad seaded",
+                "description": "Täpsusta PriceAnalyzer käitumist täpsemate valikutega hinnaparanduste, tõstmis-/säästutundide ja aktiveerimislävedite jaoks.",
+                "data": {
+                    "multiply_template": "Hinnaparanduse mall",
+                    "hours_to_boost": "Tõstmistunnid",
+                    "hours_to_save": "Säästutunnid",
+                    "pa_price_before_active": "PriceAnalyzer aktiveerimislävi",
+                    "percent_difference": "Minimaalne päevane hinnavahemik (%)",
+                    "price_before_active": "Soojavee aktiveerimislävi"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2 mall hindade korrutamiseks/parandamiseks. Kasuta 'correction' muutujat. Näide: {{correction * 1.25}}",
+                    "hours_to_boost": "Odavaimate tundide arv tarbimise suurendamiseks",
+                    "hours_to_save": "Kallimate tundide arv tarbimise vähendamiseks",
+                    "pa_price_before_active": "Minimaalne päeva maksimumhind enne PriceAnalyzer anduri aktiveerumist (sinu valuutas)",
+                    "percent_difference": "Minimaalne protsentuaalne erinevus päeva min/max hinna vahel funktsioonide aktiveerimiseks",
+                    "price_before_active": "Minimaalne päeva maksimumhind enne soojavee optimeerimist (sinu valuutas)"
+                }
+            },
+            "hot_water": {
+                "title": "Soojavee juhtimine",
+                "description": "Seadista soojaveesoojendi temperatuurid erinevate hinnastsenaariumide jaoks. Süsteem reguleerib automaatselt elektrihinnade põhjal.",
+                "data": {
+                    "temp_default": "Vaikimisi temperatuur (°C)",
+                    "temp_five_most_expensive": "5 kallimat tundi (°C)",
+                    "temp_is_falling": "Hind langeb (°C)",
+                    "temp_five_cheapest": "5 odavamat tundi (°C)",
+                    "temp_ten_cheapest": "10 odavamat tundi (°C)",
+                    "temp_low_price": "Madala hinna perioodid (°C)",
+                    "temp_not_cheap_not_expensive": "Normaalsed hinnaperioodid (°C)",
+                    "temp_minimum": "Päeva miinimumhind (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Vaikimisi temperatuur kui eriolukorrad ei kehti",
+                    "temp_five_most_expensive": "Vähenda temperatuuri 5 kallima tunni ajal energia säästmiseks",
+                    "temp_is_falling": "Temperatuur kui hinnatrend langeb",
+                    "temp_five_cheapest": "Tõsta temperatuuri 5 odavama tunni ajal",
+                    "temp_ten_cheapest": "Temperatuur 10 odavama tunni ajal",
+                    "temp_low_price": "Temperatuur madala hinna perioodidel (läve all)",
+                    "temp_not_cheap_not_expensive": "Temperatuur normaalsete hindade ajal",
+                    "temp_minimum": "Maksimaalne temperatuur päeva miinimumhinna ajal"
+                }
             }
         },
         "error": {
-            "name_exists": "See nimi on juba kasutusel"
+            "name_exists": "See nimi on juba kasutusel",
+            "invalid_template": "Mall on vigane, vaata https://github.com/custom-components/nordpool"
         }
     },
     "options": {
         "step": {
-            "edit": {
-                "title": "Andur",
-                "description": "Seadista elektrihinna andur",
+            "basic_setup": {
+                "title": "Põhiseadistus",
+                "description": "Seadista PriceAnalyzer anduri põhiseaded. Vali oma piirkond ja valuuta alustamiseks.",
                 "data": {
                     "region": "Piirkond",
-                    "friendly_name": "Kuvatav nimi",
-                    "currency": "EUR",
-                    "VAT": "Koos käibemaksuga",
-                    "precision": "Mitu kohta peale koma",
-                    "low_price_cutoff": "Madala hinna tase",
-                    "price_in_cents": "Hind sentides",
-                    "price_type": "Hinna vorming",
-                    "time_resolution": "Aja resolutsioon (Kvartaalselt/Tunniti)",
-                    "additional_costs": "Lisanduvate hindade mall",
-                    "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
-                    "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
-                    "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active",
-                    "multiply_template": "Price Correction Template",
-                    "hours_to_boost": "Hours to boost",
-                    "hours_to_save": "Hours to save",
-                    "temp_default": "VVB: Vaikimisi temperatuur (°C)",
-                    "temp_five_most_expensive": "VVB: Temperatuur 5 kõige kallima tunni ajal (°C)",
-                    "temp_is_falling": "VVB: Temperatuur hinna langemisel (°C)",
-                    "temp_five_cheapest": "VVB: Temperatuur 5 kõige odavama tunni ajal (°C)",
-                    "temp_ten_cheapest": "VVB: Temperatuur 10 kõige odavama tunni ajal (°C)",
-                    "temp_low_price": "VVB: Temperatuur madala hinnaga perioodidel (°C)",
-                    "temp_not_cheap_not_expensive": "VVB: Temperatuur normaalsete hindadega perioodidel (°C)",
-                    "temp_minimum": "VVB: Temperatuur miinimumhinna ajal (°C)"
-                    }
+                    "currency": "Valuuta (jäta tühjaks vaikimisi jaoks)",
+                    "VAT": "Kaasa käibemaks hindades",
+                    "time_resolution": "Aja resolutsioon"
+                },
+                "data_description": {
+                    "region": "Vali oma elektrihinna piirkond (nt EE, LT, LV)",
+                    "currency": "Tühista piirkonna vaikimisi valuuta vajadusel",
+                    "VAT": "Kaasa käibemaks kuvatud hindades",
+                    "time_resolution": "Vali tunni- või kvartaalipõhine (15-minutiline) hinnavärskendus"
+                }
+            },
+            "price_settings": {
+                "title": "Hinnaseaded",
+                "description": "Seadista hindade kuvamine ja arvutamine. Saad lisada lisatasusid nagu võrgutasud ja kohandada hinnaformaati.",
+                "data": {
+                    "price_type": "Hinna formaat",
+                    "price_in_cents": "Kuva hinnad sentides",
+                    "low_price_cutoff": "Madala hinna lävi",
+                    "additional_costs": "Lisatasude mall"
+                },
+                "data_description": {
+                    "price_type": "Kuva hind kWh, MWh või Wh kohta",
+                    "price_in_cents": "Kuva hinnad sentides euroe asemel",
+                    "low_price_cutoff": "Kordaja madala hinna perioodide määramiseks (1.0 = keskmine hind)",
+                    "additional_costs": "Jinja2 mall püsikulude, võrgutasude jne lisamiseks. Näide: {{0.50|float}} lisab 0.50 igale hinnale"
+                }
+            },
+            "advanced_settings": {
+                "title": "Täpsemad seaded",
+                "description": "Täpsusta PriceAnalyzer käitumist täpsemate valikutega hinnaparanduste, tõstmis-/säästutundide ja aktiveerimislävedite jaoks.",
+                "data": {
+                    "multiply_template": "Hinnaparanduse mall",
+                    "hours_to_boost": "Tõstmistunnid",
+                    "hours_to_save": "Säästutunnid",
+                    "pa_price_before_active": "PriceAnalyzer aktiveerimislävi",
+                    "percent_difference": "Minimaalne päevane hinnavahemik (%)",
+                    "price_before_active": "Soojavee aktiveerimislävi"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2 mall hindade korrutamiseks/parandamiseks. Kasuta 'correction' muutujat. Näide: {{correction * 1.25}}",
+                    "hours_to_boost": "Odavaimate tundide arv tarbimise suurendamiseks",
+                    "hours_to_save": "Kallimate tundide arv tarbimise vähendamiseks",
+                    "pa_price_before_active": "Minimaalne päeva maksimumhind enne PriceAnalyzer anduri aktiveerumist (sinu valuutas)",
+                    "percent_difference": "Minimaalne protsentuaalne erinevus päeva min/max hinna vahel funktsioonide aktiveerimiseks",
+                    "price_before_active": "Minimaalne päeva maksimumhind enne soojavee optimeerimist (sinu valuutas)"
+                }
+            },
+            "hot_water": {
+                "title": "Soojavee juhtimine",
+                "description": "Seadista soojaveesoojendi temperatuurid erinevate hinnastsenaariumide jaoks. Süsteem reguleerib automaatselt elektrihinnade põhjal.",
+                "data": {
+                    "temp_default": "Vaikimisi temperatuur (°C)",
+                    "temp_five_most_expensive": "5 kallimat tundi (°C)",
+                    "temp_is_falling": "Hind langeb (°C)",
+                    "temp_five_cheapest": "5 odavamat tundi (°C)",
+                    "temp_ten_cheapest": "10 odavamat tundi (°C)",
+                    "temp_low_price": "Madala hinna perioodid (°C)",
+                    "temp_not_cheap_not_expensive": "Normaalsed hinnaperioodid (°C)",
+                    "temp_minimum": "Päeva miinimumhind (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Vaikimisi temperatuur kui eriolukorrad ei kehti",
+                    "temp_five_most_expensive": "Vähenda temperatuuri 5 kallima tunni ajal energia säästmiseks",
+                    "temp_is_falling": "Temperatuur kui hinnatrend langeb",
+                    "temp_five_cheapest": "Tõsta temperatuuri 5 odavama tunni ajal",
+                    "temp_ten_cheapest": "Temperatuur 10 odavama tunni ajal",
+                    "temp_low_price": "Temperatuur madala hinna perioodidel (läve all)",
+                    "temp_not_cheap_not_expensive": "Temperatuur normaalsete hindade ajal",
+                    "temp_minimum": "Maksimaalne temperatuur päeva miinimumhinna ajal"
+                }
             }
         },
         "error": {
-            "name_exists": "See nimi on juba kasutusel"
+            "name_exists": "See nimi on juba kasutusel",
+            "invalid_template": "Mall on vigane, vaata https://github.com/custom-components/nordpool"
         }
     }
 }

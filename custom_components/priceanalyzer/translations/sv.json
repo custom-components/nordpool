@@ -2,33 +2,79 @@
     "config": {
         "step": {
             "user": {
-                "title": "PriceAnalyzer Sensor",
-                "description": "Konfigurera en PriceAnalyzer-sensor",
+                "title": "Grundläggande inställningar",
+                "description": "Konfigurera grundläggande inställningar för din PriceAnalyzer-sensor. Välj din region och valuta för att komma igång.",
                 "data": {
                     "region": "Region",
-                    "friendly_name": "Visningsnamn",
-                    "currency": "SEK",
-                    "VAT": "Inkludera moms",
-                    "precision": "Hur många decimaler ska visas",
-                    "low_price_cutoff": "Lägsta prisnivå",
-                    "price_in_cents": "Pris i ören",
+                    "currency": "Valuta (lämna tom för standard)",
+                    "VAT": "Inkludera moms i priser",
+                    "time_resolution": "Tidsupplösning"
+                },
+                "data_description": {
+                    "region": "Välj din elprisregion (t.ex. SE1, SE2, SE3)",
+                    "currency": "Åsidosätt standardvalutan för din region om det behövs",
+                    "VAT": "Inkludera moms i de visade priserna",
+                    "time_resolution": "Välj mellan tim- eller kvartalsupplösning (15-minuters) prisuppdateringar"
+                }
+            },
+            "price_settings": {
+                "title": "Prisinställningar",
+                "description": "Konfigurera hur priser visas och beräknas. Du kan lägga till extra kostnader som nätavgifter och anpassa prisformatet.",
+                "data": {
                     "price_type": "Prisformat",
-                    "time_resolution": "Tidsupplösning (Kvartersvis/Timmars)",
-                    "additional_costs": "Mall för ytterligare kostnader",
-                    "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
-                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
-                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
-                    "multiply_template": "Priskorreksjons Template",
-                    "hours_to_boost": "Timer å booste",
-                    "hours_to_save": "Timer å spare",
-                    "temp_default": "Varmvatten: Standardtemperatur (°C)",
-                    "temp_five_most_expensive": "Varmvatten: Temperatur under 5 dyraste timmarna (°C)",
-                    "temp_is_falling": "Varmvatten: Temperatur när priset faller (°C)",
-                    "temp_five_cheapest": "Varmvatten: Temperatur under 5 billigaste timmarna (°C)",
-                    "temp_ten_cheapest": "Varmvatten: Temperatur under 10 billigaste timmarna (°C)",
-                    "temp_low_price": "Varmvatten: Temperatur under lågprisperioder (°C)",
-                    "temp_not_cheap_not_expensive": "Varmvatten: Temperatur under normala prisperioder (°C)",
-                    "temp_minimum": "Varmvatten: Temperatur vid minimumpris (°C)"
+                    "price_in_cents": "Visa priser i ören",
+                    "low_price_cutoff": "Lågpriströskel",
+                    "additional_costs": "Mall för ytterligare kostnader"
+                },
+                "data_description": {
+                    "price_type": "Visa pris per kWh, MWh eller Wh",
+                    "price_in_cents": "Visa priser i ören istället för kronor",
+                    "low_price_cutoff": "Multiplikator för att bestämma lågprisperioder (1.0 = genomsnittspris)",
+                    "additional_costs": "Jinja2-mall för att lägga till fasta kostnader, nätavgifter, osv. Exempel: {{0.50|float}} lägger till 0.50 till varje pris"
+                }
+            },
+            "advanced_settings": {
+                "title": "Avancerade inställningar",
+                "description": "Finjustera PriceAnalyzer-beteendet med avancerade alternativ för priskorrigeringar, boost/spar-timmar och aktiveringströsklar.",
+                "data": {
+                    "multiply_template": "Priskorrigeringsmall",
+                    "hours_to_boost": "Timmar att boosta",
+                    "hours_to_save": "Timmar att spara",
+                    "pa_price_before_active": "PriceAnalyzer aktiveringströskel",
+                    "percent_difference": "Minsta dagliga prisvariation (%)",
+                    "price_before_active": "Varmvatten aktiveringströskel"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2-mall för att multiplicera/korrigera priser. Använd 'correction'-variabeln. Exempel: {{correction * 1.25}}",
+                    "hours_to_boost": "Antal billigaste timmar att boosta förbrukning",
+                    "hours_to_save": "Antal dyraste timmar att minska förbrukning",
+                    "pa_price_before_active": "Minsta max dagspris innan PriceAnalyzer-sensor aktiveras (i din valuta)",
+                    "percent_difference": "Minsta procentuell skillnad mellan dagligt min/max pris för att aktivera funktioner",
+                    "price_before_active": "Minsta max dagspris innan varmvattenoptimering aktiveras (i din valuta)"
+                }
+            },
+            "hot_water": {
+                "title": "Varmvattenstyrning",
+                "description": "Konfigurera varmvattenberedare temperaturer för olika prisscenarier. Systemet justerar automatiskt baserat på elpriser.",
+                "data": {
+                    "temp_default": "Standardtemperatur (°C)",
+                    "temp_five_most_expensive": "5 dyraste timmarna (°C)",
+                    "temp_is_falling": "Pris faller (°C)",
+                    "temp_five_cheapest": "5 billigaste timmarna (°C)",
+                    "temp_ten_cheapest": "10 billigaste timmarna (°C)",
+                    "temp_low_price": "Lågprisperioder (°C)",
+                    "temp_not_cheap_not_expensive": "Normala prisperioder (°C)",
+                    "temp_minimum": "Minimalt dagspris (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Standardtemperatur när inga speciella förhållanden gäller",
+                    "temp_five_most_expensive": "Minska temperaturen under de 5 dyraste timmarna för att spara energi",
+                    "temp_is_falling": "Temperatur när pristrenden faller",
+                    "temp_five_cheapest": "Boosta temperaturen under de 5 billigaste timmarna",
+                    "temp_ten_cheapest": "Temperatur under de 10 billigaste timmarna",
+                    "temp_low_price": "Temperatur under lågprisperioder (under tröskel)",
+                    "temp_not_cheap_not_expensive": "Temperatur under normala prisperioder",
+                    "temp_minimum": "Maximal temperatur vid minimalt dagspris"
                 }
             }
         },
@@ -39,29 +85,86 @@
     },
     "options": {
         "step": {
-            "edit": {
-                "title": "PriceAnalyzer Sensor",
-                "description": "Rekonfigurera en PriceAnalyzer-sensor",
+            "basic_setup": {
+                "title": "Grundläggande inställningar",
+                "description": "Konfigurera grundläggande inställningar för din PriceAnalyzer-sensor. Välj din region och valuta för att komma igång.",
                 "data": {
                     "region": "Region",
-                    "friendly_name": "Visningsnamn",
-                    "currency": "SEK",
-                    "VAT": "Inkludera moms",
-                    "precision": "Hur många decimaler ska visas",
-                    "low_price_cutoff": "Lägsta prisnivå",
-                    "price_in_cents": "Pris i ören",
+                    "currency": "Valuta (lämna tom för standard)",
+                    "VAT": "Inkludera moms i priser",
+                    "time_resolution": "Tidsupplösning"
+                },
+                "data_description": {
+                    "region": "Välj din elprisregion (t.ex. SE1, SE2, SE3)",
+                    "currency": "Åsidosätt standardvalutan för din region om det behövs",
+                    "VAT": "Inkludera moms i de visade priserna",
+                    "time_resolution": "Välj mellan tim- eller kvartalsupplösning (15-minuters) prisuppdateringar"
+                }
+            },
+            "price_settings": {
+                "title": "Prisinställningar",
+                "description": "Konfigurera hur priser visas och beräknas. Du kan lägga till extra kostnader som nätavgifter och anpassa prisformatet.",
+                "data": {
                     "price_type": "Prisformat",
-                    "time_resolution": "Tidsupplösning (Kvartersvis/Timmars)",
-                    "additional_costs": "Mall för ytterligare kostnader",
-                    "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
-                    "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
-                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
-                    "multiply_template": "Priskorreksjons Template",
-                    "hours_to_boost": "Timer å booste",
-                    "hours_to_save": "Timer å spare"
+                    "price_in_cents": "Visa priser i ören",
+                    "low_price_cutoff": "Lågpriströskel",
+                    "additional_costs": "Mall för ytterligare kostnader"
+                },
+                "data_description": {
+                    "price_type": "Visa pris per kWh, MWh eller Wh",
+                    "price_in_cents": "Visa priser i ören istället för kronor",
+                    "low_price_cutoff": "Multiplikator för att bestämma lågprisperioder (1.0 = genomsnittspris)",
+                    "additional_costs": "Jinja2-mall för att lägga till fasta kostnader, nätavgifter, osv. Exempel: {{0.50|float}} lägger till 0.50 till varje pris"
+                }
+            },
+            "advanced_settings": {
+                "title": "Avancerade inställningar",
+                "description": "Finjustera PriceAnalyzer-beteendet med avancerade alternativ för priskorrigeringar, boost/spar-timmar och aktiveringströsklar.",
+                "data": {
+                    "multiply_template": "Priskorrigeringsmall",
+                    "hours_to_boost": "Timmar att boosta",
+                    "hours_to_save": "Timmar att spara",
+                    "pa_price_before_active": "PriceAnalyzer aktiveringströskel",
+                    "percent_difference": "Minsta dagliga prisvariation (%)",
+                    "price_before_active": "Varmvatten aktiveringströskel"
+                },
+                "data_description": {
+                    "multiply_template": "Jinja2-mall för att multiplicera/korrigera priser. Använd 'correction'-variabeln. Exempel: {{correction * 1.25}}",
+                    "hours_to_boost": "Antal billigaste timmar att boosta förbrukning",
+                    "hours_to_save": "Antal dyraste timmar att minska förbrukning",
+                    "pa_price_before_active": "Minsta max dagspris innan PriceAnalyzer-sensor aktiveras (i din valuta)",
+                    "percent_difference": "Minsta procentuell skillnad mellan dagligt min/max pris för att aktivera funktioner",
+                    "price_before_active": "Minsta max dagspris innan varmvattenoptimering aktiveras (i din valuta)"
+                }
+            },
+            "hot_water": {
+                "title": "Varmvattenstyrning",
+                "description": "Konfigurera varmvattenberedare temperaturer för olika prisscenarier. Systemet justerar automatiskt baserat på elpriser.",
+                "data": {
+                    "temp_default": "Standardtemperatur (°C)",
+                    "temp_five_most_expensive": "5 dyraste timmarna (°C)",
+                    "temp_is_falling": "Pris faller (°C)",
+                    "temp_five_cheapest": "5 billigaste timmarna (°C)",
+                    "temp_ten_cheapest": "10 billigaste timmarna (°C)",
+                    "temp_low_price": "Lågprisperioder (°C)",
+                    "temp_not_cheap_not_expensive": "Normala prisperioder (°C)",
+                    "temp_minimum": "Minimalt dagspris (°C)"
+                },
+                "data_description": {
+                    "temp_default": "Standardtemperatur när inga speciella förhållanden gäller",
+                    "temp_five_most_expensive": "Minska temperaturen under de 5 dyraste timmarna för att spara energi",
+                    "temp_is_falling": "Temperatur när pristrenden faller",
+                    "temp_five_cheapest": "Boosta temperaturen under de 5 billigaste timmarna",
+                    "temp_ten_cheapest": "Temperatur under de 10 billigaste timmarna",
+                    "temp_low_price": "Temperatur under lågprisperioder (under tröskel)",
+                    "temp_not_cheap_not_expensive": "Temperatur under normala prisperioder",
+                    "temp_minimum": "Maximal temperatur vid minimalt dagspris"
                 }
             }
+        },
+        "error": {
+            "name_exists": "Namnet existerar redan",
+            "invalid_template": "Mallen är ogiltig, se https://github.com/custom-components/nordpool"
         }
     }
-    
 }
