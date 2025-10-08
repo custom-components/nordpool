@@ -76,6 +76,20 @@
                     "temp_not_cheap_not_expensive": "Temperatur under normale prisperioder",
                     "temp_minimum": "Maksimal temperatur ved minimum dagspris"
                 }
+            },
+            "config_menu": {
+                "title": "Konfigurasjons meny",
+                "description": "Velg hvilke innstillinger du vil konfigurere. Du kan navigere mellom seksjoner og fullføre når du er klar.",
+                "menu_options": {
+                    "price_settings": "Prisinnstillinger",
+                    "advanced_settings": "Avanserte innstillinger",
+                    "hot_water": "Varmtvannsstyring",
+                    "finish": "Fullfør & Lagre"
+                }
+            },
+            "finish": {
+                "title": "Konfigurasjon fullført",
+                "description": "Din PriceAnalyzer-sensor er klar til bruk!"
             }
         },
         "error": {
@@ -160,6 +174,21 @@
                     "temp_not_cheap_not_expensive": "Temperatur under normale prisperioder",
                     "temp_minimum": "Maksimal temperatur ved minimum dagspris"
                 }
+            },
+            "options_menu": {
+                "title": "Innstillingsmeny",
+                "description": "Velg hvilke innstillinger du vil endre. Du kan navigere mellom seksjoner og lagre når du er klar.",
+                "menu_options": {
+                    "basic_setup": "Grunnleggende oppsett",
+                    "price_settings": "Prisinnstillinger",
+                    "advanced_settings": "Avanserte innstillinger",
+                    "hot_water": "Varmtvannsstyring",
+                    "finish": "Lagre endringer"
+                }
+            },
+            "finish": {
+                "title": "Lagre konfigurasjon",
+                "description": "Dine endringer vil bli lagret."
             }
         },
         "error": {

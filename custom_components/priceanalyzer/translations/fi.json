@@ -76,6 +76,20 @@
                     "temp_not_cheap_not_expensive": "Lämpötila normaalien hintojen aikana",
                     "temp_minimum": "Maksimilämpötila päivän minimihinnan aikana"
                 }
+            },
+            "config_menu": {
+                "title": "Asetusvalikko",
+                "description": "Valitse mitkä asetukset haluat määrittää. Voit siirtyä osioiden välillä ja viimeistellä kun olet valmis.",
+                "menu_options": {
+                    "price_settings": "Hinta-asetukset",
+                    "advanced_settings": "Lisäasetukset",
+                    "hot_water": "Lämminveden ohjaus",
+                    "finish": "Viimeistele & Tallenna"
+                }
+            },
+            "finish": {
+                "title": "Määritys valmis",
+                "description": "PriceAnalyzer-sensorisi on valmis käytettäväksi!"
             }
         },
         "error": {
@@ -160,6 +174,21 @@
                     "temp_not_cheap_not_expensive": "Lämpötila normaalien hintojen aikana",
                     "temp_minimum": "Maksimilämpötila päivän minimihinnan aikana"
                 }
+            },
+            "options_menu": {
+                "title": "Asetusvalikko",
+                "description": "Valitse mitkä asetukset haluat muuttaa. Voit siirtyä osioiden välillä ja tallentaa kun olet valmis.",
+                "menu_options": {
+                    "basic_setup": "Perusasetukset",
+                    "price_settings": "Hinta-asetukset",
+                    "advanced_settings": "Lisäasetukset",
+                    "hot_water": "Lämminveden ohjaus",
+                    "finish": "Tallenna muutokset"
+                }
+            },
+            "finish": {
+                "title": "Tallenna määritys",
+                "description": "Muutoksesi tallennetaan."
             }
         },
         "error": {

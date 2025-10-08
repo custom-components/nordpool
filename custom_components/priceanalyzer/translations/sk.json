@@ -76,6 +76,20 @@
           "temp_not_cheap_not_expensive": "Teplota počas normálnych cenových období",
           "temp_minimum": "Maximálna teplota pri minimálnej dennej cene"
         }
+      },
+      "config_menu": {
+        "title": "Konfiguračné menu",
+        "description": "Vyberte, ktoré nastavenia chcete konfigurovať. Môžete prechádzať medzi sekciami a dokončiť, keď ste pripravení.",
+        "menu_options": {
+          "price_settings": "Nastavenia cien",
+          "advanced_settings": "Pokročilé nastavenia",
+          "hot_water": "Riadenie teplej vody",
+          "finish": "Dokončiť & Uložiť"
+        }
+      },
+      "finish": {
+        "title": "Konfigurácia dokončená",
+        "description": "Váš PriceAnalyzer snímač je pripravený na použitie!"
       }
     },
     "error": {
@@ -160,6 +174,21 @@
           "temp_not_cheap_not_expensive": "Teplota počas normálnych cenových období",
           "temp_minimum": "Maximálna teplota pri minimálnej dennej cene"
         }
+      },
+      "options_menu": {
+        "title": "Menu možností",
+        "description": "Vyberte, ktoré nastavenia chcete zmeniť. Môžete prechádzať medzi sekciami a uložiť, keď ste pripravení.",
+        "menu_options": {
+          "basic_setup": "Základné nastavenie",
+          "price_settings": "Nastavenia cien",
+          "advanced_settings": "Pokročilé nastavenia",
+          "hot_water": "Riadenie teplej vody",
+          "finish": "Uložiť zmeny"
+        }
+      },
+      "finish": {
+        "title": "Uložiť konfiguráciu",
+        "description": "Vaše zmeny budú uložené."
       }
     },
     "error": {

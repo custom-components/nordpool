@@ -192,7 +192,7 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._data.update(user_input)
-            return await self.async_step_price_settings()
+            return await self.async_step_config_menu()
 
         schema = get_basic_schema(self._data)
 
@@ -201,6 +201,13 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(schema),
             description_placeholders=placeholders,
             errors=self._errors,
+        )
+
+    async def async_step_config_menu(self, user_input=None):
+        """Show configuration menu."""
+        return self.async_show_menu(
+            step_id="config_menu",
+            menu_options=["price_settings", "advanced_settings", "hot_water", "finish"],
         )
 
     async def async_step_price_settings(self, user_input=None):
@@ -214,7 +221,7 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
                 self._errors["base"] = "invalid_template"
             else:
                 self._data.update(validated_input)
-                return await self.async_step_advanced_settings()
+                return await self.async_step_config_menu()
 
         schema = get_price_schema(self._data)
 
@@ -231,7 +238,7 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._data.update(user_input)
-            return await self.async_step_hot_water()
+            return await self.async_step_config_menu()
 
         schema = get_advanced_schema(self._data)
 
@@ -248,8 +255,7 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._data.update(user_input)
-            title = DOMAIN + " " + self._data["region"]
-            return self.async_create_entry(title=title, data=self._data)
+            return await self.async_step_config_menu()
 
         schema = get_hot_water_schema(self._data)
 
@@ -259,6 +265,14 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders=placeholders,
             errors=self._errors,
         )
+
+    async def async_step_finish(self, user_input=None):
+        """Finish configuration and create entry."""
+        if "region" not in self._data:
+            return await self.async_step_user()
+        
+        title = DOMAIN + " " + self._data["region"]
+        return self.async_create_entry(title=title, data=self._data)
 
 
 
@@ -283,7 +297,7 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
     """Handles the options for the component"""
 
     def __init__(self, config_entry) -> None:
-        self.config_entry = config_entry
+        # Note: self.config_entry is automatically set by the parent class
         # We dont really care about the options, this component allows all
         # settings to be edit after the sensor is created.
         # For this to work we need to have a stable entity id.
@@ -293,7 +307,14 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
         """Manage the options."""
-        return await self.async_step_basic_setup(user_input=user_input)
+        return await self.async_step_options_menu(user_input=user_input)
+
+    async def async_step_options_menu(self, user_input=None):
+        """Show options menu."""
+        return self.async_show_menu(
+            step_id="options_menu",
+            menu_options=["basic_setup", "price_settings", "advanced_settings", "hot_water", "finish"],
+        )
 
     async def async_step_basic_setup(self, user_input=None):
         """Handle Step 1: Basic Setup."""
@@ -301,7 +322,7 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
 
         if user_input is not None:
             self._data.update(user_input)
-            return await self.async_step_price_settings()
+            return await self.async_step_options_menu()
 
         schema = get_basic_schema(self._data)
 
@@ -323,7 +344,7 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
                 self._errors["base"] = "invalid_template"
             else:
                 self._data.update(validated_input)
-                return await self.async_step_advanced_settings()
+                return await self.async_step_options_menu()
 
         schema = get_price_schema(self._data)
 
@@ -340,7 +361,7 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
 
         if user_input is not None:
             self._data.update(user_input)
-            return await self.async_step_hot_water()
+            return await self.async_step_options_menu()
 
         schema = get_advanced_schema(self._data)
 
@@ -357,12 +378,7 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
 
         if user_input is not None:
             self._data.update(user_input)
-            title = DOMAIN + " " + self._data["region"]
-            _LOGGER.debug('updating Integration for %s with options: %s', title, self._data)
-            self.hass.config_entries.async_update_entry(
-                self.config_entry, data=self._data, options=self.config_entry.options
-            )
-            return self.async_create_entry(title=title, data=self._data)
+            return await self.async_step_options_menu()
 
         schema = get_hot_water_schema(self._data)
 
@@ -372,3 +388,12 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
             description_placeholders=placeholders,
             errors=self._errors,
         )
+
+    async def async_step_finish(self, user_input=None):
+        """Finish configuration and save changes."""
+        title = DOMAIN + " " + self._data["region"]
+        _LOGGER.debug('updating Integration for %s with options: %s', title, self._data)
+        self.hass.config_entries.async_update_entry(
+            self.config_entry, data=self._data, options=self.config_entry.options
+        )
+        return self.async_create_entry(title=title, data=self._data)

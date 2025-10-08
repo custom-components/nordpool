@@ -76,6 +76,20 @@
                     "temp_not_cheap_not_expensive": "Temperatuur normaalsete hindade ajal",
                     "temp_minimum": "Maksimaalne temperatuur päeva miinimumhinna ajal"
                 }
+            },
+            "config_menu": {
+                "title": "Seadistuse menüü",
+                "description": "Vali, milliseid seadeid soovid konfigureerida. Saad liikuda sektsioonide vahel ja lõpetada, kui oled valmis.",
+                "menu_options": {
+                    "price_settings": "Hinnaseaded",
+                    "advanced_settings": "Täpsemad seaded",
+                    "hot_water": "Soojavee juhtimine",
+                    "finish": "Lõpeta & Salvesta"
+                }
+            },
+            "finish": {
+                "title": "Seadistus valmis",
+                "description": "Sinu PriceAnalyzer andur on kasutamiseks valmis!"
             }
         },
         "error": {
@@ -160,6 +174,21 @@
                     "temp_not_cheap_not_expensive": "Temperatuur normaalsete hindade ajal",
                     "temp_minimum": "Maksimaalne temperatuur päeva miinimumhinna ajal"
                 }
+            },
+            "options_menu": {
+                "title": "Seadete menüü",
+                "description": "Vali, milliseid seadeid soovid muuta. Saad liikuda sektsioonide vahel ja salvestada, kui oled valmis.",
+                "menu_options": {
+                    "basic_setup": "Põhiseadistus",
+                    "price_settings": "Hinnaseaded",
+                    "advanced_settings": "Täpsemad seaded",
+                    "hot_water": "Soojavee juhtimine",
+                    "finish": "Salvesta muudatused"
+                }
+            },
+            "finish": {
+                "title": "Salvesta seadistus",
+                "description": "Sinu muudatused salvestatakse."
             }
         },
         "error": {

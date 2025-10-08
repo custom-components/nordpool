@@ -76,6 +76,20 @@
           "temp_not_cheap_not_expensive": "Temperature during normal price periods",
           "temp_minimum": "Maximum temperature at minimum daily price"
         }
+      },
+      "config_menu": {
+        "title": "Configuration Menu",
+        "description": "Choose which settings to configure. You can navigate between sections and finish when ready.",
+        "menu_options": {
+          "price_settings": "Price Settings",
+          "advanced_settings": "Advanced Settings",
+          "hot_water": "Hot Water Control",
+          "finish": "Finish & Save"
+        }
+      },
+      "finish": {
+        "title": "Configuration Complete",
+        "description": "Your PriceAnalyzer sensor is ready to use!"
       }
     },
     "error": {
@@ -160,6 +174,21 @@
           "temp_not_cheap_not_expensive": "Temperature during normal price periods",
           "temp_minimum": "Maximum temperature at minimum daily price"
         }
+      },
+      "options_menu": {
+        "title": "Options Menu",
+        "description": "Choose which settings to modify. You can navigate between sections and save when ready.",
+        "menu_options": {
+          "basic_setup": "Basic Setup",
+          "price_settings": "Price Settings",
+          "advanced_settings": "Advanced Settings",
+          "hot_water": "Hot Water Control",
+          "finish": "Save Changes"
+        }
+      },
+      "finish": {
+        "title": "Save Configuration",
+        "description": "Your changes will be saved."
       }
     },
     "error": {
