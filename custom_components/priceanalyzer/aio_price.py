@@ -131,7 +131,7 @@ def aggregate_quarters_to_hours(data):
                     avg_price = sum(current_hour_values) / len(current_hour_values)
                     hourly_values.append({
                         "start": current_hour_start,
-                        "end": current_hour_start.replace(hour=current_hour_start.hour + 1),
+                        "end": current_hour_start + timedelta(hours=1),
                         "value": avg_price
                     })
                 
@@ -144,7 +144,7 @@ def aggregate_quarters_to_hours(data):
             avg_price = sum(current_hour_values) / len(current_hour_values)
             hourly_values.append({
                 "start": current_hour_start,
-                "end": current_hour_start.replace(hour=current_hour_start.hour + 1),
+                "end": current_hour_start + timedelta(hours=1),
                 "value": avg_price
             })
         
