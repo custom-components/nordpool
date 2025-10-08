@@ -13,13 +13,22 @@
                     "low_price_cutoff": "Madala hinna tase",
                     "price_in_cents": "Hind sentides",
                     "price_type": "Hinna vorming",
+                    "time_resolution": "Aja resolutsioon (Kvartaalselt/Tunniti)",
                     "additional_costs": "Lisanduvate hindade mall",
                     "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
                     "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
                     "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active",
                     "multiply_template": "Price Correction Template",
                     "hours_to_boost": "Hours to boost",
-                    "hours_to_save": "Hours to save"
+                    "hours_to_save": "Hours to save",
+                    "temp_default": "VVB: Vaikimisi temperatuur (°C)",
+                    "temp_five_most_expensive": "VVB: Temperatuur 5 kõige kallima tunni ajal (°C)",
+                    "temp_is_falling": "VVB: Temperatuur hinna langemisel (°C)",
+                    "temp_five_cheapest": "VVB: Temperatuur 5 kõige odavama tunni ajal (°C)",
+                    "temp_ten_cheapest": "VVB: Temperatuur 10 kõige odavama tunni ajal (°C)",
+                    "temp_low_price": "VVB: Temperatuur madala hinnaga perioodidel (°C)",
+                    "temp_not_cheap_not_expensive": "VVB: Temperatuur normaalsete hindadega perioodidel (°C)",
+                    "temp_minimum": "VVB: Temperatuur miinimumhinna ajal (°C)"
                     }
             }
         },
@@ -41,13 +50,22 @@
                     "low_price_cutoff": "Madala hinna tase",
                     "price_in_cents": "Hind sentides",
                     "price_type": "Hinna vorming",
+                    "time_resolution": "Aja resolutsioon (Kvartaalselt/Tunniti)",
                     "additional_costs": "Lisanduvate hindade mall",
                     "hot_water_config" : "Object for setting custom degrees for Hot Water sensor",
                     "price_before_active":  "Minimum max price for the day before PriceAnalyzer Hot Water is active",
                     "pa_price_before_active":  "Minimum max price for the day before PriceAnalyzer Sensor is active",
                     "multiply_template": "Price Correction Template",
                     "hours_to_boost": "Hours to boost",
-                    "hours_to_save": "Hours to save"
+                    "hours_to_save": "Hours to save",
+                    "temp_default": "VVB: Vaikimisi temperatuur (°C)",
+                    "temp_five_most_expensive": "VVB: Temperatuur 5 kõige kallima tunni ajal (°C)",
+                    "temp_is_falling": "VVB: Temperatuur hinna langemisel (°C)",
+                    "temp_five_cheapest": "VVB: Temperatuur 5 kõige odavama tunni ajal (°C)",
+                    "temp_ten_cheapest": "VVB: Temperatuur 10 kõige odavama tunni ajal (°C)",
+                    "temp_low_price": "VVB: Temperatuur madala hinnaga perioodidel (°C)",
+                    "temp_not_cheap_not_expensive": "VVB: Temperatuur normaalsete hindadega perioodidel (°C)",
+                    "temp_minimum": "VVB: Temperatuur miinimumhinna ajal (°C)"
                     }
             }
         },

@@ -63,7 +63,7 @@ SENTINEL = object()
 _LOGGER = logging.getLogger(__name__)
 
 class NordpoolData:
-    def __init__(self, hass: HomeAssistant) -> None:
+    def __init__(self, hass: HomeAssistant, time_resolution: str = "1hour") -> None:
         self._hass = hass
         self._last_tick = None
         self._data = defaultdict(dict)
@@ -71,6 +71,7 @@ class NordpoolData:
         self.currency = []
         self.listeners = []
         self.areas = []
+        self.time_resolution = time_resolution  # "15min" or "1hour"
 
     async def _update(self, type_="today", dt=None, areas=None):
         _LOGGER.debug("calling _update %s %s", type_, dt)
@@ -87,7 +88,7 @@ class NordpoolData:
         # as we request data for 3 days anyway.
         # Keeping this for now, but this should be changed.
         for currency in self.currency:
-            spot = AioPrices(currency, client)
+            spot = AioPrices(currency, client, time_resolution=self.time_resolution)
             data = await spot.hourly(end_date=dt, areas=self.areas if len(self.areas) > 0 else None)
             if data:
                 self._data[currency][type_] = data["areas"]
@@ -185,7 +186,8 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
 
     if DOMAIN not in hass.data and True:
         # TODO This is the reason why only one sensor sets up correctly at startup.
-        api = NordpoolData(hass)
+        time_resolution = config.get("time_resolution", "hourly")
+        api = NordpoolData(hass, time_resolution=time_resolution)
         hass.data[DOMAIN] = api
 
 
@@ -235,8 +237,16 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
             hass, new_day_cb, hour=0, minute=0, second=0
         )
 
-        cb_new_hr = async_track_time_change(
-            hass, new_hr, minute=0, second=0
+        # Update interval depends on time resolution
+        # For quarterly resolution: update every 15 minutes
+        # For hourly resolution: update every hour
+        if time_resolution == "quarterly":
+            cb_new_hr = async_track_time_change(
+                hass, new_hr, minute=[0, 15, 30, 45], second=0
+            )
+        else:  # hourly
+            cb_new_hr = async_track_time_change(
+                hass, new_hr, minute=0, second=0
             )
 
         api.listeners.append(cb_update_tomorrow)

@@ -15,13 +15,14 @@ from jinja2 import pass_context
 from homeassistant.util import dt as dt_utils
 
 from . import DOMAIN
-from .const import (_PRICE_IN, _REGIONS, DEFAULT_TEMPLATE, HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG, 
+from .const import (_PRICE_IN, _REGIONS, DEFAULT_TEMPLATE, DEFAULT_TIME_RESOLUTION, HOT_WATER_CONFIG, HOT_WATER_DEFAULT_CONFIG, 
                    HOT_WATER_DEFAULT_CONFIG_JSON, TEMP_DEFAULT, TEMP_FIVE_MOST_EXPENSIVE, TEMP_IS_FALLING,
                    TEMP_FIVE_CHEAPEST, TEMP_TEN_CHEAPEST, TEMP_LOW_PRICE, TEMP_NOT_CHEAP_NOT_EXPENSIVE, TEMP_MINIMUM)
 
 regions = sorted(list(_REGIONS.keys()))
 currencys = sorted(list(set(v[0] for k, v in _REGIONS.items())))
 price_types = sorted(list(_PRICE_IN.keys()))
+time_resolutions = ["quarterly", "hourly"]
 
 placeholders = {
     "region": regions,
@@ -83,6 +84,7 @@ def get_schema(existing_config = None) -> dict:
         vol.Optional("low_price_cutoff", default=ec.get("low_price_cutoff", 1.0)): vol.Coerce(float),
         vol.Optional("price_in_cents", default=ec.get("price_in_cents", False)): bool,
         vol.Optional("price_type", default=ec.get("price_type", "kWh")): vol.In(price_types),
+        vol.Optional("time_resolution", default=ec.get("time_resolution", DEFAULT_TIME_RESOLUTION)): vol.In(time_resolutions),
         vol.Optional("additional_costs", default=ec.get("additional_costs", DEFAULT_TEMPLATE)): str,
         vol.Optional("multiply_template", default=ec.get("multiply_template", '{{correction * 1}}')): str,
         vol.Optional("hours_to_boost", default=ec.get("hours_to_boost", 2)): int,

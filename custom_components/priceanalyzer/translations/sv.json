@@ -13,13 +13,22 @@
                     "low_price_cutoff": "Lägsta prisnivå",
                     "price_in_cents": "Pris i ören",
                     "price_type": "Prisformat",
+                    "time_resolution": "Tidsupplösning (Kvartersvis/Timmars)",
                     "additional_costs": "Mall för ytterligare kostnader",
                     "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
                     "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
                     "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
                     "multiply_template": "Priskorreksjons Template",
                     "hours_to_boost": "Timer å booste",
-                    "hours_to_save": "Timer å spare"
+                    "hours_to_save": "Timer å spare",
+                    "temp_default": "Varmvatten: Standardtemperatur (°C)",
+                    "temp_five_most_expensive": "Varmvatten: Temperatur under 5 dyraste timmarna (°C)",
+                    "temp_is_falling": "Varmvatten: Temperatur när priset faller (°C)",
+                    "temp_five_cheapest": "Varmvatten: Temperatur under 5 billigaste timmarna (°C)",
+                    "temp_ten_cheapest": "Varmvatten: Temperatur under 10 billigaste timmarna (°C)",
+                    "temp_low_price": "Varmvatten: Temperatur under lågprisperioder (°C)",
+                    "temp_not_cheap_not_expensive": "Varmvatten: Temperatur under normala prisperioder (°C)",
+                    "temp_minimum": "Varmvatten: Temperatur vid minimumpris (°C)"
                 }
             }
         },
@@ -42,6 +51,7 @@
                     "low_price_cutoff": "Lägsta prisnivå",
                     "price_in_cents": "Pris i ören",
                     "price_type": "Prisformat",
+                    "time_resolution": "Tidsupplösning (Kvartersvis/Timmars)",
                     "additional_costs": "Mall för ytterligare kostnader",
                     "hot_water_config" : "Objekt for å sette egne temperaturer for VVB-sensoren",
                     "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",

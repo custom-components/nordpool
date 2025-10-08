@@ -96,6 +96,65 @@ class InvalidValueException(ValueError):
     pass
 
 
+def aggregate_quarters_to_hours(data):
+    """Aggregate 15-minute price data into hourly averages.
+    
+    Takes data with 15-minute resolution and returns data with hourly resolution.
+    The hourly price is calculated as the average of the four 15-minute prices.
+    """
+    if not data or "areas" not in data:
+        return data
+    
+    result = {"areas": {}}
+    
+    for area_key, area_data in data["areas"].items():
+        if "values" not in area_data or not area_data["values"]:
+            result["areas"][area_key] = area_data
+            continue
+        
+        hourly_values = []
+        current_hour_values = []
+        current_hour_start = None
+        
+        for val in area_data["values"]:
+            hour_start = val["start"].replace(minute=0, second=0, microsecond=0)
+            
+            if current_hour_start is None:
+                current_hour_start = hour_start
+            
+            if hour_start == current_hour_start:
+                # Same hour, accumulate
+                current_hour_values.append(val["value"])
+            else:
+                # New hour, finalize previous hour
+                if current_hour_values:
+                    avg_price = sum(current_hour_values) / len(current_hour_values)
+                    hourly_values.append({
+                        "start": current_hour_start,
+                        "end": current_hour_start.replace(hour=current_hour_start.hour + 1),
+                        "value": avg_price
+                    })
+                
+                # Start new hour
+                current_hour_start = hour_start
+                current_hour_values = [val["value"]]
+        
+        # Don't forget the last hour
+        if current_hour_values:
+            avg_price = sum(current_hour_values) / len(current_hour_values)
+            hourly_values.append({
+                "start": current_hour_start,
+                "end": current_hour_start.replace(hour=current_hour_start.hour + 1),
+                "value": avg_price
+            })
+        
+        # Copy area_data and replace values
+        result["areas"][area_key] = area_data.copy()
+        result["areas"][area_key]["values"] = hourly_values
+    
+    return result
+
+
 async def join_result_for_correct_time(results, dt):
     """Parse a list of responses from the api
     to extract the correct hours in there timezone.
@@ -156,10 +215,11 @@ async def join_result_for_correct_time(results, dt):
 class AioPrices(Prices):
     """Interface"""
 
-    def __init__(self, currency, client, timeezone=None):
+    def __init__(self, currency, client, timeezone=None, time_resolution="hourly"):
         super().__init__(currency)
         self.client = client
         self.timeezone = timeezone
+        self.time_resolution = time_resolution  # "quarterly" or "hourly"
         (self.HOURLY, self.DAILY, self.WEEKLY, self.MONTHLY, self.YEARLY) = ("DayAheadPrices", "AggregatePrices",
                                                                              "AggregatePrices", "AggregatePrices",
                                                                              "AggregatePrices")
@@ -332,7 +392,13 @@ class AioPrices(Prices):
         """Helper to fetch hourly data, see Prices.fetch()"""
         if areas is None:
             areas = []
-        return await self.fetch(self.HOURLY, end_date, areas)
+        data = await self.fetch(self.HOURLY, end_date, areas)
+        
+        # If time_resolution is "hourly", aggregate 15-minute data to hourly
+        if data and self.time_resolution == "hourly":
+            data = aggregate_quarters_to_hours(data)
+        
+        return data
 
     async def daily(self, end_date=None, areas=None):
         """Helper to fetch daily data, see Prices.fetch()"""

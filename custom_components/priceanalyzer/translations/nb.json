@@ -12,13 +12,22 @@
                     "low_price_cutoff": "Grense for lav-pris",
                     "price_in_cents": "Pris i øre",
                     "price_type": "Pris i format",
+                    "time_resolution": "Tidsoppløsning (Kvartersvis/Timevis)",
                     "additional_costs": "Mal for tilleggskostnader",
                     "hot_water_config" : "Instilling for å sette egne temperaturer for VVB-sensoren",
                     "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
                     "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
                     "multiply_template": "Priskorreksjons Template",
                     "hours_to_boost": "Timer å booste",
-                    "hours_to_save": "Timer å spare"
+                    "hours_to_save": "Timer å spare",
+                    "temp_default": "VVB: Standard temperatur (°C)",
+                    "temp_five_most_expensive": "VVB: Temperatur under 5 dyreste timer (°C)",
+                    "temp_is_falling": "VVB: Temperatur når pris faller (°C)",
+                    "temp_five_cheapest": "VVB: Temperatur under 5 billigste timer (°C)",
+                    "temp_ten_cheapest": "VVB: Temperatur under 10 billigste timer (°C)",
+                    "temp_low_price": "VVB: Temperatur under lavpris-perioder (°C)",
+                    "temp_not_cheap_not_expensive": "VVB: Temperatur under normale prisperioder (°C)",
+                    "temp_minimum": "VVB: Temperatur ved minimumspris (°C)"
 
                 }
             }
@@ -41,10 +50,19 @@
                     "low_price_cutoff": "Grense for lav-pris",
                     "price_in_cents": "Pris i øre",
                     "price_type": "Pris i format",
+                    "time_resolution": "Tidsoppløsning (Kvartersvis/Timevis)",
                     "additional_costs": "Mal for tilleggskostnader",
                     "hot_water_config" : "Instilling for å sette egne temperaturer for VVB-sensoren",
                     "price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer VVB-sensor er aktiv",
-                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv"
+                    "pa_price_before_active":  "Minimum maks pris for dagen før PriceAnalyzer-Temperatur-sensor er aktiv",
+                    "temp_default": "VVB: Standard temperatur (°C)",
+                    "temp_five_most_expensive": "VVB: Temperatur under 5 dyreste timer (°C)",
+                    "temp_is_falling": "VVB: Temperatur når pris faller (°C)",
+                    "temp_five_cheapest": "VVB: Temperatur under 5 billigste timer (°C)",
+                    "temp_ten_cheapest": "VVB: Temperatur under 10 billigste timer (°C)",
+                    "temp_low_price": "VVB: Temperatur under lavpris-perioder (°C)",
+                    "temp_not_cheap_not_expensive": "VVB: Temperatur under normale prisperioder (°C)",
+                    "temp_minimum": "VVB: Temperatur ved minimumspris (°C)"
                 }
             }
         },

@@ -73,8 +73,6 @@ _REGIONS = {
     # Unsure about tax rate, correct if wrong
     "GER": ["EUR", "Germany", 0.23],
 }
-
-
 # Needed incase a user wants the prices in non local currency
 _CURRENCY_TO_LOCAL = {"DKK": "Kr", "NOK": "Kr", "SEK": "Kr", "EUR": "€"}
 _CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
@@ -82,6 +80,7 @@ _CURRENTY_TO_CENTS = {"DKK": "Øre", "NOK": "Øre", "SEK": "Öre", "EUR": "c"}
 DEFAULT_CURRENCY = "NOK"
 DEFAULT_REGION = "Kr.sand"
 DEFAULT_NAME = "Elspot"
+DEFAULT_TIME_RESOLUTION = "hourly"
 
 
 DEFAULT_TEMPLATE = "{{0.01|float}}"
@@ -122,6 +121,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("low_price_cutoff", default=1.0): cv.small_float,
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
+        vol.Optional("time_resolution", default=DEFAULT_TIME_RESOLUTION): vol.In(["quarterly", "hourly"]),
         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
         vol.Optional("multiply_template", default='{{correction * 1}}'): cv.template,
         vol.Optional("hours_to_boost", default=2): int,
