@@ -20,6 +20,7 @@
             "price_settings": {
                 "title": "Prisinnstillinger",
                 "description": "Konfigurer hvordan priser vises og beregnes. Du kan legge til tilleggskostnader som nettleie og tilpasse prisformatet.",
+                "menu_option": "Prisinnstillinger",
                 "data": {
                     "price_type": "Prisformat",
                     "price_in_cents": "Vis priser i øre",
@@ -36,6 +37,7 @@
             "advanced_settings": {
                 "title": "Avanserte innstillinger",
                 "description": "Finjuster PriceAnalyzer-oppførselen med avanserte alternativer for priskorrigeringer, boost/spare-timer og aktiveringsterskler.",
+                "menu_option": "Avanserte innstillinger",
                 "data": {
                     "multiply_template": "Priskorreksjonsmal",
                     "hours_to_boost": "Timer å booste",
@@ -56,6 +58,7 @@
             "hot_water": {
                 "title": "Varmtvannsstyring",
                 "description": "Konfigurer varmtvannsberedertempera turer for ulike prisscenarier. Systemet vil automatisk justere basert på strømpriser.",
+                "menu_option": "Varmtvannsstyring",
                 "data": {
                     "temp_default": "Standardtemperatur (°C)",
                     "temp_five_most_expensive": "5 dyreste timer (°C)",
@@ -89,7 +92,8 @@
             },
             "finish": {
                 "title": "Konfigurasjon fullført",
-                "description": "Din PriceAnalyzer-sensor er klar til bruk!"
+                "description": "Din PriceAnalyzer-sensor er klar til bruk!",
+                "menu_option": "Fullfør & Lagre"
             }
         },
         "error": {
@@ -102,6 +106,7 @@
             "basic_setup": {
                 "title": "Grunnleggende oppsett",
                 "description": "Konfigurer de grunnleggende innstillingene for PriceAnalyzer-sensoren. Velg din region og valuta for å komme i gang.",
+                "menu_option": "Grunnleggende oppsett",
                 "data": {
                     "region": "Region",
                     "currency": "Valuta (la stå tom for standard)",
@@ -118,6 +123,7 @@
             "price_settings": {
                 "title": "Prisinnstillinger",
                 "description": "Konfigurer hvordan priser vises og beregnes. Du kan legge til tilleggskostnader som nettleie og tilpasse prisformatet.",
+                "menu_option": "Prisinnstillinger",
                 "data": {
                     "price_type": "Prisformat",
                     "price_in_cents": "Vis priser i øre",
@@ -134,6 +140,7 @@
             "advanced_settings": {
                 "title": "Avanserte innstillinger",
                 "description": "Finjuster PriceAnalyzer-oppførselen med avanserte alternativer for priskorrigeringer, boost/spare-timer og aktiveringsterskler.",
+                "menu_option": "Avanserte innstillinger",
                 "data": {
                     "multiply_template": "Priskorreksjonsmal",
                     "hours_to_boost": "Timer å booste",
@@ -154,6 +161,7 @@
             "hot_water": {
                 "title": "Varmtvannsstyring",
                 "description": "Konfigurer varmtvannsberedertempera turer for ulike prisscenarier. Systemet vil automatisk justere basert på strømpriser.",
+                "menu_option": "Varmtvannsstyring",
                 "data": {
                     "temp_default": "Standardtemperatur (°C)",
                     "temp_five_most_expensive": "5 dyreste timer (°C)",
@@ -188,7 +196,8 @@
             },
             "finish": {
                 "title": "Lagre konfigurasjon",
-                "description": "Dine endringer vil bli lagret."
+                "description": "Dine endringer vil bli lagret.",
+                "menu_option": "Lagre endringer"
             }
         },
         "error": {

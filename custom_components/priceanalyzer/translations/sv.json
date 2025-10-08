@@ -1,9 +1,10 @@
 {
     "config": {
         "step": {
-            "user": {
+            "basic_setup": {
                 "title": "Grundläggande inställningar",
                 "description": "Konfigurera grundläggande inställningar för din PriceAnalyzer-sensor. Välj din region och valuta för att komma igång.",
+                "menu_option": "Grundläggande inställningar",
                 "data": {
                     "region": "Region",
                     "currency": "Valuta (lämna tom för standard)",
@@ -20,6 +21,7 @@
             "price_settings": {
                 "title": "Prisinställningar",
                 "description": "Konfigurera hur priser visas och beräknas. Du kan lägga till extra kostnader som nätavgifter och anpassa prisformatet.",
+                "menu_option": "Prisinställningar",
                 "data": {
                     "price_type": "Prisformat",
                     "price_in_cents": "Visa priser i ören",
@@ -36,6 +38,7 @@
             "advanced_settings": {
                 "title": "Avancerade inställningar",
                 "description": "Finjustera PriceAnalyzer-beteendet med avancerade alternativ för priskorrigeringar, boost/spar-timmar och aktiveringströsklar.",
+                "menu_option": "Avancerade inställningar",
                 "data": {
                     "multiply_template": "Priskorrigeringsmall",
                     "hours_to_boost": "Timmar att boosta",
@@ -56,6 +59,7 @@
             "hot_water": {
                 "title": "Varmvattenstyrning",
                 "description": "Konfigurera varmvattenberedare temperaturer för olika prisscenarier. Systemet justerar automatiskt baserat på elpriser.",
+                "menu_option": "Varmvattenstyrning",
                 "data": {
                     "temp_default": "Standardtemperatur (°C)",
                     "temp_five_most_expensive": "5 dyraste timmarna (°C)",
@@ -89,11 +93,11 @@
             },
             "finish": {
                 "title": "Konfiguration klar",
-                "description": "Din PriceAnalyzer-sensor är redo att användas!"
+                "description": "Din PriceAnalyzer-sensor är redo att användas!",
+                "menu_option": "Slutför & Spara"
             }
         },
         "error": {
-            "name_exists": "Namnet existerar redan",
             "invalid_template": "Mallen är ogiltig, se https://github.com/custom-components/nordpool"
         }
     },
@@ -102,6 +106,7 @@
             "basic_setup": {
                 "title": "Grundläggande inställningar",
                 "description": "Konfigurera grundläggande inställningar för din PriceAnalyzer-sensor. Välj din region och valuta för att komma igång.",
+                "menu_option": "Grundläggande inställningar",
                 "data": {
                     "region": "Region",
                     "currency": "Valuta (lämna tom för standard)",
@@ -118,6 +123,7 @@
             "price_settings": {
                 "title": "Prisinställningar",
                 "description": "Konfigurera hur priser visas och beräknas. Du kan lägga till extra kostnader som nätavgifter och anpassa prisformatet.",
+                "menu_option": "Prisinställningar",
                 "data": {
                     "price_type": "Prisformat",
                     "price_in_cents": "Visa priser i ören",
@@ -134,6 +140,7 @@
             "advanced_settings": {
                 "title": "Avancerade inställningar",
                 "description": "Finjustera PriceAnalyzer-beteendet med avancerade alternativ för priskorrigeringar, boost/spar-timmar och aktiveringströsklar.",
+                "menu_option": "Avancerade inställningar",
                 "data": {
                     "multiply_template": "Priskorrigeringsmall",
                     "hours_to_boost": "Timmar att boosta",
@@ -154,6 +161,7 @@
             "hot_water": {
                 "title": "Varmvattenstyrning",
                 "description": "Konfigurera varmvattenberedare temperaturer för olika prisscenarier. Systemet justerar automatiskt baserat på elpriser.",
+                "menu_option": "Varmvattenstyrning",
                 "data": {
                     "temp_default": "Standardtemperatur (°C)",
                     "temp_five_most_expensive": "5 dyraste timmarna (°C)",
@@ -188,7 +196,8 @@
             },
             "finish": {
                 "title": "Spara konfiguration",
-                "description": "Dina ändringar kommer att sparas."
+                "description": "Dina ändringar kommer att sparas.",
+                "menu_option": "Spara ändringar"
             }
         },
         "error": {

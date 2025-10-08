@@ -89,7 +89,8 @@
             },
             "finish": {
                 "title": "Määritys valmis",
-                "description": "PriceAnalyzer-sensorisi on valmis käytettäväksi!"
+                "description": "PriceAnalyzer-sensorisi on valmis käytettäväksi!",
+                "menu_option": "Viimeistele & Tallenna"
             }
         },
         "error": {
@@ -102,6 +103,7 @@
             "basic_setup": {
                 "title": "Perusasetukset",
                 "description": "Määritä PriceAnalyzer-sensorin perusasetukset. Valitse alue ja valuutta aloittaaksesi.",
+                "menu_option": "Perusasetukset",
                 "data": {
                     "region": "Alue",
                     "currency": "Valuutta (jätä tyhjäksi oletusarvolle)",
@@ -188,7 +190,8 @@
             },
             "finish": {
                 "title": "Tallenna määritys",
-                "description": "Muutoksesi tallennetaan."
+                "description": "Muutoksesi tallennetaan.",
+                "menu_option": "Tallenna muutokset"
             }
         },
         "error": {

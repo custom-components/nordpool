@@ -89,7 +89,8 @@
       },
       "finish": {
         "title": "Konfigurácia dokončená",
-        "description": "Váš PriceAnalyzer snímač je pripravený na použitie!"
+        "description": "Váš PriceAnalyzer snímač je pripravený na použitie!",
+        "menu_option": "Dokončiť & Uložiť"
       }
     },
     "error": {
@@ -102,6 +103,7 @@
       "basic_setup": {
         "title": "Základné nastavenie",
         "description": "Nakonfigurujte základné nastavenia pre váš PriceAnalyzer snímač. Vyberte váš región a menu pre začiatok.",
+        "menu_option": "Základné nastavenie",
         "data": {
           "region": "Región",
           "currency": "Mena (nechajte prázdne pre predvolené)",
@@ -188,7 +190,8 @@
       },
       "finish": {
         "title": "Uložiť konfiguráciu",
-        "description": "Vaše zmeny budú uložené."
+        "description": "Vaše zmeny budú uložené.",
+        "menu_option": "Uložiť zmeny"
       }
     },
     "error": {

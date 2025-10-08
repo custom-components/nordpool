@@ -20,6 +20,7 @@
       "price_settings": {
         "title": "Price Settings",
         "description": "Configure how prices are displayed and calculated. You can add additional costs like grid fees and customize the price format.",
+        "menu_option": "Price Settings",
         "data": {
           "price_type": "Price Format",
           "price_in_cents": "Display prices in cents/øre",
@@ -36,6 +37,7 @@
       "advanced_settings": {
         "title": "Advanced Settings",
         "description": "Fine-tune the PriceAnalyzer behavior with advanced options for price corrections, boost/save hours, and activation thresholds.",
+        "menu_option": "Advanced Settings",
         "data": {
           "multiply_template": "Price Correction Template",
           "hours_to_boost": "Hours to Boost",
@@ -56,6 +58,7 @@
       "hot_water": {
         "title": "Hot Water Temperature Control",
         "description": "Configure hot water heater temperatures for different price scenarios. The system will automatically adjust based on electricity prices.",
+        "menu_option": "Hot Water Control",
         "data": {
           "temp_default": "Default Temperature (°C)",
           "temp_five_most_expensive": "5 Most Expensive Hours (°C)",
@@ -89,7 +92,8 @@
       },
       "finish": {
         "title": "Configuration Complete",
-        "description": "Your PriceAnalyzer sensor is ready to use!"
+        "description": "Your PriceAnalyzer sensor is ready to use!",
+        "menu_option": "Finish & Save"
       }
     },
     "error": {
@@ -102,6 +106,7 @@
       "basic_setup": {
         "title": "Basic Setup",
         "description": "Configure the basic settings for your PriceAnalyzer sensor. Select your region and currency to get started.",
+        "menu_option": "Basic Setup",
         "data": {
           "region": "Region",
           "currency": "Currency (leave empty for default)",
@@ -118,6 +123,7 @@
       "price_settings": {
         "title": "Price Settings",
         "description": "Configure how prices are displayed and calculated. You can add additional costs like grid fees and customize the price format.",
+        "menu_option": "Price Settings",
         "data": {
           "price_type": "Price Format",
           "price_in_cents": "Display prices in cents/øre",
@@ -134,6 +140,7 @@
       "advanced_settings": {
         "title": "Advanced Settings",
         "description": "Fine-tune the PriceAnalyzer behavior with advanced options for price corrections, boost/save hours, and activation thresholds.",
+        "menu_option": "Advanced Settings",
         "data": {
           "multiply_template": "Price Correction Template",
           "hours_to_boost": "Hours to Boost",
@@ -154,6 +161,7 @@
       "hot_water": {
         "title": "Hot Water Temperature Control",
         "description": "Configure hot water heater temperatures for different price scenarios. The system will automatically adjust based on electricity prices.",
+        "menu_option": "Hot Water Control",
         "data": {
           "temp_default": "Default Temperature (°C)",
           "temp_five_most_expensive": "5 Most Expensive Hours (°C)",
@@ -188,7 +196,8 @@
       },
       "finish": {
         "title": "Save Configuration",
-        "description": "Your changes will be saved."
+        "description": "Your changes will be saved.",
+        "menu_option": "Save Changes"
       }
     },
     "error": {

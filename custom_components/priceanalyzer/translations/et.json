@@ -89,7 +89,8 @@
             },
             "finish": {
                 "title": "Seadistus valmis",
-                "description": "Sinu PriceAnalyzer andur on kasutamiseks valmis!"
+                "description": "Sinu PriceAnalyzer andur on kasutamiseks valmis!",
+                "menu_option": "Lõpeta & Salvesta"
             }
         },
         "error": {
@@ -102,6 +103,7 @@
             "basic_setup": {
                 "title": "Põhiseadistus",
                 "description": "Seadista PriceAnalyzer anduri põhiseaded. Vali oma piirkond ja valuuta alustamiseks.",
+                "menu_option": "Põhiseadistus",
                 "data": {
                     "region": "Piirkond",
                     "currency": "Valuuta (jäta tühjaks vaikimisi jaoks)",
@@ -188,7 +190,8 @@
             },
             "finish": {
                 "title": "Salvesta seadistus",
-                "description": "Sinu muudatused salvestatakse."
+                "description": "Sinu muudatused salvestatakse.",
+                "menu_option": "Salvesta muudatused"
             }
         },
         "error": {
