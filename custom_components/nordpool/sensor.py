@@ -108,6 +108,10 @@ class NordpoolSensor(SensorEntity):
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_suggested_display_precision = None
     _attr_state_class = SensorStateClass.TOTAL
+    # Do not write list attributes to database.
+    _unrecorded_attributes = frozenset(
+        {"raw_today", "raw_tomorrow", "today", "tomorrow"}
+    )
 
     def __init__(
         self,
