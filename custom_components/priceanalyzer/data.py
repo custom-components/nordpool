@@ -1,9 +1,12 @@
+import asyncio
 import logging
 import math
 from datetime import datetime, timedelta, date
 from operator import itemgetter
 from statistics import mean
 
+import aiohttp
+import backoff
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.const import CONF_REGION
@@ -652,7 +655,7 @@ class Data():
 
         data = self._data_tomorrow if is_tomorrow else self._data_today
         if data is None:
-            self.check_stuff()
+            _LOGGER.debug("No data available for %s, skipping calculation", "tomorrow" if is_tomorrow else "today")
             return
         data = sorted(data.get("values"), key=itemgetter("start"))
 
@@ -899,7 +902,32 @@ class Data():
         # tomorrow_calculated is righly None here.
         _LOGGER.debug("New day!, Tomorrow calculated is: %s",self._tomorrow_calculated)
 
+    async def _safe_api_call(self, api_method, *args, **kwargs):
+        """Wrapper for API calls with error handling and logging"""
+        try:
+            result = await api_method(*args, **kwargs)
+            if result:
+                _LOGGER.debug("API call successful: %s", api_method.__name__)
+                return result
+            else:
+                _LOGGER.debug("API call returned no data: %s", api_method.__name__)
+                return None
+        except Exception as e:
+            _LOGGER.error("API call failed for %s: %s", api_method.__name__, str(e))
+            return None
 
+    @backoff.on_exception(
+        backoff.expo,
+        (aiohttp.ClientError, aiohttp.ClientTimeout, asyncio.TimeoutError, 
+         ConnectionError, Exception),
+        max_tries=2,
+        max_time=60,
+        logger=_LOGGER,
+        on_backoff=lambda details: _LOGGER.warning(
+            "API call failed, retrying in %s seconds (attempt %s/%s): %s",
+            details['wait'], details['tries'], details.get('max_tries', 'unknown'), 
+            details['exception']
+        ))
     async def check_stuff(self) -> None:
         """Cb to do some house keeping, called every hour to get the current hours price"""
         _LOGGER.debug("called check_stuff")
@@ -909,27 +937,27 @@ class Data():
         if self._data_tomorrow is None or len(self._data_tomorrow.get("values")) < 1:
             _LOGGER.debug(
                 "PriceAnalyzerSensor _data_tomorrow is none, trying to fetch it")
-            tomorrow = await self.api.tomorrow(self._area, self._currency)
+            tomorrow = await self._safe_api_call(self.api.tomorrow, self._area, self._currency)
             if tomorrow:
                 # _LOGGER.debug("PriceAnalyzerSensor FETCHED _data_tomorrow!, %s", tomorrow)
                 self._data_tomorrow = tomorrow
                 self._update_tomorrow(tomorrow)
             else:
                 _LOGGER.debug(
-                    "PriceAnalyzerSensor _data_tomorrow could not be fetched!, %s", tomorrow)
+                    "PriceAnalyzerSensor _data_tomorrow could not be fetched!")
                 self._data_tomorrow = None
                 self._tomorrow_calculated = None
 
         if self._data_today is None:
             _LOGGER.debug(
                 "PriceAnalyzerSensor _data_today is none, trying to fetch it")
-            today = await self.api.today(self._area, self._currency)
+            today = await self._safe_api_call(self.api.today, self._area, self._currency)
             if today:
                 self._data_today = today
                 self._update(today)
             else:
                 _LOGGER.debug(
-                    "PriceAnalyzerSensor _data_today could not be fetched for %s!, %s", self._area, today)
+                    "PriceAnalyzerSensor _data_today could not be fetched for %s!", self._area)
 
         # We can just check if this is the first hour.
         if is_new(self._last_tick, typ="day"):
@@ -953,7 +981,7 @@ class Data():
                 self._data_tomorrow = None
                 self._tomorrow_calculated = None
             else:
-                today = await self.api.today(self._area, self._currency)
+                today = await self._safe_api_call(self.api.today, self._area, self._currency)
                 if today:
                     self._data_today = today
                     self._update(today)
@@ -968,7 +996,7 @@ class Data():
         # TODO update current_hour here?
 
         # try to force tomorrow.
-        tomorrow = await self.api.tomorrow(self._area, self._currency)
+        tomorrow = await self._safe_api_call(self.api.tomorrow, self._area, self._currency)
         if tomorrow:
             # often inf..
             _LOGGER.debug(
@@ -978,7 +1006,5 @@ class Data():
 
         self._last_tick = dt_utils.now()
         self.update_sensors()
-        if self.tomorrow_valid and (self._tomorrow_calculated != None and len(self._tomorrow_calculated) < 1):
-            self.check_stuff()
-        if self.tomorrow_valid and self._data_tomorrow == None:
-            self.check_stuff()
+        # Removed recursive calls to check_stuff() to prevent infinite loops
+        # These conditions will be handled in the next scheduled check

@@ -225,13 +225,22 @@ class AioPrices(Prices):
                                                                              "AggregatePrices")
         self.API_URL = "https://dataportal-api.nordpoolgroup.com/api/%s"
 
+    @backoff.on_exception(
+        backoff.expo,
+        (aiohttp.ClientError, aiohttp.ClientTimeout, asyncio.TimeoutError, ConnectionError),
+        max_tries=3,
+        max_time=60,
+        logger=_LOGGER)
     async def _io(self, url, **kwargs):
-
+        """HTTP request with retry mechanism"""
         resp = await self.client.get(url, params=kwargs)
         _LOGGER.debug("requested %s %s", resp.url, kwargs)
 
         if resp.status == 204:
             return None
+        
+        # Raise an exception for HTTP error status codes
+        resp.raise_for_status()
 
         return await resp.json()
 
@@ -340,8 +349,11 @@ class AioPrices(Prices):
     # junk due to currency not being available in the data.
     @backoff.on_exception(
         backoff.expo,
-        (aiohttp.ClientError, KeyError),
-        logger=_LOGGER, max_value=20)
+        (aiohttp.ClientError, aiohttp.ClientTimeout, asyncio.TimeoutError, 
+         ConnectionError, KeyError, ValueError, TypeError),
+        max_tries=3,
+        max_time=120,
+        logger=_LOGGER)
     async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.

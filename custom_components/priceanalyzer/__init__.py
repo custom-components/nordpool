@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from functools import partial
 from random import randint
 
+import aiohttp
 import backoff
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -76,7 +77,9 @@ class NordpoolData:
     async def _update(self, type_="today", dt=None, areas=None):
         _LOGGER.debug("calling _update %s %s", type_, dt)
         hass = self._hass
-        client = async_get_clientsession(hass)
+        # Configure client with timeout for better reliability
+        timeout = aiohttp.ClientTimeout(total=30, connect=10)
+        client = async_get_clientsession(hass, timeout=timeout)
 
         if dt is None:
             dt = dt_utils.now()
@@ -184,8 +187,8 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
     if DATA not in hass.data:
         hass.data[DATA] = {}
 
-    if DOMAIN not in hass.data and True:
-        # TODO This is the reason why only one sensor sets up correctly at startup.
+    if DOMAIN not in hass.data:
+        # Initialize the API only once
         time_resolution = config.get("time_resolution", "hourly")
         api = NordpoolData(hass, time_resolution=time_resolution)
         hass.data[DOMAIN] = api
@@ -254,7 +257,7 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         api.listeners.append(cb_new_day)
 
     pa_config = config
-    api = NordpoolData(hass) if hass.data[DOMAIN] is None else hass.data[DOMAIN]
+    api = hass.data[DOMAIN]  # Use the existing API instance
     region = pa_config.get(CONF_REGION)
     friendly_name = pa_config.get("friendly_name", "")
     price_type = pa_config.get("price_type")
@@ -286,6 +289,11 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         pa_config
     )
 
+    # Check if this region is already set up to prevent duplicates
+    if region in hass.data[DATA]:
+        _LOGGER.warning("Region %s already set up, skipping duplicate setup", region)
+        return True
+    
     hass.data[DATA][region] = data
     return True
 

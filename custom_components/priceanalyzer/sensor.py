@@ -85,6 +85,12 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 class VVBSensor(SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_state_class = SensorStateClass.MEASUREMENT
+    
+    # Exclude large attributes from recorder database
+    _unrecorded_attributes: frozenset[str] = frozenset({
+        "raw_today",
+        "raw_tomorrow"
+    })
 
     def __init__(self, data, config, unique_id) -> None:
         self._data = data
@@ -252,6 +258,7 @@ class VVBSensor(SensorEntity):
             "unique_id": self.unique_id,
         }
 
+
     @property
     def name(self) -> str:
         return 'VVBSensor_' + self._data._area
@@ -302,6 +309,16 @@ class PriceAnalyzerSensor(SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_state_class = SensorStateClass.MEASUREMENT
 
+    _unrecorded_attributes: frozenset[str] = frozenset({
+        "raw_today",
+        "raw_tomorrow", 
+        "ten_cheapest_today",
+        "five_cheapest_today",
+        "ten_cheapest_tomorrow",
+        "five_cheapest_tomorrow",
+        "current_hour"
+    })
+
     def __init__(
         self,
         data,
@@ -343,7 +360,7 @@ class PriceAnalyzerSensor(SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         return {
-            "display_name" : self._data._attr_name,
+            "display_name": self._data._attr_name,
             "low price": self._data.low_price,
             "tomorrow_valid": self._data.tomorrow_valid,
             'max': self._data._max,
@@ -362,8 +379,8 @@ class PriceAnalyzerSensor(SensorEntity):
             "five_cheapest_today": self._data._five_cheapest_today,
             "ten_cheapest_tomorrow": self._data._ten_cheapest_tomorrow,
             "five_cheapest_tomorrow": self._data._ten_cheapest_tomorrow,
-            #"five_cheapest_hours_in_future": self._data._cheapest_hours_in_future_sorted[5:]
         }
+
 
     @property
     def state(self) -> float:
