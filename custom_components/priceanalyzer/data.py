@@ -75,10 +75,10 @@ class Data():
 
         self._vat = _REGIONS[area][2]
 
-        # Price by current hour.
+        # Price by current period (hour or quarter).
         self._current_price = None
 
-        self._current_hour = None
+        self._current_period = None
         self._today_calculated = None
         self._tomorrow_calculated = None
 
@@ -213,12 +213,8 @@ class Data():
         ]
 
     @property
-    def current_hour(self) -> list:
-        if self._today_calculated is not None:
-            now = datetime.now()
-            return self._today_calculated[now.hour]
-        else:
-            return []
+    def current_hour(self) -> dict:
+        return self._current_period
 
     @property
     def raw_today(self):
@@ -251,13 +247,16 @@ class Data():
         return isinstance(self._data_tomorrow, list) and len(self._data_tomorrow)
 
     async def _update_current_price(self) -> None:
-        """ update the current price (price this hour)"""
+        """ update the current price (price this period)"""
         local_now = dt_utils.now()
 
         data = await self.api.today(self._area, self._currency)
         if data:
+            # Use appropriate time resolution for current period matching
+            time_resolution = self._config.get("time_resolution", "hourly")
+            time_type = "quarter" if time_resolution == "quarterly" else "hour"
             for item in self._someday(data):
-                if item["start"] == start_of(local_now, "hour"):
+                if item["start"] == start_of(local_now, time_type):
                     self._current_price = item["value"]
 
     def _someday(self, data) -> list:
@@ -759,8 +758,11 @@ class Data():
             # todo is a top?
 
             hour += 1
-            if item["start"] == start_of(local_now, "hour"):
-                self._current_hour = item
+            # Use appropriate time resolution for current period matching
+            time_resolution = self._config.get("time_resolution", "hourly")
+            time_type = "quarter" if time_resolution == "quarterly" else "hour"
+            if item["start"] == start_of(local_now, time_type):
+                self._current_period = item
 
             result.append(item)
 

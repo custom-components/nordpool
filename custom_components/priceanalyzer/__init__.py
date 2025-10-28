@@ -301,11 +301,21 @@ async def async_migrate_entry(title, domain) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
-    res = await _dry_setup(hass, entry)
-    #hass.config_entries.async_setup_platforms(entry, PLATFORMS)
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    entry.add_update_listener(async_reload_entry)
-    return res
+    try:
+        # Set up the data layer first
+        await _dry_setup(hass, entry)
+        
+        # Set up the platforms (sensors)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        
+        # Add update listener
+        entry.add_update_listener(async_reload_entry)
+        
+        # Return True only after everything is set up
+        return True
+    except Exception as e:
+        _LOGGER.error("Failed to set up priceanalyzer: %s", e)
+        return False
 
 # async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry, options):
 #     res = await hass.config_entries.async_update_entry(entry,options)

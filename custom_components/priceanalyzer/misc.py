@@ -58,6 +58,10 @@ def stock(d):
 def start_of(d, typ_="hour"):
     if typ_ == "hour":
         return d.replace(minute=0, second=0, microsecond=0)
+    elif typ_ == "quarter":
+        # Round down to the nearest 15-minute mark
+        quarter_minute = (d.minute // 15) * 15
+        return d.replace(minute=quarter_minute, second=0, microsecond=0)
     elif typ_ == "day":
         return d.replace(hour=0, minute=0, microsecond=0)
 
