@@ -77,9 +77,8 @@ class NordpoolData:
     async def _update(self, type_="today", dt=None, areas=None):
         _LOGGER.debug("calling _update %s %s", type_, dt)
         hass = self._hass
-        # Configure client with timeout for better reliability
-        timeout = aiohttp.ClientTimeout(total=30, connect=10)
-        client = async_get_clientsession(hass, timeout=timeout)
+        # Get the default client session
+        client = async_get_clientsession(hass)
 
         if dt is None:
             dt = dt_utils.now()
