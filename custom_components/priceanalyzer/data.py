@@ -262,6 +262,17 @@ class Data():
                 if item["start"] == start_of(local_now, time_type):
                     self._current_price = item["value"]
 
+    def _update_current_period(self) -> None:
+        """Update _current_period to reflect the current time"""
+        if not self._today_calculated:
+            return
+            
+        local_now = dt_utils.now()
+        for item in self._today_calculated:
+            if item["start"] <= local_now < item["end"]:
+                self._current_period = item
+                break
+
     def _someday(self, data) -> list:
         """The data is already sorted in the xml,
         but i dont trust that to continue forever. Thats why we sort it ourselfs."""
@@ -991,7 +1002,8 @@ class Data():
         # Updates the current for this hour.
         await self._update_current_price()
 
-        # TODO update current_hour here?
+        # Update current_period to reflect the current time
+        self._update_current_period()
 
         # try to force tomorrow.
         tomorrow = await self._safe_api_call(self.api.tomorrow, self._area, self._currency)
