@@ -761,10 +761,8 @@ class Data():
             # todo is a top?
 
             hour += 1
-            # Use appropriate time resolution for current period matching
-            time_resolution = self._config.get("time_resolution", "hourly")
-            time_type = "quarter" if time_resolution == "quarterly" else "hour"
-            if item["start"] == start_of(local_now, time_type):
+            # Check if current time falls within this period's time range
+            if item["start"] <= local_now < item["end"]:
                 self._current_period = item
 
             result.append(item)
