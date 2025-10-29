@@ -933,13 +933,19 @@ class Data():
         max_time=60,
         logger=_LOGGER,
         on_backoff=lambda details: _LOGGER.warning(
-            "API call failed, retrying in %s seconds (attempt %s/%s): %s",
+            "check_stuff API call failed, retrying in %s seconds (attempt %s/%s) for region %s: %s",
             details['wait'], details['tries'], details.get('max_tries', 'unknown'), 
-            details['exception']
+            getattr(details.get('args', [None])[0], '_area', 'unknown'), details['exception']
+        ),
+        on_giveup=lambda details: _LOGGER.error(
+            "check_stuff API call failed permanently after %s attempts over %s seconds for region %s: %s",
+            details['tries'], details.get('elapsed', 'unknown'),
+            getattr(details.get('args', [None])[0], '_area', 'unknown'), details['exception']
         ))
     async def check_stuff(self) -> None:
         """Cb to do some house keeping, called every hour to get the current hours price"""
-        _LOGGER.debug("called check_stuff")
+        _LOGGER.debug("called check_stuff for region %s", self._area)
+        start_time = dt_utils.now()
         if self._last_tick is None:
             self._last_tick = dt_utils.now()
 
@@ -1016,5 +1022,13 @@ class Data():
 
         self._last_tick = dt_utils.now()
         self.update_sensors()
+        
+        # Log completion time for performance monitoring
+        elapsed = (dt_utils.now() - start_time).total_seconds()
+        if elapsed > 5:  # Log if it took more than 5 seconds
+            _LOGGER.warning("check_stuff completed for region %s in %s seconds (slow performance)", 
+                          self._area, elapsed)
+        else:
+            _LOGGER.debug("check_stuff completed for region %s in %s seconds", self._area, elapsed)
         # Removed recursive calls to check_stuff() to prevent infinite loops
         # These conditions will be handled in the next scheduled check

@@ -75,7 +75,8 @@ class NordpoolData:
         self.time_resolution = time_resolution  # "15min" or "1hour"
 
     async def _update(self, type_="today", dt=None, areas=None):
-        _LOGGER.debug("calling _update %s %s", type_, dt)
+        _LOGGER.debug("calling _update %s %s for areas %s", type_, dt, areas)
+        start_time = dt_utils.now()
         hass = self._hass
         # Get the default client session
         client = async_get_clientsession(hass)
@@ -94,9 +95,14 @@ class NordpoolData:
             data = await spot.hourly(end_date=dt, areas=self.areas if len(self.areas) > 0 else None)
             if data:
                 self._data[currency][type_] = data["areas"]
+                elapsed = (dt_utils.now() - start_time).total_seconds()
+                _LOGGER.debug("Successfully fetched %s data for currency %s in %s seconds", 
+                            type_, currency, elapsed)
                 async_dispatcher_send(hass, API_DATA_LOADED)
             else:
-                _LOGGER.info("Some crap happend, retrying request later.")
+                elapsed = (dt_utils.now() - start_time).total_seconds()
+                _LOGGER.warning("Data fetch failed for %s after %s seconds, retrying in 20 seconds. Currency: %s, Areas: %s", 
+                              type_, elapsed, currency, self.areas)
                 async_call_later(hass, 20, partial(self._update, type_=type_, dt=dt))
 
     async def update_today(self, areas=None):
@@ -183,14 +189,17 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
     """Set up using yaml config file."""
     config = configEntry.data
 
+    # Ensure DATA dictionary exists
     if DATA not in hass.data:
         hass.data[DATA] = {}
+        _LOGGER.debug("Initialized DATA dictionary")
 
     if DOMAIN not in hass.data:
         # Initialize the API only once
         time_resolution = config.get("time_resolution", "hourly")
         api = NordpoolData(hass, time_resolution=time_resolution)
         hass.data[DOMAIN] = api
+        _LOGGER.debug("Initialized API with time_resolution: %s", time_resolution)
 
 
         async def new_day_cb(n):
@@ -216,14 +225,23 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         @backoff.on_exception(
             backoff.constant,
             (InvalidValueException),
-            logger=_LOGGER, interval=600, max_time=7200, jitter=None)
+            logger=_LOGGER, interval=600, max_time=7200, jitter=None,
+            on_backoff=lambda details: _LOGGER.warning(
+                "Tomorrow data fetch failed, retrying in %s seconds (attempt %s): %s",
+                details['wait'], details['tries'], details['exception']
+            ),
+            on_giveup=lambda details: _LOGGER.error(
+                "Tomorrow data fetch failed permanently after %s attempts over %s seconds: %s",
+                details['tries'], details.get('elapsed', 'unknown'), details['exception']
+            ))
         async def new_data_cb(_):
             """Callback to fetch new data for tomorrows prices at 1300ish CET
             and notify any sensors, about the new data
             """
-            # _LOGGER.debug("Called new_data_cb")
+            _LOGGER.debug("Called new_data_cb - fetching tomorrow's data")
             await api.update_tomorrow()
             async_dispatcher_send(hass, EVENT_NEW_PRICE)
+            _LOGGER.debug("Successfully fetched tomorrow's data and sent update event")
 
         # Handles futures updates
         cb_update_tomorrow = async_track_time_change_in_tz(
@@ -293,8 +311,13 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         _LOGGER.warning("Region %s already set up, skipping duplicate setup", region)
         return True
     
-    hass.data[DATA][region] = data
-    return True
+    try:
+        hass.data[DATA][region] = data
+        _LOGGER.debug("Successfully set up region %s", region)
+        return True
+    except Exception as e:
+        _LOGGER.error("Failed to set up region %s: %s", region, e)
+        return False
 
 
 async def async_setup(hass: HomeAssistant, config: Config) -> bool:
@@ -310,18 +333,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up nordpool as config entry."""
     try:
         # Set up the data layer first
-        await _dry_setup(hass, entry)
+        setup_ok = await _dry_setup(hass, entry)
+        if not setup_ok:
+            _LOGGER.error("Failed to set up data layer for priceanalyzer")
+            return False
         
-        # Set up the platforms (sensors)
+        # Set up the platforms (sensors) - ensure this completes before returning
+        # Use the correct method name for HA 2024.x compatibility
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         
-        # Add update listener
+        # Add update listener only after successful setup
         entry.add_update_listener(async_reload_entry)
         
-        # Return True only after everything is set up
+        _LOGGER.debug("Successfully set up priceanalyzer entry: %s", entry.entry_id)
         return True
     except Exception as e:
         _LOGGER.error("Failed to set up priceanalyzer: %s", e)
+        # Clean up on failure
+        if DATA in hass.data:
+            region = entry.data.get(CONF_REGION)
+            if region and region in hass.data[DATA]:
+                hass.data[DATA].pop(region, None)
         return False
 
 # async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry, options):
@@ -332,12 +364,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "sensor")
+    unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, PLATFORMS)
 
     if unload_ok:
-        for unsub in hass.data[DOMAIN].listeners:
-            unsub()
-        hass.data.pop(DOMAIN)
+        # Clean up the region-specific data
+        region = entry.data.get(CONF_REGION)
+        if region and DATA in hass.data and region in hass.data[DATA]:
+            hass.data[DATA].pop(region)
+            _LOGGER.debug("Cleaned up data for region %s", region)
+        
+        # Clean up the API data if no more regions are configured
+        if DATA in hass.data and len(hass.data[DATA]) == 0:
+            if DOMAIN in hass.data:
+                for unsub in hass.data[DOMAIN].listeners:
+                    unsub()
+                hass.data.pop(DOMAIN)
+                _LOGGER.debug("Cleaned up API data as no regions remain")
 
         return True
 

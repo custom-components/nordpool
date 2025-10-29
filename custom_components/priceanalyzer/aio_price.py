@@ -230,7 +230,19 @@ class AioPrices(Prices):
         (aiohttp.ClientError, aiohttp.ClientTimeout, asyncio.TimeoutError, ConnectionError),
         max_tries=3,
         max_time=60,
-        logger=_LOGGER)
+        logger=_LOGGER,
+        on_backoff=lambda details: _LOGGER.warning(
+            "HTTP request failed, retrying in %s seconds (attempt %s/%s) for URL %s: %s",
+            details['wait'], details['tries'], details.get('max_tries', 'unknown'),
+            details.get('args', ['unknown URL'])[0] if details.get('args') else 'unknown URL',
+            details['exception']
+        ),
+        on_giveup=lambda details: _LOGGER.error(
+            "HTTP request failed permanently after %s attempts over %s seconds for URL %s: %s",
+            details['tries'], details.get('elapsed', 'unknown'),
+            details.get('args', ['unknown URL'])[0] if details.get('args') else 'unknown URL',
+            details['exception']
+        ))
     async def _io(self, url, **kwargs):
         """HTTP request with retry mechanism"""
         resp = await self.client.get(url, params=kwargs)
@@ -353,7 +365,19 @@ class AioPrices(Prices):
          ConnectionError, KeyError, ValueError, TypeError),
         max_tries=3,
         max_time=120,
-        logger=_LOGGER)
+        logger=_LOGGER,
+        on_backoff=lambda details: _LOGGER.warning(
+            "Data fetch failed, retrying in %s seconds (attempt %s/%s) for data_type %s: %s",
+            details['wait'], details['tries'], details.get('max_tries', 'unknown'),
+            details.get('args', ['unknown'])[1] if len(details.get('args', [])) > 1 else 'unknown',
+            details['exception']
+        ),
+        on_giveup=lambda details: _LOGGER.error(
+            "Data fetch failed permanently after %s attempts over %s seconds for data_type %s: %s",
+            details['tries'], details.get('elapsed', 'unknown'),
+            details.get('args', ['unknown'])[1] if len(details.get('args', [])) > 1 else 'unknown',
+            details['exception']
+        ))
     async def fetch(self, data_type, end_date=None, areas=None):
         """
         Fetch data from API.

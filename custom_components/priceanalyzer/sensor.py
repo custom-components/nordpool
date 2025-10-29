@@ -79,6 +79,13 @@ async def async_setup_platform(hass, config, add_devices, discovery_info=None) -
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
+    region = config.get(CONF_REGION)
+    
+    # Ensure the data is available before setting up sensors
+    if DATA not in hass.data or region not in hass.data[DATA]:
+        _LOGGER.error("Data not available for region %s during sensor setup", region)
+        return False
+    
     _dry_setup(hass, config, async_add_devices, unique_id=config_entry.entry_id)
     return True
 
