@@ -56,7 +56,14 @@ _LOGGER = logging.getLogger(__name__)
 
 def _dry_setup(hass, config, add_devices, discovery_info=None, unique_id=None):
     region = config.get(CONF_REGION)
-    data = hass.data[DATA][region]
+    entry_key = unique_id or config.get(CONF_ID) or region
+    data = hass.data[DATA].get(entry_key)
+
+    if data is None:
+        fallback_key = region
+        data = hass.data[DATA].get(fallback_key)
+        if data is None:
+            raise KeyError(f"Data for entry {entry_key} (region {region}) not found")
     pricecorrection = PriceAnalyzerSensor(data, unique_id)
     vvbsensor = VVBSensor(data, config, unique_id)
     pricesensor = PriceSensor(data, unique_id)
@@ -80,13 +87,20 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     """Setup sensor platform for the ui"""
     config = config_entry.data
     region = config.get(CONF_REGION)
-    
+    entry_key = config_entry.entry_id or config.get(CONF_ID) or region
+
     # Ensure the data is available before setting up sensors
-    if DATA not in hass.data or region not in hass.data[DATA]:
-        _LOGGER.error("Data not available for region %s during sensor setup", region)
+    if DATA not in hass.data or entry_key not in hass.data[DATA]:
+        # Fallback to region key for backward compatibility
+        fallback_key = region if DATA in hass.data else None
+        if fallback_key and fallback_key in hass.data[DATA]:
+            data = hass.data[DATA][fallback_key]
+            hass.data[DATA][entry_key] = data
+        else:
+            _LOGGER.error("Data not available for entry %s (region %s) during sensor setup", entry_key, region)
         return False
     
-    _dry_setup(hass, config, async_add_devices, unique_id=config_entry.entry_id)
+    _dry_setup(hass, config, async_add_devices, unique_id=entry_key)
     return True
 
 class VVBSensor(SensorEntity):
@@ -268,6 +282,9 @@ class VVBSensor(SensorEntity):
 
     @property
     def name(self) -> str:
+        # Use friendly_name if set, otherwise use region for backward compatibility
+        if self._data._attr_name and self._data._attr_name.strip():
+            return 'VVBSensor_' + self._data._attr_name
         return 'VVBSensor_' + self._data._area
 
     @property
@@ -339,6 +356,9 @@ class PriceAnalyzerSensor(SensorEntity):
 
     @property
     def name(self) -> str:
+        # Use friendly_name if set, otherwise use region for backward compatibility
+        if self._data._attr_name and self._data._attr_name.strip():
+            return 'Priceanalyzer_' + self._data._attr_name
         return 'Priceanalyzer_' + self._data._area
 
     @property
@@ -431,6 +451,9 @@ class PriceSensor(SensorEntity):
 
     @property
     def name(self) -> str:
+        # Use friendly_name if set, otherwise use region for backward compatibility
+        if self._data._attr_name and self._data._attr_name.strip():
+            return 'Priceanalyzer_Price_' + self._data._attr_name
         return 'Priceanalyzer_Price_' + self._data._area
 
     @property

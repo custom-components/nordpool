@@ -48,7 +48,8 @@ class Data():
         num_hours_to_save,
         percent_difference,
         hass,
-        config
+        config,
+        entry_id=None
     ) -> None:
 
 
@@ -144,6 +145,7 @@ class Data():
         self._multiply_template.hass = self._hass
 
         self.multiply_template = multiply_template
+        self._entry_id = entry_id
 
         # To control the updates.
         self._last_tick = None
@@ -151,19 +153,29 @@ class Data():
 
     @property
     def device_name(self) -> str:
+        # If we have a friendly_name, use it to make the device name more descriptive
+        if self._attr_name and self._attr_name.strip():
+            return self._attr_name
         return 'Priceanalyzer ' + self._area
 
     @property
     def device_unique_id(self):
-        name = "priceanalyzer_device_%s_%s_%s_%s_%s_%s" % (
-            self._price_type,
-            self._area,
-            self._currency,
-            self._precision,
-            self._low_price_cutoff,
-            self._vat,
-        )
-        name = name.lower().replace(".", "")
+        # Include entry_id to make device unique for each entry
+        # This allows multiple setups with the same region
+        if self._entry_id:
+            # Use entry_id as base for unique device ID
+            name = "priceanalyzer_device_%s" % (self._entry_id,)
+        else:
+            # Fallback for backward compatibility
+            name = "priceanalyzer_device_%s_%s_%s_%s_%s_%s" % (
+                self._price_type,
+                self._area,
+                self._currency,
+                self._precision,
+                self._low_price_cutoff,
+                self._vat,
+            )
+        name = name.lower().replace(".", "").replace("-", "_")
         return name
 
     @property
@@ -179,7 +191,7 @@ class Data():
         """Check if the price is lower then avg depending on settings"""
         return (
             self.current_price < self._average * self._low_price_cutoff
-            if self.current_price and self._average
+            if self.current_price and self._average and self._low_price_cutoff
             else None
         )
 
@@ -927,8 +939,7 @@ class Data():
 
     @backoff.on_exception(
         backoff.expo,
-        (aiohttp.ClientError, aiohttp.ClientTimeout, asyncio.TimeoutError, 
-         ConnectionError, Exception),
+        (aiohttp.ClientError, asyncio.TimeoutError, OSError, Exception),
         max_tries=2,
         max_time=60,
         logger=_LOGGER,

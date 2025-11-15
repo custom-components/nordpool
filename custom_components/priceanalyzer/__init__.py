@@ -277,17 +277,23 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
     api = hass.data[DOMAIN]  # Use the existing API instance
     region = pa_config.get(CONF_REGION)
     friendly_name = pa_config.get("friendly_name", "")
-    price_type = pa_config.get("price_type")
+    price_type = pa_config.get("price_type", "kWh")  # Default to kWh if not specified
 
-    low_price_cutoff = pa_config.get("low_price_cutoff")
-    currency = pa_config.get("currency")
-    vat = pa_config.get("VAT")
-    use_cents = pa_config.get("price_in_cents")
-    ad_template = pa_config.get("additional_costs")
-    multiply_template = pa_config.get("multiply_template")
-    num_hours_to_boost = pa_config.get("hours_to_boost")
-    num_hours_to_save = pa_config.get("hours_to_save")
-    percent_difference = pa_config.get("percent_difference")
+    low_price_cutoff = pa_config.get("low_price_cutoff", 1.0)
+    currency = pa_config.get("currency", "")
+    vat = pa_config.get("VAT", True)
+    use_cents = pa_config.get("price_in_cents", False)
+    ad_template = pa_config.get("additional_costs", "{{0.01|float}}")
+    multiply_template = pa_config.get("multiply_template", "{{correction * 1}}")
+    num_hours_to_boost = pa_config.get("hours_to_boost", 2)
+    num_hours_to_save = pa_config.get("hours_to_save", 2)
+    percent_difference = pa_config.get("percent_difference", 20)
+    
+    # Get entry_id first so we can pass it to Data constructor
+    entry_id = getattr(configEntry, "entry_id", None) or pa_config.get(CONF_ID)
+    if entry_id is None:
+        entry_id = f"{region}_{len(hass.data[DATA])}"
+    
     data = Data(
         friendly_name,
         region,
@@ -303,20 +309,19 @@ async def _dry_setup(hass: HomeAssistant, configEntry: Config) -> bool:
         num_hours_to_save,
         percent_difference,
         hass,
-        pa_config
+        pa_config,
+        entry_id
     )
 
-    # Check if this region is already set up to prevent duplicates
-    if region in hass.data[DATA]:
-        _LOGGER.warning("Region %s already set up, skipping duplicate setup", region)
-        return True
-    
+    if entry_id in hass.data[DATA]:
+        _LOGGER.debug("Replacing existing data for entry %s (region %s)", entry_id, region)
+
     try:
-        hass.data[DATA][region] = data
-        _LOGGER.debug("Successfully set up region %s", region)
+        hass.data[DATA][entry_id] = data
+        _LOGGER.debug("Successfully set up entry %s for region %s", entry_id, region)
         return True
     except Exception as e:
-        _LOGGER.error("Failed to set up region %s: %s", region, e)
+        _LOGGER.error("Failed to set up entry %s for region %s: %s", entry_id, region, e)
         return False
 
 
@@ -339,8 +344,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             return False
         
         # Set up the platforms (sensors) - ensure this completes before returning
-        # Use the correct method name for HA 2024.x compatibility
-        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        # Support both old (2024.x) and new (2025.11+) HA versions
+        if hasattr(hass.config_entries, 'async_forward_entry_setups'):
+            # HA 2025.11+ - use plural version
+            await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        else:
+            # HA 2024.x and older - use singular version
+            for platform in PLATFORMS:
+                await hass.config_entries.async_forward_entry_setup(entry, platform)
         
         # Add update listener only after successful setup
         entry.add_update_listener(async_reload_entry)
@@ -349,11 +360,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return True
     except Exception as e:
         _LOGGER.error("Failed to set up priceanalyzer: %s", e)
-        # Clean up on failure
-        if DATA in hass.data:
-            region = entry.data.get(CONF_REGION)
-            if region and region in hass.data[DATA]:
-                hass.data[DATA].pop(region, None)
+        # Clean up on failure using entry_id
+        if DATA in hass.data and entry.entry_id in hass.data[DATA]:
+            hass.data[DATA].pop(entry.entry_id, None)
+            _LOGGER.debug("Cleaned up failed setup for entry %s", entry.entry_id)
         return False
 
 # async def async_update_entry(hass: HomeAssistant, entry: ConfigEntry, options):
@@ -364,22 +374,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, PLATFORMS)
+    # Unload all platforms - support both old and new HA versions
+    if hasattr(hass.config_entries, 'async_forward_entry_unloads'):
+        # HA 2025.11+ - use plural version
+        unload_ok = await hass.config_entries.async_forward_entry_unloads(entry, PLATFORMS)
+    else:
+        # HA 2024.x and older - use singular version
+        unload_results = []
+        for platform in PLATFORMS:
+            result = await hass.config_entries.async_forward_entry_unload(entry, platform)
+            unload_results.append(result)
+        unload_ok = all(unload_results)
 
     if unload_ok:
-        # Clean up the region-specific data
-        region = entry.data.get(CONF_REGION)
-        if region and DATA in hass.data and region in hass.data[DATA]:
-            hass.data[DATA].pop(region)
-            _LOGGER.debug("Cleaned up data for region %s", region)
+        # Clean up the entry-specific data using entry_id (not region)
+        # This allows multiple setups with the same region
+        entry_id = entry.entry_id
+        if DATA in hass.data and entry_id in hass.data[DATA]:
+            hass.data[DATA].pop(entry_id)
+            _LOGGER.debug("Cleaned up data for entry %s (region: %s)", entry_id, entry.data.get(CONF_REGION))
         
-        # Clean up the API data if no more regions are configured
+        # Clean up the API data if no more entries are configured
         if DATA in hass.data and len(hass.data[DATA]) == 0:
             if DOMAIN in hass.data:
                 for unsub in hass.data[DOMAIN].listeners:
                     unsub()
                 hass.data.pop(DOMAIN)
-                _LOGGER.debug("Cleaned up API data as no regions remain")
+                _LOGGER.debug("Cleaned up API data as no entries remain")
 
         return True
 

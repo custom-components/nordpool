@@ -74,6 +74,7 @@ def get_basic_schema(existing_config = None) -> dict:
     """Schema for basic setup step"""
     ec = existing_config if existing_config else {}
     return {
+        vol.Optional("friendly_name", default=ec.get("friendly_name", "")): str,
         vol.Required("region", default=ec.get("region", None)): vol.In(regions),
         vol.Optional("currency", default=ec.get("currency", "")): vol.In(currencys),
         vol.Optional("VAT", default=ec.get("VAT", True)): bool,
@@ -177,7 +178,6 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for PriceAnalyzer."""
 
     VERSION = "1.0"
-    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     def __init__(self):
         """Initialize."""
@@ -271,7 +271,18 @@ class PriceAnalyzerFlowHandler(Base, config_entries.ConfigFlow, domain=DOMAIN):
         if "region" not in self._data:
             return await self.async_step_user()
         
-        title = DOMAIN + " " + self._data["region"]
+        # Use friendly_name if provided, otherwise create default title
+        if self._data.get("friendly_name") and self._data["friendly_name"].strip():
+            title = self._data["friendly_name"]
+        else:
+            # Create unique title by checking for existing entries with same region
+            base_title = DOMAIN + " " + self._data["region"]
+            title = base_title
+            existing_entries = self._async_current_entries()
+            region_count = sum(1 for entry in existing_entries if entry.data.get("region") == self._data["region"])
+            if region_count > 0:
+                title = f"{base_title} #{region_count + 1}"
+        
         return self.async_create_entry(title=title, data=self._data)
 
 
@@ -391,9 +402,14 @@ class PriceAnalyzerOptionsHandler(Base, config_entries.OptionsFlow):
 
     async def async_step_finish(self, user_input=None):
         """Finish configuration and save changes."""
-        title = DOMAIN + " " + self._data["region"]
+        # Use friendly_name if provided, otherwise keep original title
+        if self._data.get("friendly_name") and self._data["friendly_name"].strip():
+            title = self._data["friendly_name"]
+        else:
+            title = self.config_entry.title
+        
         _LOGGER.debug('updating Integration for %s with options: %s', title, self._data)
         self.hass.config_entries.async_update_entry(
-            self.config_entry, data=self._data, options=self.config_entry.options
+            self.config_entry, data=self._data, title=title, options=self.config_entry.options
         )
-        return self.async_create_entry(title=title, data=self._data)
+        return self.async_create_entry(title="", data={})

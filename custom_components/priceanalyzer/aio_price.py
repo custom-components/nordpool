@@ -227,7 +227,7 @@ class AioPrices(Prices):
 
     @backoff.on_exception(
         backoff.expo,
-        (aiohttp.ClientError, aiohttp.ClientTimeout, asyncio.TimeoutError, ConnectionError),
+        (aiohttp.ClientError, asyncio.TimeoutError, OSError),
         max_tries=3,
         max_time=60,
         logger=_LOGGER,
@@ -361,8 +361,8 @@ class AioPrices(Prices):
     # junk due to currency not being available in the data.
     @backoff.on_exception(
         backoff.expo,
-        (aiohttp.ClientError, aiohttp.ClientTimeout, asyncio.TimeoutError, 
-         ConnectionError, KeyError, ValueError, TypeError),
+        (aiohttp.ClientError, asyncio.TimeoutError, OSError,
+         KeyError, ValueError, TypeError),
         max_tries=3,
         max_time=120,
         logger=_LOGGER,
