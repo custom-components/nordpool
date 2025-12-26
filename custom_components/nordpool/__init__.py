@@ -191,7 +191,7 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             hass, new_day_cb, hour=0, minute=0, second=0
         )
 
-        cb_new_hr = async_track_time_change(hass, new_hr, minute=0, second=0)
+        cb_new_hr = async_track_time_change(hass, new_hr, minute=[0, 15, 30, 45], second=0)
 
         api.listeners.append(cb_update_tomorrow)
         api.listeners.append(cb_new_hr)
