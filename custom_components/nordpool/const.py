@@ -123,7 +123,7 @@ _REGIONS = {
     "BE": ["EUR", "Belgium", 0.06],
     "AT": ["EUR", "Austria", 0.20],
     # Unsure about tax rate, correct if wrong
-    "GER": ["EUR", "Germany", 0.23],
+    "GER": ["EUR", "Germany", 0.19],
 }
 
 # Needed incase a user wants the prices in non local currency
