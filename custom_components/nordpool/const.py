@@ -15,7 +15,7 @@ _CURRENCY_LIST = ["DKK", "EUR", "NOK", "SEK"]
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 NAME = DOMAIN
-VERSION = "0.0.17"
+VERSION = "0.0.18"
 ISSUEURL = "https://github.com/custom-components/nordpool/issues"
 
 
@@ -123,7 +123,7 @@ _REGIONS = {
     "BE": ["EUR", "Belgium", 0.06],
     "AT": ["EUR", "Austria", 0.20],
     # Unsure about tax rate, correct if wrong
-    "GER": ["EUR", "Germany", 0.19],
+    "GER": ["EUR", "Germany", 0.19],  # <-- this should be fixed.
 }
 
 # Needed incase a user wants the prices in non local currency

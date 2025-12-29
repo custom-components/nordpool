@@ -1,2 +1,2 @@
-nordpool==0.4.2
+#nordpool==0.4.2
 backoff

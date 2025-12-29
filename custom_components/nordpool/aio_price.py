@@ -287,7 +287,9 @@ class AioPrices:
             if raw:
                 return await self._fetch_json(data_type, today, areas)
             jobs = [
-                self._fetch_json(data_type, yesterday, areas),
+                self._fetch_json(
+                    data_type, yesterday, areas
+                ),  # TODO this is no longer needed, seems like NP api really does return what they should
                 self._fetch_json(data_type, today, areas),
                 self._fetch_json(data_type, tomorrow, areas),
             ]
