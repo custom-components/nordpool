@@ -55,6 +55,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional("price_type", default="kWh"): vol.In(list(_PRICE_IN.keys())),
         vol.Optional("price_in_cents", default=False): cv.boolean,
         vol.Optional("additional_costs", default=DEFAULT_TEMPLATE): cv.template,
+        vol.Optional("unique_id"): cv.string,
     }
 )
 
@@ -73,6 +74,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
     use_cents = config.get("price_in_cents")
     ad_template = config.get("additional_costs")
     api = hass.data[DOMAIN]
+    unique_id = config.get("unique_id")
     sensor = NordpoolSensor(
         friendly_name,
         region,
@@ -85,6 +87,7 @@ def _dry_setup(hass, config, add_devices, discovery_info=None):
         api,
         ad_template,
         hass,
+        unique_id,
     )
 
     add_devices([sensor])
@@ -126,6 +129,7 @@ class NordpoolSensor(SensorEntity):
         api,
         ad_template,
         hass,
+        unique_id=None,
     ) -> None:
         self._area = area
         self._currency = currency or _REGIONS[area][0]
@@ -139,6 +143,7 @@ class NordpoolSensor(SensorEntity):
         self._ad_template = ad_template
         self._hass = hass
         self._attr_force_update = True
+        self._user_unique_id = unique_id
 
         if vat is True:
             self._vat = _REGIONS[area][2]
@@ -206,6 +211,9 @@ class NordpoolSensor(SensorEntity):
 
     @property
     def unique_id(self):
+        if self._user_unique_id:
+            return self._user_unique_id
+        
         name = "nordpool_%s_%s_%s_%s_%s_%s" % (
             self._price_type,
             self._area,

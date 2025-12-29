@@ -60,6 +60,7 @@ mv nordpool-X.Y.Z/custom_components/nordpool/* .
 | Price in cents       | no       | *Default: false* <br> Display price in cents in stead of (for example) Euros.|
 | Energy scale         | no       | *Default: kWh* <br> Price displayed for MWh, kWh or Wh.|
 | Additional Cost      | no       |  *default `{{0.0\|float}}`* <br> Template to specify additional cost to be added. See [Additional Costs](#additional-costs) for more details.|
+| Entity Id            | no       | *Default: Generated automatically based on scale, region, currency, precision, low price precentage and vat. |
 
 ### Option 1: UI
 - Go to `Settings` -> `Devices & Services`
@@ -109,6 +110,11 @@ sensor:
     # The template price is in EUR, DKK, NOK or SEK (not in cents).
     # For example: "{{ current_price * 0.19 + 0.023 | float}}"
     additional_costs: "{{0.0|float}}"
+
+    # Can be used to override default generated entity id.
+    # Enter only part after "sensor."
+    # Lower case and no spaces
+    unique_id: nordpool_custom
 ```
 ### Regions
 See the [Nord Pool region map](https://data.nordpoolgroup.com/map) for details
