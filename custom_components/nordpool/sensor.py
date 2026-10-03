@@ -484,9 +484,23 @@ class NordpoolSensor(SensorEntity):
         await super().async_added_to_hass()
         _LOGGER.debug("called async_added_to_hass %s", self.name)
 
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_DAY, self.handle_new_day)
-        async_dispatcher_connect(
-            self._api._hass, EVENT_NEW_PRICE, self.handle_new_price
+        # async_on_remove disconnects these when the entity is removed (e.g. on
+        # a config entry reload). Without it the removed sensor objects stay
+        # subscribed and keep recalculating every 15 min, piling up on each
+        # reload until EVENT_NEW_HOUR blocks the event loop for minutes.
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self._api._hass, EVENT_NEW_DAY, self.handle_new_day
+            )
         )
-        async_dispatcher_connect(self._api._hass, EVENT_NEW_HOUR, self.handle_new_hr)
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self._api._hass, EVENT_NEW_PRICE, self.handle_new_price
+            )
+        )
+        self.async_on_remove(
+            async_dispatcher_connect(
+                self._api._hass, EVENT_NEW_HOUR, self.handle_new_hr
+            )
+        )
         await self.handle_new_hr()

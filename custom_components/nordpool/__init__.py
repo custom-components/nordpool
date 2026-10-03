@@ -210,7 +210,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     res = await _dry_setup(hass, entry.data)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    entry.add_update_listener(async_reload_entry)
+    # async_on_unload removes the listener on unload, so reloads don't stack
+    # up extra update listeners (each one triggers another reload).
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     return res
 
 
@@ -234,5 +236,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload config entry."""
-    await async_unload_entry(hass, entry)
-    await async_setup_entry(hass, entry)
+    # Go through HA's own reload so the entry's async_on_unload callbacks
+    # (the update listener above) actually run before setup adds new ones.
+    await hass.config_entries.async_reload(entry.entry_id)
