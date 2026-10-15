@@ -219,6 +219,9 @@ class NordpoolSensor(SensorEntity):
 
     @property
     def device_info(self):
+        # Home Assistant only supports devices for config-entry entities.
+        if self.platform.config_entry is None:
+            return None
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": self.name,
