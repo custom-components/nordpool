@@ -314,9 +314,12 @@ class NordpoolSensor(SensorEntity):
         self._average = mean(today)
         self._min = min(today)
         self._max = max(today)
-        self._off_peak_1 = mean(today[0:8])
-        self._off_peak_2 = mean(today[20:])
-        self._peak = mean(today[8:20])
+        hours = [item["start"].hour for item in self._someday(self._data_today)]
+        self._off_peak_1 = mean(price for hour, price in zip(hours, today) if hour < 8)
+        self._off_peak_2 = mean(
+            price for hour, price in zip(hours, today) if hour >= 20
+        )
+        self._peak = mean(price for hour, price in zip(hours, today) if 8 <= hour < 20)
         self._mean = median(today)
 
     @property
