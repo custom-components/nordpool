@@ -28,6 +28,7 @@ from .const import (
     _CURRENCY_LIST,
     RANDOM_MINUTE,
     RANDOM_SECOND,
+    tzs,
 )
 
 
@@ -143,18 +144,47 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _LOGGER.debug("Added %s to hass.data", DOMAIN)
         await async_setup_services(hass)
 
-        async def new_day_cb(_):
-            """Cb to handle some house keeping when it a new day."""
-            _LOGGER.debug("Called new_day_cb callback")
+        async def new_day_cb(now):
+            """Cb to handle some house keeping when it a new day.
 
+            Prices are stored per area for the day in the area's own
+            timezone, so the day rolls over at midnight in each area's
+            timezone, not at midnight in Home Assistant's timezone.
+            """
+            areas = []
+            for area in api.areas:
+                zone = await dt_utils.async_get_time_zone(
+                    tzs.get(area, "Europe/Stockholm")
+                )
+                if now.astimezone(zone).hour == 0:
+                    areas.append(area)
+
+            if not areas:
+                return
+
+            _LOGGER.debug("Called new_day_cb callback for %s", areas)
+
+            refresh_today = False
             for curr in api.currency:
-                if not api._data.get(curr, {}).get("tomorrow"):
-                    api._data[curr]["today"] = await api.update_today()
-                else:
-                    api._data[curr]["today"] = api._data[curr]["tomorrow"]
-                api._data[curr]["tomorrow"] = {}
+                today = api._data[curr].setdefault("today", {})
+                tomorrow = api._data[curr].get("tomorrow") or {}
+                for area in areas:
+                    if tomorrow.get(area, {}).get("values"):
+                        today[area] = tomorrow.pop(area)
+                    else:
+                        # Drop yesterday's prices so they are not shown as
+                        # today's if the refresh below fails.
+                        today.pop(area, None)
+                        tomorrow.pop(area, None)
+                        refresh_today = True
 
-            async_dispatcher_send(hass, EVENT_NEW_DAY)
+            if refresh_today:
+                try:
+                    await api.update_today()
+                except InvalidValueException:
+                    _LOGGER.debug("No data available for today, retrying later")
+
+            async_dispatcher_send(hass, EVENT_NEW_DAY, areas)
 
         async def new_hr(_):
             """Callback to tell the sensors to update on a new hour."""
@@ -187,9 +217,9 @@ async def _dry_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             tz=await dt_utils.async_get_time_zone("Europe/Stockholm"),
         )
 
-        cb_new_day = async_track_time_change(
-            hass, new_day_cb, hour=0, minute=0, second=0
-        )
+        # Midnight in every supported area's timezone is on the hour,
+        # so check every hour which areas just started a new day.
+        cb_new_day = async_track_time_change(hass, new_day_cb, minute=0, second=0)
 
         cb_new_hr = async_track_time_change(hass, new_hr, minute=[0, 15, 30, 45], second=0)
 

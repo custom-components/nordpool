@@ -441,9 +441,14 @@ class NordpoolSensor(SensorEntity):
         else:
             _LOGGER.debug("Cant update _update_current_price because it was no data")
 
-    async def handle_new_day(self):
+    async def handle_new_day(self, areas=None):
         """Update attrs for the new day"""
+        if areas is not None and self._area not in areas:
+            return
         _LOGGER.debug("handle_new_day")
+        # Yesterday's prices must not be shown as today's if the new day's
+        # prices could not be fetched.
+        self._data_today = None
         self._data_tomorrow = None
         # update attrs for the new day
         await self.handle_new_hr()
